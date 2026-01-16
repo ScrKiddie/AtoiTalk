@@ -1,6 +1,6 @@
 "use client";
 
-import { useCurrentUser } from "@/hooks/queries";
+import { useAuthStore, useChatStore } from "@/store";
 import { Ban, Check, CheckCheck, EllipsisVertical, File, Trash2, Unlock } from "lucide-react";
 
 import { useHideChat } from "@/hooks/mutations/use-hide-chat";
@@ -22,7 +22,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-import { useChatStore } from "@/store";
+
 import { useState } from "react";
 
 import { BlockUserDialog } from "@/components/modals/block-user-dialog";
@@ -48,7 +48,7 @@ export function NavChat({
   const { isMobile } = useSidebar();
   const navigate = useNavigate();
   const location = useLocation();
-  const { data: currentUser } = useCurrentUser();
+  const currentUser = useAuthStore((state) => state.user);
   const typingUsers = useChatStore((state) => state.typingUsers);
 
   const match = location.pathname.match(/\/chat\/([^/]+)/);
@@ -119,8 +119,8 @@ export function NavChat({
                         <div className="flex items-center gap-1 pr-1 shrink-0">
                           {chat.last_message?.sender_id === currentUser?.id &&
                             (chat.other_last_read_at &&
-                            chat.last_message?.created_at &&
-                            new Date(chat.other_last_read_at) >=
+                              chat.last_message?.created_at &&
+                              new Date(chat.other_last_read_at) >=
                               new Date(chat.last_message.created_at) ? (
                               <CheckCheck className="size-3.5 text-blue-500" />
                             ) : (
