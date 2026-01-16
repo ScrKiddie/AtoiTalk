@@ -3,7 +3,10 @@ import { userService } from "@/services/user.service";
 import { useAuthStore, useChatStore } from "@/store";
 import { ChatListItem, Message, PaginatedResponse, User, UserUpdateEventPayload } from "@/types";
 import { InfiniteData, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+const MAX_RECONNECT_ATTEMPTS = 10;
+const getBackoffMs = (attempt: number) => Math.min(1000 * Math.pow(2, attempt), 30000);
 
 export const useChatWebSocket = (url: string) => {
   const queryClient = useQueryClient();
@@ -16,7 +19,23 @@ export const useChatWebSocket = (url: string) => {
   const wsRef = useRef<WebSocket | null>(null);
   const typingTimeoutsRef = useRef<Record<string, NodeJS.Timeout>>({});
 
-  useEffect(() => {
+  const [isConnected, setIsConnected] = useState(false);
+  const reconnectAttemptRef = useRef(0);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isIntentionalCloseRef = useRef(false);
+  const isFirstConnectionRef = useRef(true);
+
+  const handleReconnect = useCallback(() => {
+    const activeChatId = useChatStore.getState().activeChatId;
+
+    queryClient.invalidateQueries({ queryKey: ["chats"] });
+
+    if (activeChatId) {
+      queryClient.invalidateQueries({ queryKey: ["messages", activeChatId] });
+    }
+  }, [queryClient]);
+
+  const connect = useCallback(() => {
     if (!token) return;
 
     const wsUrl = new URL(url);
@@ -25,7 +44,16 @@ export const useChatWebSocket = (url: string) => {
     const ws = new WebSocket(wsUrl.toString());
     wsRef.current = ws;
 
-    ws.onopen = () => {};
+    ws.onopen = () => {
+      setIsConnected(true);
+
+      if (!isFirstConnectionRef.current) {
+        handleReconnect();
+      }
+      isFirstConnectionRef.current = false;
+
+      reconnectAttemptRef.current = 0;
+    };
 
     ws.onmessage = (event) => {
       try {
@@ -574,15 +602,56 @@ export const useChatWebSocket = (url: string) => {
 
     ws.onerror = (error) => console.error("WS Error:", error);
 
-    ws.onclose = () => {};
+    ws.onclose = () => {
+      setIsConnected(false);
+      wsRef.current = null;
+
+      if (
+        !isIntentionalCloseRef.current &&
+        reconnectAttemptRef.current < MAX_RECONNECT_ATTEMPTS &&
+        token
+      ) {
+        const backoffMs = getBackoffMs(reconnectAttemptRef.current);
+        reconnectAttemptRef.current += 1;
+
+        reconnectTimeoutRef.current = setTimeout(() => {
+          connect();
+        }, backoffMs);
+      }
+    };
+  }, [
+    url,
+    token,
+    queryClient,
+    setUserTyping,
+    setUserOnline,
+    clearUserTypingGlobal,
+    handleReconnect,
+  ]);
+
+  useEffect(() => {
+    if (!token) return;
+
+    isIntentionalCloseRef.current = false;
+    isFirstConnectionRef.current = true;
+    reconnectAttemptRef.current = 0;
+
+    connect();
 
     return () => {
-      ws.close();
-      wsRef.current = null;
+      isIntentionalCloseRef.current = true;
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
     };
-  }, [url, token, queryClient, setUserTyping, setUserOnline, clearUserTypingGlobal]);
+  }, [token, connect]);
 
-  const sendTyping = (chatId: string) => {
+  const sendTyping = useCallback((chatId: string) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(
         JSON.stringify({
@@ -592,15 +661,8 @@ export const useChatWebSocket = (url: string) => {
           },
         })
       );
-    } else {
-      console.warn(
-        "[WS-Error] Cannot send typing. WS State:",
-        wsRef.current?.readyState,
-        "Ref exists:",
-        !!wsRef.current
-      );
     }
-  };
+  }, []);
 
-  return { sendTyping };
+  return { sendTyping, isConnected };
 };

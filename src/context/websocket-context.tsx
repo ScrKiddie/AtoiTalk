@@ -3,14 +3,21 @@ import React, { createContext, useContext } from "react";
 
 interface WebSocketContextType {
   sendTyping: (chatId: string) => void;
+  isConnected: boolean;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
 
 export const WebSocketProvider = ({ children }: { children: React.ReactNode }) => {
-  const { sendTyping } = useChatWebSocket(import.meta.env.VITE_WS_URL || "ws://localhost:8080/ws");
+  const { sendTyping, isConnected } = useChatWebSocket(
+    import.meta.env.VITE_WS_URL || "ws://localhost:8080/ws"
+  );
 
-  return <WebSocketContext.Provider value={{ sendTyping }}>{children}</WebSocketContext.Provider>;
+  return (
+    <WebSocketContext.Provider value={{ sendTyping, isConnected }}>
+      {children}
+    </WebSocketContext.Provider>
+  );
 };
 
 export const useWebSocketContext = () => {

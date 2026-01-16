@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { chatService } from "@/services";
 import { useChatStore } from "@/store";
 import type {
@@ -10,6 +11,7 @@ import type {
 import {
   InfiniteData,
   useInfiniteQuery,
+  useIsFetching,
   useMutation,
   useQuery,
   useQueryClient,
@@ -34,14 +36,65 @@ export function useChats(params?: GetChatsParams) {
 }
 
 export function useChat(chatId: string | null) {
-  return useQuery({
+  const queryClient = useQueryClient();
+  const chatsIsFetching = useIsFetching({ queryKey: ["chats"] });
+
+  const getChatsQueryState = () => {
+    const states = queryClient
+      .getQueryCache()
+      .findAll({ queryKey: ["chats"] })
+      .map((q) => q.state);
+    return states.length > 0 ? states[0] : null;
+  };
+
+  const cachedData = useMemo(() => {
+    if (!chatId) return undefined;
+
+    const existingData = queryClient.getQueryData<ChatListItem>(["chat", chatId]);
+    if (existingData) return existingData;
+
+    const chatsCache = queryClient.getQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>({
+      queryKey: ["chats"],
+    });
+
+    for (const [, cache] of chatsCache) {
+      if (cache?.pages) {
+        for (const page of cache.pages) {
+          const found = page.data.find((c) => c.id === chatId);
+          if (found) {
+            queryClient.setQueryData<ChatListItem>(["chat", chatId], found);
+            return found;
+          }
+        }
+      }
+    }
+
+    return undefined;
+  }, [chatId, chatsIsFetching, queryClient]);
+
+  const chatsState = getChatsQueryState();
+  const chatsHasLoaded = chatsState?.status === "success" && chatsState?.fetchStatus === "idle";
+  const isWaitingForChats = !!chatId && !cachedData && !chatsHasLoaded;
+
+  const shouldFetch = !!chatId && !cachedData && chatsHasLoaded;
+
+  const query = useQuery({
     queryKey: ["chat", chatId],
     queryFn: ({ signal }) => chatService.getChatById(chatId!, signal),
-    enabled: !!chatId,
+    enabled: shouldFetch,
     retry: false,
     staleTime: 1000 * 60 * 5,
+    initialData: cachedData,
   });
+
+  return {
+    ...query,
+    isLoading: query.isLoading || isWaitingForChats,
+  };
 }
+
+
+
 
 export function useCreatePrivateChat() {
   const queryClient = useQueryClient();
