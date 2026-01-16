@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { chatService } from "@/services";
 import { useChatStore } from "@/store";
 import type {
@@ -16,6 +15,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 export function useChats(params?: GetChatsParams) {
   return useInfiniteQuery({
@@ -92,9 +92,6 @@ export function useChat(chatId: string | null) {
     isLoading: query.isLoading || isWaitingForChats,
   };
 }
-
-
-
 
 export function useCreatePrivateChat() {
   const queryClient = useQueryClient();

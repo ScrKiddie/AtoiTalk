@@ -119,8 +119,8 @@ export function NavChat({
                         <div className="flex items-center gap-1 pr-1 shrink-0">
                           {chat.last_message?.sender_id === currentUser?.id &&
                             (chat.other_last_read_at &&
-                              chat.last_message?.created_at &&
-                              new Date(chat.other_last_read_at) >=
+                            chat.last_message?.created_at &&
+                            new Date(chat.other_last_read_at) >=
                               new Date(chat.last_message.created_at) ? (
                               <CheckCheck className="size-3.5 text-blue-500" />
                             ) : (

@@ -1,5 +1,6 @@
 import AttachmentCard from "@/components/attachment-card";
 import { useRefreshMedia } from "@/hooks/use-refresh-media";
+import { toast } from "@/lib/toast";
 import { Media, Message } from "@/types";
 import React, { useState } from "react";
 import Lightbox from "yet-another-react-lightbox";
@@ -52,7 +53,11 @@ export const MessageAttachments = ({ message, isCurrentUser }: MessageAttachment
               let currentUrl = item.url;
               const downloadFile = async (url: string) => {
                 const response = await fetch(url);
-                if (!response.ok) throw new Error(response.statusText);
+                if (!response.ok) {
+                  const error = new Error(response.statusText) as Error & { status: number };
+                  error.status = response.status;
+                  throw error;
+                }
                 const blob = await response.blob();
                 const uniqueUrl = window.URL.createObjectURL(blob);
                 const a = document.createElement("a");
@@ -67,17 +72,23 @@ export const MessageAttachments = ({ message, isCurrentUser }: MessageAttachment
 
               try {
                 await downloadFile(currentUrl);
-              } catch {
-                try {
-                  const { newUrl } = await refreshMedia({
-                    mediaId: item.id,
-                    messageId: message.id,
-                  });
-                  currentUrl = newUrl;
-                  await downloadFile(newUrl);
-                } catch (retryError) {
-                  console.error("Download failed after refresh, fallback to open", retryError);
-                  window.open(currentUrl, "_blank");
+              } catch (error) {
+                const status = (error as { status?: number })?.status;
+
+                if (status === 403) {
+                  try {
+                    const { newUrl } = await refreshMedia({
+                      mediaId: item.id,
+                      messageId: message.id,
+                    });
+                    currentUrl = newUrl;
+                    await downloadFile(newUrl);
+                  } catch (retryError) {
+                    console.error("Download failed after refresh", retryError);
+                    toast.error("Unable to download file", { id: "download-failed" });
+                  }
+                } else {
+                  toast.error("Unable to download file", { id: "download-failed" });
                 }
               }
             }}
@@ -112,7 +123,7 @@ export const MessageAttachments = ({ message, isCurrentUser }: MessageAttachment
                 <AttachmentCard
                   file={item}
                   isSender={isCurrentUser}
-                  onClick={() => {}}
+                  onClick={() => { }}
                   onImageClick={() => {
                     setLightboxIndex(index);
                     setLightboxOpen(true);

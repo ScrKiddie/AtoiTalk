@@ -11,6 +11,7 @@ import {
   FileIcon,
   FileTextIcon,
   FileVideoIcon,
+  ImageOff,
   X,
 } from "lucide-react";
 import { useState } from "react";
@@ -97,11 +98,34 @@ const AttachmentCard: React.FC<FilePreviewProps> = ({
   const [isLoaded, setIsLoaded] = useState(false);
   const [isThumbLoaded, setIsThumbLoaded] = useState(false);
   const [hasRetried, setHasRetried] = useState(false);
+  const [hasFailed, setHasFailed] = useState(false);
 
   const lastDotIndex = file?.original_name.lastIndexOf(".") ?? -1;
   const fileName =
     lastDotIndex !== -1 ? file.original_name.slice(0, lastDotIndex) : file.original_name;
   const fileExt = lastDotIndex !== -1 ? file.original_name.slice(lastDotIndex) : "";
+
+  const handleImageError = async (url: string) => {
+    if (hasRetried || !onRefresh) {
+      setHasFailed(true);
+      setIsLoaded(true);
+      return;
+    }
+
+    try {
+      const response = await fetch(url, { method: "HEAD" });
+      if (response.status === 403) {
+        setHasRetried(true);
+        await onRefresh(file.id);
+      } else {
+        setHasFailed(true);
+        setIsLoaded(true);
+      }
+    } catch {
+      setHasFailed(true);
+      setIsLoaded(true);
+    }
+  };
 
   if (!file) return null;
 
@@ -115,24 +139,25 @@ const AttachmentCard: React.FC<FilePreviewProps> = ({
             className="absolute inset-0 size-full"
           />
         )}
-        <img
-          key={file.url}
-          src={file.url}
-          alt={file.original_name}
-          loading="lazy"
-          className={`block size-full object-cover cursor-pointer transition-opacity duration-300 ${isLoaded ? "opacity-100" : "opacity-0"}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            onImageClick?.();
-          }}
-          onLoad={() => setIsLoaded(true)}
-          onError={() => {
-            if (!hasRetried && onRefresh) {
-              setHasRetried(true);
-              onRefresh(file.id).catch(console.error);
-            }
-          }}
-        />
+        {hasFailed ? (
+          <div className="flex items-center justify-center size-full bg-muted">
+            <ImageOff className="size-8 text-muted-foreground" />
+          </div>
+        ) : (
+          <img
+            key={file.url}
+            src={file.url}
+            alt={file.original_name}
+            loading="lazy"
+            className={`block size-full object-cover cursor-pointer transition-opacity duration-300 ${isLoaded ? "opacity-100" : "opacity-0"}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onImageClick?.();
+            }}
+            onLoad={() => setIsLoaded(true)}
+            onError={() => handleImageError(file.url)}
+          />
+        )}
       </div>
     );
   }
@@ -152,19 +177,18 @@ const AttachmentCard: React.FC<FilePreviewProps> = ({
         {isImage ? (
           <>
             {!isThumbLoaded && <Skeleton className="absolute inset-0 size-full rounded-md" />}
-            <img
-              src={file.url}
-              alt={file.original_name}
-              loading="lazy"
-              className={`size-full object-cover ${!isThumbLoaded ? "opacity-0" : ""}`}
-              onLoad={() => setIsThumbLoaded(true)}
-              onError={() => {
-                if (!hasRetried && onRefresh) {
-                  setHasRetried(true);
-                  onRefresh(file.id).catch(console.error);
-                }
-              }}
-            />
+            {hasFailed ? (
+              <ImageOff className="size-5 text-muted-foreground" />
+            ) : (
+              <img
+                src={file.url}
+                alt={file.original_name}
+                loading="lazy"
+                className={`size-full object-cover ${!isThumbLoaded ? "opacity-0" : ""}`}
+                onLoad={() => setIsThumbLoaded(true)}
+                onError={() => handleImageError(file.url)}
+              />
+            )}
           </>
         ) : (
           getFileIconFromData(file)
