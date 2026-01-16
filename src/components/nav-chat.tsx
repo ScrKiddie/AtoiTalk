@@ -57,7 +57,7 @@ export function NavChat({
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [deleteChatIndex, setDeleteChatIndex] = useState<number | null>(null);
 
-  const { mutate: hideChat } = useHideChat();
+  const { mutate: hideChat, isPending: isHidingChat } = useHideChat();
   const [userToBlock, setUserToBlock] = useState<string | null>(null);
   const [userToUnblock, setUserToUnblock] = useState<string | null>(null);
 
@@ -240,6 +240,7 @@ export function NavChat({
       <ConfirmationDialog
         open={deleteChatIndex !== null}
         onOpenChange={(open) => !open && setDeleteChatIndex(null)}
+        isLoading={isHidingChat}
         title="Delete Chat"
         description="Are you sure you want to delete this chat? This action cannot be undone."
         confirmText="Delete"
@@ -251,10 +252,10 @@ export function NavChat({
                 if (activeId === chatToDelete.id) {
                   navigate("/");
                 }
+                setDeleteChatIndex(null);
               },
             });
           }
-          setDeleteChatIndex(null);
         }}
       />
 

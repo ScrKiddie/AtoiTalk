@@ -1,53 +1,27 @@
 import { ExternalToast, toast as sonnerToast } from "sonner";
 
-let lastToastId: string | number | undefined;
-
-const smartDismiss = (data?: ExternalToast) => {
-  if (data?.id && data.id === lastToastId) {
-    return;
-  }
-  sonnerToast.dismiss();
-};
-
-const trackId = (id: string | number, data?: ExternalToast) => {
-  lastToastId = data?.id || id;
-  return id;
-};
-
 export const toast = (message: string | React.ReactNode, data?: ExternalToast) => {
-  smartDismiss(data);
-  const id = sonnerToast(message, data);
-  return trackId(id, data);
+  return sonnerToast(message, data);
 };
 
 toast.success = (message: string | React.ReactNode, data?: ExternalToast) => {
-  smartDismiss(data);
-  const id = sonnerToast.success(message, data);
-  return trackId(id, data);
+  return sonnerToast.success(message, data);
 };
 
 toast.error = (message: string | React.ReactNode, data?: ExternalToast) => {
-  smartDismiss(data);
-  const id = sonnerToast.error(message, data);
-  return trackId(id, data);
+  return sonnerToast.error(message, data);
 };
 
 toast.warning = (message: string | React.ReactNode, data?: ExternalToast) => {
-  smartDismiss(data);
-  const id = sonnerToast.warning(message, data);
-  return trackId(id, data);
+  return sonnerToast.warning(message, data);
 };
 
 toast.info = (message: string | React.ReactNode, data?: ExternalToast) => {
-  smartDismiss(data);
-  const id = sonnerToast.info(message, data);
-  return trackId(id, data);
+  return sonnerToast.info(message, data);
 };
 
 toast.loading = (message: string | React.ReactNode, data?: ExternalToast) => {
-  smartDismiss(data);
-  const id = sonnerToast.loading(message, data);
-  return trackId(id, data);
+  return sonnerToast.loading(message, data);
 };
 
 toast.dismiss = sonnerToast.dismiss;
