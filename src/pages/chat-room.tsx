@@ -20,6 +20,7 @@ import { ChatListItem, EditMessageRequest, Media, Message, MessageType } from "@
 
 import ChatFooter from "@/components/chat/chat-footer";
 import ChatHeader from "@/components/chat/chat-header";
+import { ChatHeaderSkeleton } from "@/components/chat/chat-header-skeleton";
 import MessageBubble from "@/components/chat/message-bubble";
 import { TypingBubble } from "@/components/chat/typing-bubble";
 import DeleteMessageDialog from "@/components/modals/delete-message-dialog.tsx";
@@ -27,7 +28,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useChatScroll } from "@/hooks/use-chat-scroll";
 import { useJumpToMessage } from "@/hooks/use-jump-to-message";
-import { AlertCircle, RefreshCcw } from "lucide-react";
+import { RefreshCcw } from "lucide-react";
 import { useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -64,7 +65,12 @@ const ChatRoom = () => {
   }, []);
 
   const { data: chatsData } = useChats();
-  const { data: singleChat, isLoading: isLoadingSingleChat } = useChat(currentChatId);
+  const {
+    data: singleChat,
+    isLoading: isLoadingSingleChat,
+    isError: isChatError,
+    refetch: refetchChat,
+  } = useChat(currentChatId);
   let chat =
     chatsData?.pages.flatMap((p) => p.data).find((c) => c.id === currentChatId) || singleChat;
 
@@ -109,7 +115,12 @@ const ChatRoom = () => {
 
   const partnerId = isVirtual ? targetUserId : derivedPartnerId;
 
-  const { data: partnerProfile } = useUserById(partnerId || null);
+  const {
+    data: partnerProfile,
+    isError: isProfileError,
+    isLoading: isProfileLoading,
+    refetch: refetchProfile,
+  } = useUserById(partnerId || null);
 
   useEffect(() => {
     if (isVirtual && targetUserId && chatsData) {
@@ -139,6 +150,25 @@ const ChatRoom = () => {
       is_blocked_by_other: partnerProfile.is_blocked_by_other,
     } as ChatListItem;
   }
+
+  const renderHeader = () => {
+    if (chat) {
+      return (
+        <ChatHeader
+          chat={chat}
+          partnerId={partnerId}
+          partnerProfile={partnerProfile}
+          isProfileError={isProfileError}
+          isProfileLoading={isProfileLoading}
+          onRetryProfile={refetchProfile}
+        />
+      );
+    }
+    if (isChatError) {
+      return <ChatHeaderSkeleton isError onRetry={() => refetchChat()} />;
+    }
+    return <ChatHeaderSkeleton />;
+  };
 
   const displayMessages = [...messages].sort(
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
@@ -530,7 +560,7 @@ const ChatRoom = () => {
     <>
       <SidebarInset key={currentChatId ?? "empty"} className={"break-w overflow-hidden"}>
         <div className="h-[100dvh] w-full overflow-hidden flex flex-col relative">
-          {chat && <ChatHeader chat={chat} partnerId={partnerId} partnerProfile={partnerProfile} />}
+          {renderHeader()}
 
           <main
             ref={scrollRef}
@@ -543,13 +573,10 @@ const ChatRoom = () => {
                 <div className="flex-1" />
               ) : isMessagesError && groupedMessages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center flex-1 h-full gap-3 p-4">
-                  <div className="flex items-center justify-center size-12 rounded-full bg-destructive/10">
-                    <AlertCircle className="size-6 text-destructive" />
-                  </div>
                   <div className="text-center space-y-1">
                     <h3 className="font-semibold text-lg">Failed to load messages</h3>
                     <p className="text-sm text-muted-foreground">
-                      Something went wrong while fetching the chat history.
+                      We couldn't retrieve your chat history
                     </p>
                   </div>
                   <Button

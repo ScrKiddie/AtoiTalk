@@ -58,12 +58,17 @@ interface ChatState {
 
   setUserOnline: (userId: string, isOnline: boolean) => void;
   clearUserTypingGlobal: (userId: string) => void;
+
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
 }
 
 export const useChatStore = create<ChatState>()((set) => ({
   activeChatId: null,
   typingUsers: {},
   onlineUsers: new Set(),
+  searchQuery: "",
+  setSearchQuery: (query) => set({ searchQuery: query }),
 
   setActiveChatId: (chatId) => {
     set({ activeChatId: chatId });

@@ -18,12 +18,15 @@ import {
 import { useMemo } from "react";
 
 export function useChats(params?: GetChatsParams) {
+  const normalizedQuery = params?.query || undefined;
+
   return useInfiniteQuery({
-    queryKey: ["chats", params?.query],
+    queryKey: ["chats", normalizedQuery],
     queryFn: ({ pageParam, signal }) =>
       chatService.getChats(
         {
           ...params,
+          query: normalizedQuery,
           cursor: pageParam as string | undefined,
           limit: params?.limit ?? 20,
         },
@@ -32,6 +35,9 @@ export function useChats(params?: GetChatsParams) {
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) =>
       lastPage.meta.has_next ? lastPage.meta.next_cursor : undefined,
+    staleTime: 1000 * 30,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 }
 
@@ -85,6 +91,8 @@ export function useChat(chatId: string | null) {
     retry: false,
     staleTime: 1000 * 60 * 5,
     initialData: cachedData,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   return {

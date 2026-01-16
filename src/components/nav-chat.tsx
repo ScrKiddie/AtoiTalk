@@ -1,10 +1,3 @@
-"use client";
-
-import { useAuthStore, useChatStore } from "@/store";
-import { Ban, Check, CheckCheck, EllipsisVertical, File, Trash2, Unlock } from "lucide-react";
-
-import { useHideChat } from "@/hooks/mutations/use-hide-chat";
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -13,6 +6,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
 import {
   SidebarGroup,
   SidebarMenu,
@@ -21,29 +15,50 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useHideChat } from "@/hooks/mutations/use-hide-chat";
+import { getInitials } from "@/lib/avatar-utils";
+import { formatChatPreviewDate } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
-
+import { useAuthStore, useChatStore } from "@/store";
+import { ChatListItem } from "@/types";
+import {
+  Ban,
+  Check,
+  CheckCheck,
+  EllipsisVertical,
+  File,
+  Loader2,
+  RefreshCcw,
+  Trash2,
+  Unlock,
+} from "lucide-react";
 import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { BlockUserDialog } from "@/components/modals/block-user-dialog";
 import { UnblockUserDialog } from "@/components/modals/unblock-user-dialog";
+import { Button } from "@/components/ui/button";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog.tsx";
-import { Skeleton } from "@/components/ui/skeleton";
-import { getInitials } from "@/lib/avatar-utils";
-import { formatChatPreviewDate } from "@/lib/date-utils";
-import { ChatListItem } from "@/types";
-import { useLocation, useNavigate } from "react-router-dom";
 
 export function NavChat({
   chats,
   activeMenu,
   setActiveMenu,
   isLoading = false,
+  isFetchingNextPage,
+  hasNextPage,
+  isError,
+  refetch,
 }: {
   chats: ChatListItem[];
   activeMenu: string | null;
   setActiveMenu: (menu: string | null) => void;
   isLoading?: boolean;
+  isFetchingNextPage?: boolean;
+  hasNextPage?: boolean;
+  isError?: boolean;
+  refetch?: () => void;
 }) {
   const { isMobile } = useSidebar();
   const navigate = useNavigate();
@@ -72,14 +87,37 @@ export function NavChat({
 
   return (
     <>
-      <SidebarGroup>
-        <SidebarMenu>
+      <SidebarGroup className="p-0 group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:py-2">
+        <SidebarMenu className="gap-0 group-data-[collapsible=icon]:gap-2">
+          {chats.length === 0 && isError && (
+            <SidebarMenuItem>
+              <div className="h-[calc(100vh-250px)] flex flex-col items-center justify-center gap-2 text-center group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:py-0 group-data-[collapsible=icon]:gap-0">
+                <div className="space-y-1 group-data-[collapsible=icon]:hidden">
+                  <span className="block font-semibold text-sm">Failed to load</span>
+                  <p className="text-[10px] text-muted-foreground">Check your connection</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => refetch?.()}
+                  className="h-7 text-xs gap-2 mt-1 group-data-[collapsible=icon]:mt-0 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:rounded-full"
+                >
+                  <RefreshCcw className="size-3.5" />
+                  <span className="group-data-[collapsible=icon]:hidden">Retry</span>
+                </Button>
+              </div>
+            </SidebarMenuItem>
+          )}
+
           {chats.map((chat, index) => {
             const menuId = `chat-${index}`;
             const initials = getInitials(chat.name);
 
             return (
-              <SidebarMenuItem key={chat.id}>
+              <SidebarMenuItem
+                key={chat.id}
+                className="border-b border-sidebar-border last:border-0 group-data-[collapsible=icon]:border-none"
+              >
                 <div
                   className="relative w-full"
                   onMouseEnter={() => setHoveredIndex(index)}
@@ -91,12 +129,12 @@ export function NavChat({
                     isActive={activeId === chat.id}
                     data-state={activeMenu === menuId ? "open" : "closed"}
                     className={cn(
-                      "group relative flex items-center",
+                      "group relative flex items-center rounded-none px-4 group-data-[collapsible=icon]:rounded-md group-data-[collapsible=icon]:px-0",
                       "data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground",
                       activeId === chat.id
                         ? "bg-muted font-normal data-[active=true]:font-normal"
                         : "",
-                      !(hoveredIndex === index || activeMenu === menuId || isMobile) && "!pr-2"
+                      !(hoveredIndex === index || activeMenu === menuId || isMobile) && "!pr-4"
                     )}
                   >
                     <div className="relative">
@@ -111,7 +149,7 @@ export function NavChat({
                         />
                       )}
                     </div>
-                    <div className="grid flex-1 text-left text-sm leading-tight ml-3 min-w-0">
+                    <div className="grid flex-1 text-left text-sm leading-tight ml-3 min-w-0 group-data-[collapsible=icon]:hidden">
                       <div className="flex justify-between items-center w-full min-w-0">
                         <span className="truncate font-medium flex-1 min-w-0 mr-2">
                           {chat.name}
@@ -159,7 +197,7 @@ export function NavChat({
                       </div>
                     </div>
                     {chat.unread_count > 0 ? (
-                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] leading-none text-primary-foreground ml-3">
+                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] leading-none text-primary-foreground ml-3 group-data-[collapsible=icon]:hidden">
                         {chat.unread_count}
                       </div>
                     ) : null}
@@ -174,7 +212,7 @@ export function NavChat({
                     <DropdownMenuTrigger asChild>
                       <SidebarMenuAction
                         className={cn(
-                          "absolute right-2 !top-1/2 -translate-y-1/2 transition-opacity duration-200 hover:bg-transparent",
+                          "absolute right-2 !top-1/2 -translate-y-1/2 transition-opacity duration-200 hover:bg-transparent group-data-[collapsible=icon]:hidden",
                           hoveredIndex === index || activeMenu === menuId || isMobile
                             ? "opacity-100"
                             : "opacity-0 pointer-events-none"
@@ -235,62 +273,70 @@ export function NavChat({
             );
           })}
         </SidebarMenu>
+
+        {isFetchingNextPage && (
+          <div className="p-4 flex justify-center group-data-[collapsible=icon]:pt-2 group-data-[collapsible=icon]:pb-0 group-data-[collapsible=icon]:px-0">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        )}
+
+        {!isFetchingNextPage && hasNextPage && <div className="h-[0.1px] w-full" />}
       </SidebarGroup>
+
+      <DropdownMenu></DropdownMenu>
 
       <ConfirmationDialog
         open={deleteChatIndex !== null}
         onOpenChange={(open) => !open && setDeleteChatIndex(null)}
-        isLoading={isHidingChat}
         title="Delete Chat"
         description="Are you sure you want to delete this chat? This action cannot be undone."
         confirmText="Delete"
+        cancelText="Cancel"
+        variant="destructive"
         onConfirm={() => {
-          if (deleteChatIndex !== null && chats[deleteChatIndex]) {
-            const chatToDelete = chats[deleteChatIndex];
-            hideChat(chatToDelete.id, {
+          if (deleteChatIndex !== null) {
+            const chat = chats[deleteChatIndex];
+            hideChat(chat.id, {
               onSuccess: () => {
-                if (activeId === chatToDelete.id) {
+                setDeleteChatIndex(null);
+                if (chat.id === activeId) {
                   navigate("/");
                 }
-                setDeleteChatIndex(null);
               },
             });
           }
         }}
+        isLoading={isHidingChat}
       />
 
       <BlockUserDialog
         open={!!userToBlock}
-        onOpenChange={(val) => {
-          if (!val) setUserToBlock(null);
-        }}
-        userId={userToBlock}
+        onOpenChange={(open) => !open && setUserToBlock(null)}
+        userId={userToBlock || ""}
       />
 
       <UnblockUserDialog
         open={!!userToUnblock}
-        onOpenChange={(val) => {
-          if (!val) setUserToUnblock(null);
-        }}
-        userId={userToUnblock}
+        onOpenChange={(open) => !open && setUserToUnblock(null)}
+        userId={userToUnblock || ""}
       />
     </>
   );
 }
 
-export function NavChatSkeleton() {
+function NavChatSkeleton() {
   return (
     <SidebarGroup>
       <SidebarMenu>
-        {Array.from({ length: 5 }).map((_, index) => (
-          <SidebarMenuItem key={index}>
-            <SidebarMenuButton size="lg" className="pointer-events-none">
-              <Skeleton className="h-8 w-8 rounded-full shrink-0" />
-              <div className="grid flex-1 gap-1 ml-3">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-3 w-32" />
+        {[1, 2, 3, 4, 5].map((i) => (
+          <SidebarMenuItem key={i}>
+            <div className="flex items-center gap-2 p-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0">
+              <Skeleton className="h-10 w-10 rounded-full group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8" />
+              <div className="flex-1 space-y-2 group-data-[collapsible=icon]:hidden">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
               </div>
-            </SidebarMenuButton>
+            </div>
           </SidebarMenuItem>
         ))}
       </SidebarMenu>

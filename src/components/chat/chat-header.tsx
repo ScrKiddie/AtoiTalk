@@ -7,6 +7,7 @@ import { BlockUserDialog } from "@/components/modals/block-user-dialog";
 import { PartnerProfileDialog } from "@/components/modals/partner-profile-dialog";
 import { UnblockUserDialog } from "@/components/modals/unblock-user-dialog";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getInitials } from "@/lib/avatar-utils";
 import { formatLastSeen } from "@/lib/utils";
 import { Ban, Unlock } from "lucide-react";
@@ -16,9 +17,19 @@ interface ChatHeaderProps {
   chat: ChatListItem;
   partnerId?: string | null;
   partnerProfile?: User | null;
+  isProfileError?: boolean;
+  isProfileLoading?: boolean;
+  onRetryProfile?: () => void;
 }
 
-const ChatHeader = ({ chat, partnerId, partnerProfile }: ChatHeaderProps) => {
+const ChatHeader = ({
+  chat,
+  partnerId,
+  partnerProfile,
+  isProfileError,
+  isProfileLoading,
+  onRetryProfile,
+}: ChatHeaderProps) => {
   const typingUsers = useChatStore((state) => state.typingUsers);
   const { user: currentUser } = useAuthStore();
 
@@ -30,27 +41,45 @@ const ChatHeader = ({ chat, partnerId, partnerProfile }: ChatHeaderProps) => {
 
   const initials = getInitials(chat.name);
 
-  let statusText = "Messages";
+  let statusContent: React.ReactNode = "Messages";
   let statusColor = "text-muted-foreground";
 
   if (chat.type === "private") {
-    if (partnerProfile?.is_blocked_by_me || partnerProfile?.is_blocked_by_other) {
-      statusText = "Last seen a long time ago";
+    if (isProfileLoading) {
+      statusContent = <Skeleton className="h-[13px] w-24 rounded-full" />;
+    } else if (isProfileError) {
+      statusContent = (
+        <span className="flex items-center gap-1">
+          <span>Failed to load user data.</span>
+          <span
+            className="text-blue-500 cursor-pointer hover:text-blue-400 transition-colors font-medium"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRetryProfile?.();
+            }}
+          >
+            Retry
+          </span>
+        </span>
+      );
+      statusColor = "text-foreground text-xs";
+    } else if (partnerProfile?.is_blocked_by_me || partnerProfile?.is_blocked_by_other) {
+      statusContent = "Last seen a long time ago";
       statusColor = "text-muted-foreground";
     } else if (isTyping) {
-      statusText = "Typing...";
+      statusContent = "Typing...";
       statusColor = "text-muted-foreground italic font-medium animate-pulse";
     } else if (partnerProfile?.is_online) {
-      statusText = "Online";
+      statusContent = "Online";
       statusColor = "text-green-500 font-medium";
     } else if (partnerProfile?.last_seen_at) {
-      statusText = formatLastSeen(partnerProfile.last_seen_at);
+      statusContent = formatLastSeen(partnerProfile.last_seen_at);
     } else {
-      statusText = "Offline";
+      statusContent = "Offline";
     }
   } else {
     if (isTyping) {
-      statusText = "Someone is typing...";
+      statusContent = "Someone is typing...";
       statusColor = "text-muted-foreground italic font-medium animate-pulse";
     }
   }
@@ -71,12 +100,24 @@ const ChatHeader = ({ chat, partnerId, partnerProfile }: ChatHeaderProps) => {
               }}
             >
               <Avatar className="size-8">
-                <AvatarImage src={chat.avatar || undefined} className="object-cover" />
-                <AvatarFallback>{initials}</AvatarFallback>
+                {isProfileLoading ? (
+                  <Skeleton className="size-full rounded-full" />
+                ) : (
+                  <>
+                    <AvatarImage src={chat.avatar || undefined} className="object-cover" />
+                    <AvatarFallback>{initials}</AvatarFallback>
+                  </>
+                )}
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{chat.name}</span>
-                <span className={`truncate text-xs ${statusColor}`}>{statusText}</span>
+                {isProfileLoading ? (
+                  <Skeleton className="h-[13px] w-32 mb-1" />
+                ) : (
+                  <span className="truncate font-medium">{chat.name}</span>
+                )}
+                <div className={`truncate text-xs ${statusColor} min-h-[16px] flex items-center`}>
+                  {statusContent}
+                </div>
               </div>
             </div>
           </div>

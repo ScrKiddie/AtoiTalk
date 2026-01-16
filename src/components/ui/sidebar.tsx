@@ -342,17 +342,29 @@ function SidebarSeparator({ className, ...props }: React.ComponentProps<typeof S
   );
 }
 
-function SidebarContent({ className, ...props }: React.ComponentProps<"div">) {
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+function SidebarContent({
+  className,
+  children,
+  onScroll,
+  scrollRef,
+  ...props
+}: React.ComponentProps<"div"> & {
+  onScroll?: React.UIEventHandler<HTMLDivElement>;
+  scrollRef?: React.RefObject<HTMLDivElement | null>;
+}) {
   return (
     <div
       data-slot="sidebar-content"
       data-sidebar="content"
-      className={cn(
-        "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden",
-        className
-      )}
+      className={cn("flex min-h-0 flex-1 flex-col overflow-hidden", className)}
       {...props}
-    />
+    >
+      <ScrollArea className="h-full" onScroll={onScroll} viewportRef={scrollRef}>
+        <div className="flex flex-col">{children}</div>
+      </ScrollArea>
+    </div>
   );
 }
 

@@ -123,7 +123,7 @@ export const MessageAttachments = ({ message, isCurrentUser }: MessageAttachment
                 <AttachmentCard
                   file={item}
                   isSender={isCurrentUser}
-                  onClick={() => { }}
+                  onClick={() => {}}
                   onImageClick={() => {
                     setLightboxIndex(index);
                     setLightboxOpen(true);

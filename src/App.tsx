@@ -1,5 +1,6 @@
 import { AppSidebar } from "@/components/app-sidebar.tsx";
 import Logo from "@/components/logo.tsx";
+import ProtectedRoute from "@/components/protected-route";
 import PublicRoute from "@/components/public-route";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar.tsx";
@@ -77,22 +78,24 @@ const AnimatedRoutes = () => {
           <Route path="/forgot" element={<Verify />} />
           <Route path="/verify" element={<Verify />} />
         </Route>
-        <Route
-          path="/*"
-          element={
-            <WebSocketProvider>
-              <SidebarProvider>
-                <AppSidebar />
-                <Routes>
-                  <Route path="/" element={<EmptyChatState />} />
-                  <Route path="/chat/:chatId" element={<ChatRoom />} />
-                  <Route path="/chat/u/:userId" element={<ChatRoom />} />
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </SidebarProvider>
-            </WebSocketProvider>
-          }
-        />
+        <Route element={<ProtectedRoute />}>
+          <Route
+            path="/*"
+            element={
+              <WebSocketProvider>
+                <SidebarProvider>
+                  <AppSidebar />
+                  <Routes>
+                    <Route path="/" element={<EmptyChatState />} />
+                    <Route path="/chat/:chatId" element={<ChatRoom />} />
+                    <Route path="/chat/u/:userId" element={<ChatRoom />} />
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </SidebarProvider>
+              </WebSocketProvider>
+            }
+          />
+        </Route>
       </Routes>
     </AnimatePresence>
   );
