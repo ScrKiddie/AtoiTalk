@@ -511,7 +511,7 @@ const ChatFooter = ({
                         <p className="text-muted-foreground text-xs">
                           Please wait a moment <span className="text-foreground">or</span>{" "}
                           <span
-                            className="text-red-500 cursor-pointer hover:underline pointer-events-auto"
+                            className="text-red-500 cursor-pointer hover:text-red-400 transition-colors font-medium pointer-events-auto"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleCancelUploads();

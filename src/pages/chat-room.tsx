@@ -25,6 +25,7 @@ import MessageBubble from "@/components/chat/message-bubble";
 import { TypingBubble } from "@/components/chat/typing-bubble";
 import DeleteMessageDialog from "@/components/modals/delete-message-dialog.tsx";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
 import { useChatScroll } from "@/hooks/use-chat-scroll";
 import { useJumpToMessage } from "@/hooks/use-jump-to-message";
@@ -562,12 +563,12 @@ const ChatRoom = () => {
         <div className="h-[100dvh] w-full overflow-hidden flex flex-col relative">
           {renderHeader()}
 
-          <main
-            ref={scrollRef}
+          <ScrollArea
+            viewportRef={scrollRef}
             onScroll={handleScroll}
-            className="flex flex-col gap-4 flex-1 px-2 overflow-x-hidden overflow-y-auto"
+            className="flex-1 px-2 overflow-hidden chat-messages-scroll"
           >
-            <div className="flex flex-col flex-1 bg-none">
+            <div className="flex flex-col flex-1 bg-none min-h-full">
               {!isMessagesError &&
               (isMessagesLoading || (anchorMessageId && groupedMessages.length === 0)) ? (
                 <div className="flex-1" />
@@ -582,7 +583,10 @@ const ChatRoom = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => refetch()}
+                    onClick={() => {
+                      refetch();
+                      if (!chat) refetchChat();
+                    }}
                     disabled={isRefetching}
                     className="gap-2"
                   >
@@ -595,7 +599,7 @@ const ChatRoom = () => {
                   </Button>
                 </div>
               ) : groupedMessages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center p-4">
+                <div className="flex flex-col items-center justify-center flex-1 text-center p-4">
                   <div className="flex items-center justify-center mb-1 text-primary">
                     <Logo width={80} height={80} />
                   </div>
@@ -672,7 +676,7 @@ const ChatRoom = () => {
                 </div>
               )}
             </div>
-          </main>
+          </ScrollArea>
 
           <div className="shrink-0 bg-background z-20">
             <ChatFooter

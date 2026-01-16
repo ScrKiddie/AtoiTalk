@@ -872,7 +872,7 @@ export function NavFooter({
                 <p className="text-[0.8rem] text-muted-foreground">
                   Set{" "}
                   <span
-                    className="text-primary font-medium cursor-pointer hover:underline"
+                    className="text-primary font-medium cursor-pointer hover:opacity-80 transition-opacity"
                     onClick={() => {
                       setOpenAccount(false);
                       setTimeout(() => setOpenSecurity(true), 150);

@@ -298,7 +298,7 @@ const Verify = () => {
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center px-6 sm:px-0">
+    <div className="min-h-screen w-full flex items-center justify-center p-6 sm:px-0">
       <motion.div
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -626,7 +626,11 @@ const Verify = () => {
 
             <p className="text-center text-sm text-muted-foreground mt-4">
               {isRegister ? "Already have an account?" : "Remember password?"}{" "}
-              <Button variant="link" className="p-0 h-auto" onClick={() => navigate("/login")}>
+              <Button
+                variant="link"
+                className="p-0 h-auto hover:no-underline hover:opacity-80 transition-opacity"
+                onClick={() => navigate("/login")}
+              >
                 Login
               </Button>
             </p>

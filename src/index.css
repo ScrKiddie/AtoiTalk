@@ -257,3 +257,9 @@ button .dark .bg-foreground:focus {
   --mobile-offset-left: 0px !important;
   --mobile-offset-right: 0px !important;
 }
+
+.chat-messages-scroll [data-radix-scroll-area-viewport] > div {
+  display: flex !important;
+  flex-direction: column;
+  min-height: 100%;
+}

@@ -219,7 +219,7 @@ const Login = () => {
                         <FormLabel>Password</FormLabel>
                         <Button
                           variant="link"
-                          className="p-0 h-auto font-normal text-sm"
+                          className="p-0 h-auto font-normal text-sm hover:no-underline hover:opacity-80 transition-opacity"
                           type="button"
                           onClick={() => navigate("/forgot")}
                           disabled={isLoginPending || isGooglePending || isGooglePopupOpen}
@@ -339,7 +339,7 @@ const Login = () => {
               Don&apos;t have an account?{" "}
               <Button
                 variant="link"
-                className="p-0 h-auto"
+                className="p-0 h-auto hover:no-underline hover:opacity-80 transition-opacity"
                 onClick={() => navigate("/register")}
                 disabled={isLoginPending || isGooglePending || isGooglePopupOpen}
               >
