@@ -19,7 +19,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const chats = data?.pages.flatMap((page) => page.data) || [];
 
-  const { scrollRef, handleScroll } = useChatListScroll({
+  const { scrollRef, handleScroll, handleWheel } = useChatListScroll({
     hasNextPage: hasNextPage ?? false,
     isFetchingNextPage: isFetchingNextPage ?? false,
     isError: isError ?? false,
@@ -56,7 +56,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader className="border-b bg-background">
         <NavHeader />
       </SidebarHeader>
-      <SidebarContent className="bg-background" onScroll={handleScroll} scrollRef={scrollRef}>
+      <SidebarContent
+        className="bg-background"
+        onScroll={handleScroll}
+        onWheel={handleWheel}
+        scrollRef={scrollRef}
+      >
         <ChatSearchInput onSearch={debouncedSetSearch} initialValue={searchQuery} />
         <NavChat
           chats={chats}

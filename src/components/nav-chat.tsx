@@ -157,8 +157,8 @@ export function NavChat({
                         <div className="flex items-center gap-1 pr-1 shrink-0">
                           {chat.last_message?.sender_id === currentUser?.id &&
                             (chat.other_last_read_at &&
-                            chat.last_message?.created_at &&
-                            new Date(chat.other_last_read_at) >=
+                              chat.last_message?.created_at &&
+                              new Date(chat.other_last_read_at) >=
                               new Date(chat.last_message.created_at) ? (
                               <CheckCheck className="size-3.5 text-blue-500" />
                             ) : (
@@ -275,7 +275,7 @@ export function NavChat({
         </SidebarMenu>
 
         {isFetchingNextPage && (
-          <div className="p-4 flex justify-center group-data-[collapsible=icon]:pt-2 group-data-[collapsible=icon]:pb-0 group-data-[collapsible=icon]:px-0">
+          <div className="h-12 w-full flex items-center justify-center border-t border-sidebar-border group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:border-none">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         )}

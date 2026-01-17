@@ -2,6 +2,7 @@
 
 import { Ban, MailPlus, MessageSquare, ScrollText, Search } from "lucide-react";
 
+import { InfiniteUserList } from "@/components/infinite-user-list";
 import Logo from "@/components/logo.tsx";
 import { BlockUserDialog } from "@/components/modals/block-user-dialog";
 import { ModeToggle } from "@/components/mode-toggle.tsx";
@@ -38,7 +39,15 @@ export function NavHeader() {
   const queryClient = useQueryClient();
 
   const trimmedSearch = debouncedSearch.trim();
-  const { data: searchResults, isLoading: isSearching } = useSearchUsers(trimmedSearch, {
+  const {
+    data: searchResults,
+    isLoading: isSearching,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isError,
+    refetch,
+  } = useSearchUsers(trimmedSearch, {
     enabled: !!trimmedSearch && trimmedSearch.length >= 3,
   });
 
@@ -139,23 +148,21 @@ export function NavHeader() {
                             disabled={!!initiatingUserId}
                           />
                         </div>
-                        <div className="flex flex-col gap-2 overflow-y-auto">
-                          {isSearching && (
-                            <p className="text-center text-sm text-muted-foreground py-4">
-                              Searching...
-                            </p>
-                          )}
-                          {!isSearching && users.length === 0 && debouncedSearch && (
-                            <p className="text-sm text-muted-foreground text-center py-4">
-                              No users found.
-                            </p>
-                          )}
-                          {!isSearching && users.length === 0 && !debouncedSearch && (
-                            <p className="text-sm text-muted-foreground text-center py-4">
-                              Type to search users.
-                            </p>
-                          )}
-                          {users.map((user) => (
+                        <InfiniteUserList
+                          users={users}
+                          isLoading={isSearching}
+                          isError={!!isError}
+                          hasNextPage={!!hasNextPage}
+                          isFetchingNextPage={!!isFetchingNextPage}
+                          fetchNextPage={() => fetchNextPage()}
+                          refetch={() => refetch()}
+                          emptyMessage={
+                            debouncedSearch ? "No users found." : "Type to search users."
+                          }
+                          loadingHeight="h-11"
+                          showBorder={false}
+                          resetKey={debouncedSearch}
+                          renderActions={(user) => (
                             <div
                               key={user.id}
                               className="flex items-center justify-between p-2 hover:bg-muted rounded-md transition-colors group gap-2"
@@ -201,8 +208,8 @@ export function NavHeader() {
                                 </Button>
                               </div>
                             </div>
-                          ))}
-                        </div>
+                          )}
+                        />
                       </div>
                     </TabsContent>
                     <TabsContent

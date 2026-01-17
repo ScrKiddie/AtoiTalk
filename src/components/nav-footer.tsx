@@ -1,5 +1,6 @@
 import { UnblockUserDialog } from "@/components/modals/unblock-user-dialog";
 import { LoadingModal } from "@/components/ui/loading-modal";
+import { InfiniteUserList } from "@/components/infinite-user-list";
 import {
   useBlockedUsers,
   useChangeEmail,
@@ -194,6 +195,10 @@ export function NavFooter({
     data: blockedUsersData,
     isLoading: isLoadingBlocked,
     refetch: refetchBlocked,
+    hasNextPage: hasNextBlockedPage,
+    fetchNextPage: fetchNextBlockedPage,
+    isFetchingNextPage: isFetchingNextBlockedPage,
+    isError: isBlockedError,
   } = useBlockedUsers(trimmedBlockedSearch, {
     enabled: openBlocked && (!trimmedBlockedSearch || trimmedBlockedSearch.length >= 3),
   });
@@ -1133,7 +1138,7 @@ export function NavFooter({
                     value={securityData.oldPassword}
                     className={cn(
                       securityErrors.oldPassword &&
-                        "border-destructive focus-visible:ring-destructive"
+                      "border-destructive focus-visible:ring-destructive"
                     )}
                     onChange={(e) => {
                       setSecurityData({ ...securityData, oldPassword: e.target.value });
@@ -1173,7 +1178,7 @@ export function NavFooter({
                   value={securityData.newPassword}
                   className={cn(
                     securityErrors.newPassword &&
-                      "border-destructive focus-visible:ring-destructive"
+                    "border-destructive focus-visible:ring-destructive"
                   )}
                   onChange={(e) => {
                     setSecurityData({ ...securityData, newPassword: e.target.value });
@@ -1211,7 +1216,7 @@ export function NavFooter({
                   value={securityData.confirmPassword}
                   className={cn(
                     securityErrors.confirmPassword &&
-                      "border-destructive focus-visible:ring-destructive"
+                    "border-destructive focus-visible:ring-destructive"
                   )}
                   onChange={(e) => {
                     setSecurityData({ ...securityData, confirmPassword: e.target.value });
@@ -1296,29 +1301,35 @@ export function NavFooter({
                 disabled={!isLoadingBlocked && blockedUsers.length === 0 && !blockedSearch}
               />
             </div>
-            <div className="flex-1 overflow-y-auto pr-2">
-              {isLoadingBlocked && (
-                <p className="text-center text-sm text-muted-foreground py-4">Loading...</p>
-              )}
-              {!isLoadingBlocked && blockedUsers.length === 0 && (
-                <p className="text-center text-sm text-muted-foreground py-4">
-                  No blocked users found.
-                </p>
-              )}
-              <div className="flex flex-col gap-2">
-                {blockedUsers.map((user) => (
+            <div className="flex-1 overflow-hidden">
+              <InfiniteUserList
+                users={blockedUsers}
+                isLoading={isLoadingBlocked}
+                isError={!!isBlockedError}
+                hasNextPage={!!hasNextBlockedPage}
+                isFetchingNextPage={!!isFetchingNextBlockedPage}
+                fetchNextPage={() => fetchNextBlockedPage()}
+                refetch={() => refetchBlocked()}
+                emptyMessage="No blocked users found."
+                loadingHeight="h-11"
+                showBorder={false}
+                skeletonButtonCount={1}
+                resetKey={debouncedBlockedSearch}
+                renderActions={(user) => (
                   <div
                     key={user.id}
                     className="flex items-center justify-between p-2 hover:bg-muted rounded-md transition-colors"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden">
                       <Avatar>
                         <AvatarImage src={user.avatar || undefined} />
                         <AvatarFallback>{user.full_name[0]}</AvatarFallback>
                       </Avatar>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium">{user.full_name}</span>
-                        <span className="text-xs text-muted-foreground">@{user.username}</span>
+                      <div className="flex flex-col min-w-0 w-full text-left">
+                        <span className="text-sm font-medium truncate">{user.full_name}</span>
+                        <span className="text-xs text-muted-foreground truncate">
+                          @{user.username}
+                        </span>
                       </div>
                     </div>
                     <Button
@@ -1331,8 +1342,8 @@ export function NavFooter({
                       <Unlock className="size-4" />
                     </Button>
                   </div>
-                ))}
-              </div>
+                )}
+              />
             </div>
           </div>
         </DialogContent>
