@@ -157,8 +157,8 @@ export function NavChat({
                         <div className="flex items-center gap-1 pr-1 shrink-0">
                           {chat.last_message?.sender_id === currentUser?.id &&
                             (chat.other_last_read_at &&
-                              chat.last_message?.created_at &&
-                              new Date(chat.other_last_read_at) >=
+                            chat.last_message?.created_at &&
+                            new Date(chat.other_last_read_at) >=
                               new Date(chat.last_message.created_at) ? (
                               <CheckCheck className="size-3.5 text-blue-500" />
                             ) : (
@@ -169,28 +169,41 @@ export function NavChat({
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 min-h-[16px] text-xs text-muted-foreground font-normal min-w-0">
+                      <div className="flex items-center min-h-[16px] text-xs text-muted-foreground font-normal min-w-0">
                         {typingUsers[chat.id]?.some((id) => id !== currentUser?.id) ? (
                           <span className="text-muted-foreground italic animate-pulse truncate">
                             Typing...
                           </span>
                         ) : chat.last_message ? (
-                          chat.last_message.deleted_at ? (
-                            <span className="italic opacity-70 flex items-center gap-1 min-w-0 truncate">
-                              <Ban className="size-3 shrink-0" />
-                              <span className="truncate">Pesan sudah dihapus</span>
-                            </span>
-                          ) : chat.last_message.content ? (
-                            <span className="truncate">{chat.last_message.content}</span>
-                          ) : chat.last_message.attachments &&
-                            chat.last_message.attachments.length > 0 ? (
-                            <>
-                              <File className="size-3 shrink-0" />
+                          <>
+                            {chat.type === "group" &&
+                              !chat.last_message.type.startsWith("system_") && (
+                                <>
+                                  <span className="text-foreground truncate max-w-[80px] shrink-0">
+                                    {chat.last_message.sender_id === currentUser?.id
+                                      ? "You"
+                                      : chat.last_message.sender_name}
+                                  </span>
+                                  <span className="text-foreground mr-0.5">: </span>
+                                </>
+                              )}
+                            {chat.last_message.deleted_at ? (
+                              <span className="italic opacity-70 flex items-center gap-1 min-w-0 truncate">
+                                <Ban className="size-3 shrink-0" />
+                                <span className="truncate">Pesan sudah dihapus</span>
+                              </span>
+                            ) : chat.last_message.content ? (
+                              <span className="truncate">{chat.last_message.content}</span>
+                            ) : chat.last_message.attachments &&
+                              chat.last_message.attachments.length > 0 ? (
+                              <>
+                                <File className="size-3 shrink-0 mr-1" />
+                                <span className="truncate">File</span>
+                              </>
+                            ) : (
                               <span className="truncate">File</span>
-                            </>
-                          ) : (
-                            <span className="truncate">File</span>
-                          )
+                            )}
+                          </>
                         ) : (
                           <span className="truncate">No messages</span>
                         )}

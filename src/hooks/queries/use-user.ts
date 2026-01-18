@@ -13,11 +13,11 @@ export function useCurrentUser() {
   });
 }
 
-export function useUserById(id: string | null) {
+export function useUserById(id: string | null, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ["user", id],
     queryFn: ({ signal }) => userService.getUserById(id!, signal),
-    enabled: !!id,
+    enabled: (options?.enabled ?? true) && !!id,
     staleTime: 2 * 60 * 1000,
   });
 }

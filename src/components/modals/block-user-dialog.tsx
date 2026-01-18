@@ -5,9 +5,17 @@ interface BlockUserDialogProps {
   userId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  className?: string;
+  overlayClassName?: string;
 }
 
-export function BlockUserDialog({ userId, open, onOpenChange }: BlockUserDialogProps) {
+export function BlockUserDialog({
+  userId,
+  open,
+  onOpenChange,
+  className,
+  overlayClassName,
+}: BlockUserDialogProps) {
   const { mutate: blockUser, isPending } = useBlockUser();
 
   const handleConfirm = () => {
@@ -30,6 +38,8 @@ export function BlockUserDialog({ userId, open, onOpenChange }: BlockUserDialogP
       confirmText="Block"
       variant="destructive"
       onConfirm={handleConfirm}
+      className={className}
+      overlayClassName={overlayClassName}
     />
   );
 }

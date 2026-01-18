@@ -99,7 +99,7 @@ export const MessageAttachments = ({ message, isCurrentUser }: MessageAttachment
 
       {images.length > 0 && (
         <div
-          className={`grid gap-1 overflow-hidden rounded-md max-w-full w-full min-w-[240px] sm:min-w-[300px] ${images.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}
+          className={`grid gap-1 overflow-hidden rounded-md max-w-full w-full ${images.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}
         >
           {images.map((item, index) => {
             const isSingle = images.length === 1;

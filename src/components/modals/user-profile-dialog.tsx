@@ -1,32 +1,50 @@
+import { BlockUserDialog } from "@/components/modals/block-user-dialog";
+import { UnblockUserDialog } from "@/components/modals/unblock-user-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
+import { useCreatePrivateChat } from "@/hooks/queries";
 import { toast } from "@/lib/toast";
 import { formatLastSeen } from "@/lib/utils";
+import { useAuthStore } from "@/store";
 import { User } from "@/types";
 import { Copy } from "lucide-react";
+import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 import Lightbox from "yet-another-react-lightbox";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 import "yet-another-react-lightbox/styles.css";
 
-interface PartnerProfileDialogProps {
+interface UserProfileDialogProps {
   isOpen: boolean;
   onClose: (open: boolean) => void;
   user: User | null;
   isLoading: boolean;
+  showDirectMessageButton?: boolean;
+  isDirectMessageDisabled?: boolean;
 }
 
-export function PartnerProfileDialog({
+export function UserProfileDialog({
   isOpen,
   onClose,
   user,
   isLoading,
-}: PartnerProfileDialogProps) {
+  showDirectMessageButton = false,
+  isDirectMessageDisabled = false,
+}: UserProfileDialogProps) {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isAvatarLoaded, setIsAvatarLoaded] = useState(false);
+  const [isBlockConfirmOpen, setIsBlockConfirmOpen] = useState(false);
+  const { user: currentUser } = useAuthStore();
+  const navigate = useNavigate();
+  const { mutate: createPrivateChat, isPending: isCreatingChat } = useCreatePrivateChat();
+
+  const handleBlockUser = () => {
+    setIsBlockConfirmOpen(true);
+  };
 
   useEffect(() => {
     if (!isOpen) setIsAvatarLoaded(false);
@@ -40,6 +58,20 @@ export function PartnerProfileDialog({
         .join("")
         .toUpperCase()
     : "?";
+
+  const handleSendMessage = () => {
+    if (!user) return;
+    createPrivateChat(
+      { target_user_id: user.id },
+      {
+        onSuccess: (chat) => {
+          onClose(false);
+          navigate(`/chat/${chat.id}`);
+        },
+        onError: () => toast.error("Failed to start chat"),
+      }
+    );
+  };
 
   return (
     <>
@@ -55,7 +87,7 @@ export function PartnerProfileDialog({
       <Dialog open={isOpen} onOpenChange={onClose} modal={false}>
         <DialogContent
           className="sm:max-w-[425px] z-[61]"
-          onInteractOutside={(e) => isLightboxOpen && e.preventDefault()}
+          onInteractOutside={(e) => (isLightboxOpen || isBlockConfirmOpen) && e.preventDefault()}
         >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">User Profile</DialogTitle>
@@ -66,7 +98,7 @@ export function PartnerProfileDialog({
               <Spinner className="size-8" />
             </div>
           ) : user ? (
-            <div className="grid gap-6 py-4">
+            <div className="grid gap-6 pt-4">
               <div className="flex flex-col items-center gap-1 mb-2 w-full px-4 overflow-hidden">
                 <Avatar
                   className={`h-24 w-24 ${user.avatar && isAvatarLoaded ? "cursor-pointer hover:opacity-90 transition-opacity" : ""}`}
@@ -141,6 +173,41 @@ export function PartnerProfileDialog({
                     )}
                   </div>
                 </div>
+                {showDirectMessageButton && currentUser?.id !== user.id && (
+                  <div className="flex flex-col gap-2">
+                    {!isDirectMessageDisabled && (
+                      <Button
+                        className="w-full"
+                        onClick={handleSendMessage}
+                        disabled={
+                          isCreatingChat || user.is_blocked_by_me || user.is_blocked_by_other
+                        }
+                      >
+                        {isCreatingChat && <Spinner className="size-4 mr-2" />}
+                        {user.is_blocked_by_other
+                          ? "You have been blocked"
+                          : user.is_blocked_by_me
+                            ? "Unblock to message"
+                            : "Message"}
+                      </Button>
+                    )}
+
+                    <Button
+                      variant="destructive"
+                      className="w-full transition-all duration-300"
+                      onClick={handleBlockUser}
+                    >
+                      <motion.span
+                        key={user.is_blocked_by_me ? "unblock" : "block"}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        {user.is_blocked_by_me ? "Unblock" : "Block"}
+                      </motion.span>
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           ) : (
@@ -166,6 +233,28 @@ export function PartnerProfileDialog({
           container: { backgroundColor: "#000", zIndex: 2147483647 },
         }}
       />
+
+      {user && (
+        <>
+          {user.is_blocked_by_me ? (
+            <UnblockUserDialog
+              userId={user.id}
+              open={isBlockConfirmOpen}
+              onOpenChange={setIsBlockConfirmOpen}
+              className="z-[70]"
+              overlayClassName="z-[65]"
+            />
+          ) : (
+            <BlockUserDialog
+              userId={user.id}
+              open={isBlockConfirmOpen}
+              onOpenChange={setIsBlockConfirmOpen}
+              className="z-[70]"
+              overlayClassName="z-[65]"
+            />
+          )}
+        </>
+      )}
     </>
   );
 }

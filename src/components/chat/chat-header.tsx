@@ -3,14 +3,10 @@ import { SidebarTrigger } from "@/components/ui/sidebar.tsx";
 import { useAuthStore, useChatStore } from "@/store";
 import { ChatListItem, User } from "@/types";
 
-import { BlockUserDialog } from "@/components/modals/block-user-dialog";
-import { PartnerProfileDialog } from "@/components/modals/partner-profile-dialog";
-import { UnblockUserDialog } from "@/components/modals/unblock-user-dialog";
-import { Button } from "@/components/ui/button";
+import { UserProfileDialog } from "@/components/modals/user-profile-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getInitials } from "@/lib/avatar-utils";
 import { formatLastSeen } from "@/lib/utils";
-import { Ban, Unlock } from "lucide-react";
 import { useState } from "react";
 
 interface ChatHeaderProps {
@@ -36,8 +32,6 @@ const ChatHeader = ({
   const isTyping = typingUsers[chat.id]?.some((id) => id !== currentUser?.id);
 
   const [showProfileDialog, setShowProfileDialog] = useState(false);
-  const [showBlockDialog, setShowBlockDialog] = useState(false);
-  const [showUnblockDialog, setShowUnblockDialog] = useState(false);
 
   const initials = getInitials(chat.name);
 
@@ -122,52 +116,17 @@ const ChatHeader = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {chat.type === "private" &&
-              (partnerProfile?.is_blocked_by_me ? (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="size-8"
-                  onClick={() => setShowUnblockDialog(true)}
-                  title="Unblock User"
-                >
-                  <Unlock className="h-[1.2rem] w-[1.2rem]" />
-                  <span className="sr-only">Unblock User</span>
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="size-8"
-                  onClick={() => setShowBlockDialog(true)}
-                  title="Block User"
-                >
-                  <Ban className="h-[1.2rem] w-[1.2rem]" />
-                  <span className="sr-only">Block User</span>
-                </Button>
-              ))}
-          </div>
+          <div className="flex items-center gap-2"></div>
         </div>
       </header>
 
-      <PartnerProfileDialog
+      <UserProfileDialog
         isOpen={showProfileDialog}
         isLoading={false}
         user={partnerProfile || null}
         onClose={setShowProfileDialog}
-      />
-
-      <BlockUserDialog
-        open={showBlockDialog}
-        onOpenChange={setShowBlockDialog}
-        userId={partnerId || null}
-      />
-
-      <UnblockUserDialog
-        open={showUnblockDialog}
-        onOpenChange={setShowUnblockDialog}
-        userId={partnerId || null}
+        showDirectMessageButton={true}
+        isDirectMessageDisabled={true}
       />
     </>
   );

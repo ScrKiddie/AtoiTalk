@@ -47,7 +47,7 @@ export function ImageCropper({ image, open, onOpenChange, onCropComplete }: Imag
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] w-full p-0 gap-0 overflow-hidden bg-background">
+      <DialogContent className="sm:max-w-[400px] w-[85%] max-h-[85vh] p-0 gap-0 overflow-hidden bg-background rounded-lg">
         <DialogHeader className="p-4 border-b">
           <DialogTitle>Edit Profile Photo</DialogTitle>
         </DialogHeader>

@@ -1,6 +1,6 @@
+import { InfiniteUserList } from "@/components/infinite-user-list";
 import { UnblockUserDialog } from "@/components/modals/unblock-user-dialog";
 import { LoadingModal } from "@/components/ui/loading-modal";
-import { InfiniteUserList } from "@/components/infinite-user-list";
 import {
   useBlockedUsers,
   useChangeEmail,
@@ -377,7 +377,6 @@ export function NavFooter({
       const reader = new FileReader();
       reader.addEventListener("load", () => {
         setSelectedImage(reader.result?.toString() || null);
-        setOpenAccount(false);
         setCropModalOpen(true);
         e.target.value = "";
       });
@@ -535,7 +534,6 @@ export function NavFooter({
   const handleEmailModalChange = (open: boolean) => {
     setOpenChangeEmail(open);
     if (!open) {
-      setOpenAccount(true);
       setTimeout(() => {
         setEmailData({ newEmail: "", otp: "" });
         setEmailErrors({});
@@ -866,7 +864,6 @@ export function NavFooter({
                   disabled={!activeUser.has_password || isUpdatingProfile}
                   onClick={() => {
                     setOpenChangeEmail(true);
-                    setOpenAccount(false);
                   }}
                   title={!activeUser.has_password ? "Set password first" : "Change Email"}
                 >
@@ -942,9 +939,6 @@ export function NavFooter({
         open={cropModalOpen}
         onOpenChange={(open) => {
           setCropModalOpen(open);
-          if (!open) {
-            setOpenAccount(true);
-          }
         }}
         onCropComplete={handleCropComplete}
       />
@@ -956,7 +950,7 @@ export function NavFooter({
         }
       >
         <DialogContent
-          className="sm:max-w-[400px]"
+          className="sm:max-w-[400px] w-[85%] rounded-lg"
           onInteractOutside={(e) =>
             (isEmailSubmitting || isSendingOTP || isCaptchaSolving) && e.preventDefault()
           }
@@ -1111,7 +1105,7 @@ export function NavFooter({
         onOpenChange={(open) => !isSecuritySubmitting && handleSecurityModalChange(open)}
       >
         <DialogContent
-          className="sm:max-w-[400px]"
+          className="sm:max-w-[400px] w-[85%] rounded-lg"
           onInteractOutside={(e) => isSecuritySubmitting && e.preventDefault()}
           onEscapeKeyDown={(e) => isSecuritySubmitting && e.preventDefault()}
         >
@@ -1138,7 +1132,7 @@ export function NavFooter({
                     value={securityData.oldPassword}
                     className={cn(
                       securityErrors.oldPassword &&
-                      "border-destructive focus-visible:ring-destructive"
+                        "border-destructive focus-visible:ring-destructive"
                     )}
                     onChange={(e) => {
                       setSecurityData({ ...securityData, oldPassword: e.target.value });
@@ -1178,7 +1172,7 @@ export function NavFooter({
                   value={securityData.newPassword}
                   className={cn(
                     securityErrors.newPassword &&
-                    "border-destructive focus-visible:ring-destructive"
+                      "border-destructive focus-visible:ring-destructive"
                   )}
                   onChange={(e) => {
                     setSecurityData({ ...securityData, newPassword: e.target.value });
@@ -1216,7 +1210,7 @@ export function NavFooter({
                   value={securityData.confirmPassword}
                   className={cn(
                     securityErrors.confirmPassword &&
-                    "border-destructive focus-visible:ring-destructive"
+                      "border-destructive focus-visible:ring-destructive"
                   )}
                   onChange={(e) => {
                     setSecurityData({ ...securityData, confirmPassword: e.target.value });

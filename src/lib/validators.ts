@@ -37,3 +37,13 @@ export const bioSchema = z
   .string()
   .max(255, { message: "Bio must be at most 255 characters." })
   .optional();
+
+export const groupNameSchema = z
+  .string()
+  .min(3, { message: "Group name must be at least 3 characters." })
+  .max(100, { message: "Group name must be at most 100 characters." });
+
+export const groupDescriptionSchema = z
+  .string()
+  .max(500, { message: "Description must be at most 500 characters." })
+  .optional();

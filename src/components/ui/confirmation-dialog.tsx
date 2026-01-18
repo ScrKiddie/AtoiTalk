@@ -18,6 +18,8 @@ interface ConfirmationDialogProps {
   onConfirm: () => void;
   variant?: "default" | "destructive";
   isLoading?: boolean;
+  className?: string;
+  overlayClassName?: string;
 }
 
 export function ConfirmationDialog({
@@ -30,11 +32,14 @@ export function ConfirmationDialog({
   onConfirm,
   variant = "destructive",
   isLoading = false,
+  className,
+  overlayClassName,
 }: ConfirmationDialogProps) {
   return (
     <Dialog open={open} onOpenChange={(val) => !isLoading && onOpenChange(val)}>
       <DialogContent
-        className="max-w-[320px] sm:max-w-[360px]"
+        className={`max-w-[320px] sm:max-w-[360px] ${className || ""}`}
+        overlayClassName={overlayClassName}
         onInteractOutside={(e) => isLoading && e.preventDefault()}
         onEscapeKeyDown={(e) => isLoading && e.preventDefault()}
       >

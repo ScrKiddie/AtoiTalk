@@ -22,6 +22,7 @@ import ChatFooter from "@/components/chat/chat-footer";
 import ChatHeader from "@/components/chat/chat-header";
 import { ChatHeaderSkeleton } from "@/components/chat/chat-header-skeleton";
 import MessageBubble from "@/components/chat/message-bubble";
+import { SystemMessage } from "@/components/chat/system-message";
 import { TypingBubble } from "@/components/chat/typing-bubble";
 import DeleteMessageDialog from "@/components/modals/delete-message-dialog.tsx";
 import { Button } from "@/components/ui/button";
@@ -608,7 +609,7 @@ const ChatRoom = () => {
                 </div>
               ) : (
                 <div
-                  className="flex-1 p-2 flex flex-col w-full justify-end relative"
+                  className="flex-1 py-3 px-2 flex flex-col w-full justify-end relative"
                   id="chat-container"
                 >
                   <div
@@ -626,10 +627,10 @@ const ChatRoom = () => {
                     )}
 
                     {groupedMessages.map((group) => (
-                      <div key={group.date} className="relative flex flex-col gap-2">
+                      <div key={group.date} className="relative flex flex-col gap-3">
                         <div
                           className={cn(
-                            "flex justify-center z-10 pointer-events-none",
+                            "flex justify-center z-30 pointer-events-none",
                             group.date !== "Today" && "sticky top-2"
                           )}
                         >
@@ -637,31 +638,35 @@ const ChatRoom = () => {
                             {group.date}
                           </span>
                         </div>
-                        {group.messages.map((message) => (
-                          <MessageBubble
-                            key={message.id}
-                            message={message}
-                            current={currentUser}
-                            chat={chat!}
-                            activeMessageId={activeMessageId}
-                            editMessage={editMessage}
-                            messageRefs={messageRefs}
-                            isLoadingMessage={false}
-                            isError={false}
-                            handleClick={handleClick}
-                            setEditMessage={setEditMessage}
-                            setNewMessageText={setNewMessageText}
-                            setAttachmentMode={setAttachmentMode}
-                            isBusy={isGlobalBusy}
-                            textareaRef={textareaRef}
-                            setReplyTo={setReplyTo}
-                            setMessageToDelete={setMessageToDelete}
-                            setShowDeleteModal={setShowDeleteModal}
-                            setAttachments={setAttachments}
-                            jumpToMessage={handleJumpToMessage}
-                            highlightedMessageId={highlightedMessageId}
-                          />
-                        ))}
+                        {group.messages.map((message) =>
+                          message.type.startsWith("system_") ? (
+                            <SystemMessage key={message.id} message={message} />
+                          ) : (
+                            <MessageBubble
+                              key={message.id}
+                              message={message}
+                              current={currentUser}
+                              chat={chat!}
+                              activeMessageId={activeMessageId}
+                              editMessage={editMessage}
+                              messageRefs={messageRefs}
+                              isLoadingMessage={false}
+                              isError={false}
+                              handleClick={handleClick}
+                              setEditMessage={setEditMessage}
+                              setNewMessageText={setNewMessageText}
+                              setAttachmentMode={setAttachmentMode}
+                              isBusy={isGlobalBusy}
+                              textareaRef={textareaRef}
+                              setReplyTo={setReplyTo}
+                              setMessageToDelete={setMessageToDelete}
+                              setShowDeleteModal={setShowDeleteModal}
+                              setAttachments={setAttachments}
+                              jumpToMessage={handleJumpToMessage}
+                              highlightedMessageId={highlightedMessageId}
+                            />
+                          )
+                        )}
                       </div>
                     ))}
 

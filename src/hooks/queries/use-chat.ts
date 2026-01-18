@@ -129,23 +129,26 @@ export function useCreatePrivateChat() {
 
       queryClient.setQueryData<ChatListItem>(["chat", newChat.id], newChat);
 
-      queryClient.setQueryData<InfiniteData<PaginatedResponse<Message>>>(
-        ["messages", newChat.id, undefined],
-        {
-          pages: [
-            {
-              data: [],
-              meta: {
-                has_next: false,
-                has_prev: false,
-                next_cursor: null as unknown as string,
-                prev_cursor: null as unknown as string,
+      const existingMessages = queryClient.getQueryData(["messages", newChat.id, undefined]);
+      if (!existingMessages && !newChat.last_message) {
+        queryClient.setQueryData<InfiniteData<PaginatedResponse<Message>>>(
+          ["messages", newChat.id, undefined],
+          {
+            pages: [
+              {
+                data: [],
+                meta: {
+                  has_next: false,
+                  has_prev: false,
+                  next_cursor: null as unknown as string,
+                  prev_cursor: null as unknown as string,
+                },
               },
-            },
-          ],
-          pageParams: [],
-        }
-      );
+            ],
+            pageParams: [],
+          }
+        );
+      }
 
       setActiveChatId(newChat.id);
 
