@@ -10,7 +10,6 @@ import type {
 import {
   InfiniteData,
   useInfiniteQuery,
-  useIsFetching,
   useMutation,
   useQuery,
   useQueryClient,
@@ -43,21 +42,9 @@ export function useChats(params?: GetChatsParams) {
 
 export function useChat(chatId: string | null) {
   const queryClient = useQueryClient();
-  const chatsIsFetching = useIsFetching({ queryKey: ["chats"] });
-
-  const getChatsQueryState = () => {
-    const states = queryClient
-      .getQueryCache()
-      .findAll({ queryKey: ["chats"] })
-      .map((q) => q.state);
-    return states.length > 0 ? states[0] : null;
-  };
 
   const cachedData = useMemo(() => {
     if (!chatId) return undefined;
-
-    const existingData = queryClient.getQueryData<ChatListItem>(["chat", chatId]);
-    if (existingData) return existingData;
 
     const chatsCache = queryClient.getQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>({
       queryKey: ["chats"],
@@ -68,26 +55,21 @@ export function useChat(chatId: string | null) {
         for (const page of cache.pages) {
           const found = page.data.find((c) => c.id === chatId);
           if (found) {
-            queryClient.setQueryData<ChatListItem>(["chat", chatId], found);
-            return found;
+            if (found.type === "private") {
+              return found;
+            }
           }
         }
       }
     }
 
     return undefined;
-  }, [chatId, chatsIsFetching, queryClient]);
-
-  const chatsState = getChatsQueryState();
-  const chatsHasLoaded = chatsState?.status === "success" && chatsState?.fetchStatus === "idle";
-  const isWaitingForChats = !!chatId && !cachedData && !chatsHasLoaded;
-
-  const shouldFetch = !!chatId && !cachedData && chatsHasLoaded;
+  }, [chatId, queryClient]);
 
   const query = useQuery({
     queryKey: ["chat", chatId],
     queryFn: ({ signal }) => chatService.getChatById(chatId!, signal),
-    enabled: shouldFetch,
+    enabled: !!chatId,
     retry: false,
     staleTime: 1000 * 60 * 5,
     initialData: cachedData,
@@ -97,7 +79,8 @@ export function useChat(chatId: string | null) {
 
   return {
     ...query,
-    isLoading: query.isLoading || isWaitingForChats,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
   };
 }
 
@@ -108,28 +91,14 @@ export function useCreatePrivateChat() {
   return useMutation({
     mutationFn: (data: CreatePrivateChatRequest) => chatService.createPrivateChat(data),
     onSuccess: async (newChat) => {
-      queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
-        { queryKey: ["chats"] },
-        (oldData) => {
-          if (!oldData) return oldData;
-          const newPages = [...oldData.pages];
-          if (newPages.length > 0) {
-            const firstPage = newPages[0];
-
-            if (firstPage.data.some((c) => c.id === newChat.id)) return oldData;
-
-            newPages[0] = {
-              ...firstPage,
-              data: [newChat, ...firstPage.data],
-            };
-          }
-          return { ...oldData, pages: newPages };
-        }
-      );
-
       queryClient.setQueryData<ChatListItem>(["chat", newChat.id], newChat);
 
-      const existingMessages = queryClient.getQueryData(["messages", newChat.id, undefined]);
+      const existingMessages = queryClient.getQueryData<InfiniteData<PaginatedResponse<Message>>>([
+        "messages",
+        newChat.id,
+        undefined,
+      ]);
+
       if (!existingMessages && !newChat.last_message) {
         queryClient.setQueryData<InfiniteData<PaginatedResponse<Message>>>(
           ["messages", newChat.id, undefined],
@@ -154,25 +123,9 @@ export function useCreatePrivateChat() {
 
       try {
         const fullChat = await chatService.getChatById(newChat.id);
-
         queryClient.setQueryData<ChatListItem>(["chat", newChat.id], fullChat);
-
-        queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
-          { queryKey: ["chats"] },
-          (oldData) => {
-            if (!oldData) return oldData;
-            const newPages = oldData.pages.map((page) => ({
-              ...page,
-              data: page.data.map((c) => (c.id === fullChat.id ? fullChat : c)),
-            }));
-            return { ...oldData, pages: newPages };
-          }
-        );
       } catch (error) {
         console.error("Failed to fetch full chat details on create:", error);
-
-        queryClient.invalidateQueries({ queryKey: ["chats"] });
-        queryClient.invalidateQueries({ queryKey: ["chat", newChat.id] });
       }
     },
   });

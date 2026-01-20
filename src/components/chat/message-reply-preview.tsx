@@ -5,7 +5,7 @@ import { Ban, File as FileIcon } from "lucide-react";
 
 interface MessageReplyPreviewProps {
   message: Message;
-  chat: ChatListItem;
+  chat: ChatListItem | undefined;
   current: User | null;
   isCurrentUser: boolean;
   jumpToMessage: (id: string, originId?: string) => void;
@@ -28,7 +28,7 @@ export const MessageReplyPreview = ({
       message.reply_to.sender_name === current.email);
 
   const replyDate = message.reply_to.created_at ? new Date(message.reply_to.created_at) : null;
-  const hiddenDate = chat.hidden_at ? new Date(chat.hidden_at) : null;
+  const hiddenDate = chat?.hidden_at ? new Date(chat.hidden_at) : null;
 
   const isJumpable = Boolean(
     message.reply_to.id &&

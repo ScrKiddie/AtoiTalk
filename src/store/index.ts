@@ -131,6 +131,16 @@ interface UIState {
   setGlobalLoading: (loading: boolean, message?: string) => void;
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
+
+  profileModal: {
+    isOpen: boolean;
+    userId: string | null;
+    config?: {
+      hideMessageButton?: boolean;
+    };
+  };
+  openProfileModal: (userId: string, config?: { hideMessageButton?: boolean }) => void;
+  closeProfileModal: () => void;
 }
 
 export const useUIStore = create<UIState>()((set) => ({
@@ -142,4 +152,13 @@ export const useUIStore = create<UIState>()((set) => ({
     set({ globalLoading: loading, loadingMessage: message || null }),
   toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
+
+  profileModal: {
+    isOpen: false,
+    userId: null,
+    config: {},
+  },
+  openProfileModal: (userId, config) => set({ profileModal: { isOpen: true, userId, config } }),
+  closeProfileModal: () =>
+    set((state) => ({ profileModal: { ...state.profileModal, isOpen: false } })),
 }));

@@ -1,17 +1,16 @@
-"use client";
-
-import { Ban, Camera, MailPlus, MessageSquare, Plus, Search, Trash2, Users, X } from "lucide-react";
+import { Camera, MailPlus, MessageSquare, Plus, Search, Trash2, Users, X } from "lucide-react";
 
 import { ImageCropper } from "@/components/image-cropper";
 import { InfiniteUserList } from "@/components/infinite-user-list";
 import Logo from "@/components/logo.tsx";
 import { BlockUserDialog } from "@/components/modals/block-user-dialog";
+import { UserSelectionDialog } from "@/components/modals/user-selection-dialog";
 import { ModeToggle } from "@/components/mode-toggle.tsx";
 import { useTheme } from "@/components/theme-provider.tsx";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button.tsx";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import {
   Dialog,
   DialogContent,
@@ -28,20 +27,18 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateGroup } from "@/hooks/mutations/use-group";
-import { useSearchUsers } from "@/hooks/queries";
+import { useChats, useCreatePrivateChat, useSearchUsers } from "@/hooks/queries";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { groupDescriptionSchema, groupNameSchema } from "@/lib/validators";
-import { userService } from "@/services";
 import { User } from "@/types";
-import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -72,16 +69,12 @@ export function NavHeader() {
   const [userToBlock, setUserToBlock] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const [initiatingUserId, setInitiatingUserId] = useState<string | null>(null);
-  const queryClient = useQueryClient();
   const [groupName, setGroupName] = useState("");
   const [groupDescription, setGroupDescription] = useState("");
   const [groupAvatar, setGroupAvatar] = useState<File | null>(null);
   const [groupAvatarPreview, setGroupAvatarPreview] = useState<string | null>(null);
   const [selectedMembers, setSelectedMembers] = useState<User[]>([]);
   const [groupErrors, setGroupErrors] = useState<GroupErrors>({});
-  const [memberSearch, setMemberSearch] = useState("");
-  const [debouncedMemberSearch, setDebouncedMemberSearch] = useState("");
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -89,6 +82,38 @@ export function NavHeader() {
   const [isPublic, setIsPublic] = useState(false);
   const [addMemberOpen, setAddMemberOpen] = useState(false);
   const groupAvatarInputRef = useRef<HTMLInputElement>(null);
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const isAtEndRef = useRef(true);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollLeft, scrollWidth, clientWidth } = e.currentTarget;
+    isAtEndRef.current = Math.abs(scrollWidth - clientWidth - scrollLeft) < 10;
+  };
+
+  useEffect(() => {
+    const viewport = scrollRef.current;
+    if (!viewport) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.deltaY !== 0) {
+        e.preventDefault();
+        viewport.scrollLeft += e.deltaY;
+      }
+    };
+
+    viewport.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      viewport.removeEventListener("wheel", handleWheel);
+    };
+  }, [selectedMembers.length > 0]);
+
+  useEffect(() => {
+    if (isAtEndRef.current && scrollRef.current) {
+      scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
+    }
+  }, [selectedMembers.length]);
 
   const { mutate: createGroup } = useCreateGroup();
 
@@ -105,18 +130,10 @@ export function NavHeader() {
     enabled: !!trimmedSearch && trimmedSearch.length >= 3,
   });
 
-  const trimmedMemberSearch = debouncedMemberSearch.trim();
-  const {
-    data: memberSearchResults,
-    isLoading: isMemberSearching,
-    fetchNextPage: fetchNextMemberPage,
-    hasNextPage: hasNextMemberPage,
-    isFetchingNextPage: isFetchingNextMemberPage,
-    isError: isMemberError,
-    refetch: refetchMembers,
-  } = useSearchUsers(trimmedMemberSearch, {
-    enabled: !!trimmedMemberSearch && trimmedMemberSearch.length >= 3,
-  });
+  const [creatingChatUserId, setCreatingChatUserId] = useState<string | null>(null);
+
+  const { data: chatsData } = useChats();
+  const { mutateAsync: createPrivateChat } = useCreatePrivateChat();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -125,29 +142,28 @@ export function NavHeader() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedMemberSearch(memberSearch);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [memberSearch]);
-
-  const handleCreatePrivateChat = async (userId: string) => {
-    setInitiatingUserId(userId);
+  const handleSendMessage = async (user: User) => {
+    setCreatingChatUserId(user.id);
     try {
-      await queryClient.fetchQuery({
-        queryKey: ["user", userId],
-        queryFn: ({ signal }) => userService.getUserById(userId, signal),
-        staleTime: 1000 * 60,
-      });
+      const existingChat = chatsData?.pages
+        .flatMap((page) => page.data)
+        .find((chat) => chat.type === "private" && chat.other_user_id === user.id);
 
+      if (existingChat) {
+        setOpen(false);
+        setSearch("");
+        navigate(`/chat/${existingChat.id}`);
+        return;
+      }
+
+      const newChat = await createPrivateChat({ target_user_id: user.id });
       setOpen(false);
-      navigate(`/chat/u/${userId}`);
       setSearch("");
+      navigate(`/chat/${newChat.id}`);
     } catch {
-      toast.error("Failed to connect to user");
+      toast.error("Failed to start chat");
     } finally {
-      setInitiatingUserId(null);
+      setCreatingChatUserId(null);
     }
   };
 
@@ -158,13 +174,10 @@ export function NavHeader() {
     setGroupAvatarPreview(null);
     setSelectedMembers([]);
     setGroupErrors({});
-    setMemberSearch("");
-    setDebouncedMemberSearch("");
     setIsPublic(false);
   };
 
   const handleDialogChange = (val: boolean) => {
-    if (!val && !!initiatingUserId) return;
     if (!val) {
       setSearch("");
       setDebouncedSearch("");
@@ -218,14 +231,9 @@ export function NavHeader() {
     setGroupAvatarPreview(null);
   };
 
-  const toggleMember = (user: User) => {
-    setSelectedMembers((prev) => {
-      const exists = prev.find((m) => m.id === user.id);
-      if (exists) {
-        return prev.filter((m) => m.id !== user.id);
-      }
-      return [...prev, user];
-    });
+  const handleAddMembers = (users: User[]) => {
+    setSelectedMembers((prev) => [...prev, ...users]);
+    setAddMemberOpen(false);
   };
 
   const removeMember = (userId: string) => {
@@ -298,10 +306,6 @@ export function NavHeader() {
     (u) => !u.is_blocked_by_me
   );
 
-  const memberUsers = (memberSearchResults?.pages.flatMap((page) => page.data) || []).filter(
-    (u) => !u.is_blocked_by_me
-  );
-
   const isGroupFormBusy = isCreatingGroup;
 
   return (
@@ -327,12 +331,12 @@ export function NavHeader() {
                 </Button>
               </DialogTrigger>
               <DialogContent
-                className={`sm:max-w-[425px] h-[600px] flex flex-col ${initiatingUserId || isGroupFormBusy ? "[&>button]:pointer-events-none [&>button]:opacity-50" : ""}`}
+                className={`sm:max-w-[425px] h-[600px] flex flex-col ${isGroupFormBusy ? "[&>button]:pointer-events-none [&>button]:opacity-50" : ""}`}
                 onPointerDownOutside={(e) => {
-                  if (initiatingUserId || isGroupFormBusy) e.preventDefault();
+                  if (isGroupFormBusy) e.preventDefault();
                 }}
                 onEscapeKeyDown={(e) => {
-                  if (initiatingUserId || isGroupFormBusy) e.preventDefault();
+                  if (isGroupFormBusy) e.preventDefault();
                 }}
               >
                 <DialogHeader>
@@ -344,7 +348,7 @@ export function NavHeader() {
                   className="w-full flex-1 flex flex-col"
                 >
                   <TabsList
-                    className={`grid w-full grid-cols-2 ${initiatingUserId || isGroupFormBusy ? "pointer-events-none opacity-50" : ""}`}
+                    className={`grid w-full grid-cols-2 ${isGroupFormBusy ? "pointer-events-none opacity-50" : ""}`}
                   >
                     <TabsTrigger value="personal">Personal</TabsTrigger>
                     <TabsTrigger value="group">Group</TabsTrigger>
@@ -352,9 +356,9 @@ export function NavHeader() {
                   <div className="flex-1 overflow-hidden mt-4 relative">
                     <TabsContent
                       value="personal"
-                      className="absolute inset-0 data-[state=inactive]:hidden"
+                      className="absolute inset-0 data-[state=inactive]:hidden overflow-hidden"
                     >
-                      <div className="grid gap-4 h-full grid-rows-[auto_1fr]">
+                      <div className="grid gap-4 h-full grid-rows-[auto_1fr] min-w-0 w-full overflow-hidden">
                         <div className="relative">
                           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                           <Input
@@ -362,7 +366,6 @@ export function NavHeader() {
                             className="pl-8"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            disabled={!!initiatingUserId}
                           />
                         </div>
                         <InfiniteUserList
@@ -379,10 +382,11 @@ export function NavHeader() {
                           loadingHeight="h-11"
                           showBorder={false}
                           resetKey={debouncedSearch}
+                          skeletonButtonCount={1}
                           renderActions={(user) => (
                             <div
                               key={user.id}
-                              className="flex items-center justify-between p-2 hover:bg-muted rounded-md transition-colors group gap-2"
+                              className="flex items-center justify-between p-2 hover:bg-muted rounded-md transition-colors group gap-2 min-w-0"
                             >
                               <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden">
                                 <Avatar>
@@ -398,26 +402,16 @@ export function NavHeader() {
                                   </span>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 shrink-0">
                                 <Button
                                   size="icon"
                                   variant="outline"
                                   className="size-8"
-                                  onClick={() => setUserToBlock(user.id)}
-                                  title="Block User"
-                                  disabled={!!initiatingUserId}
+                                  onClick={() => handleSendMessage(user)}
+                                  title="Send Message"
+                                  disabled={creatingChatUserId === user.id}
                                 >
-                                  <Ban className="size-4" />
-                                </Button>
-                                <Button
-                                  size="icon"
-                                  variant="outline"
-                                  className="size-8 relative"
-                                  onClick={() => handleCreatePrivateChat(user.id)}
-                                  title="Start Chat"
-                                  disabled={!!initiatingUserId}
-                                >
-                                  {initiatingUserId === user.id ? (
+                                  {creatingChatUserId === user.id ? (
                                     <Spinner className="size-4" />
                                   ) : (
                                     <MessageSquare className="size-4" />
@@ -554,7 +548,7 @@ export function NavHeader() {
                             />
                           </div>
 
-                          <div className="flex flex-col">
+                          <div className="flex flex-col min-w-0 w-full">
                             <div className="flex items-center justify-between">
                               <Label>Members ({selectedMembers.length})</Label>
                               <Button
@@ -568,34 +562,41 @@ export function NavHeader() {
                               </Button>
                             </div>
                             {selectedMembers.length > 0 && (
-                              <div className="flex flex-wrap gap-2 mt-3">
-                                {selectedMembers.map((member) => (
-                                  <Badge
-                                    key={member.id}
-                                    variant="secondary"
-                                    className="pl-1 pr-1 gap-1"
-                                  >
-                                    <Avatar className="size-5">
-                                      <AvatarImage src={member.avatar || undefined} />
-                                      <AvatarFallback className="text-[10px]">
-                                        {member.full_name[0]}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <span className="max-w-[80px] truncate">
-                                      {member.full_name}
-                                    </span>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="size-4 hover:bg-destructive/20"
-                                      onClick={() => removeMember(member.id)}
-                                      disabled={isGroupFormBusy}
+                              <ScrollArea
+                                className="w-full whitespace-nowrap pt-4"
+                                viewportRef={scrollRef}
+                                onScroll={handleScroll}
+                              >
+                                <div className="flex gap-2 w-max pr-4">
+                                  {selectedMembers.map((member) => (
+                                    <Badge
+                                      key={member.id}
+                                      variant="secondary"
+                                      className="pl-1 pr-1 gap-1"
                                     >
-                                      <X className="size-3" />
-                                    </Button>
-                                  </Badge>
-                                ))}
-                              </div>
+                                      <Avatar className="size-5">
+                                        <AvatarImage src={member.avatar || undefined} />
+                                        <AvatarFallback className="text-[10px]">
+                                          {member.full_name[0]}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <span className="max-w-[80px] truncate">
+                                        {member.full_name}
+                                      </span>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="size-4 hover:bg-destructive/20"
+                                        onClick={() => removeMember(member.id)}
+                                        disabled={isGroupFormBusy}
+                                      >
+                                        <X className="size-3" />
+                                      </Button>
+                                    </Badge>
+                                  ))}
+                                </div>
+                                <ScrollBar orientation="horizontal" className="top-0" />
+                              </ScrollArea>
                             )}
                           </div>
                           <Button
@@ -639,64 +640,14 @@ export function NavHeader() {
         }}
         onCropComplete={handleCropComplete}
       />
-      <Dialog open={addMemberOpen} onOpenChange={setAddMemberOpen}>
-        <DialogContent className="gap-0 p-0 overflow-hidden !max-w-[300px] w-[85%] rounded-lg">
-          <DialogHeader className="p-4 pb-2 text-left">
-            <DialogTitle>Add Members</DialogTitle>
-          </DialogHeader>
-          <div className="px-4 mb-2">
-            <div className="relative mt-3">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search users to add..."
-                className="pl-8"
-                value={memberSearch}
-                onChange={(e) => setMemberSearch(e.target.value)}
-                autoFocus
-              />
-            </div>
-          </div>
-          <div className="h-[300px]">
-            <InfiniteUserList
-              users={memberUsers}
-              isLoading={isMemberSearching}
-              isError={!!isMemberError}
-              hasNextPage={!!hasNextMemberPage}
-              isFetchingNextPage={!!isFetchingNextMemberPage}
-              fetchNextPage={() => fetchNextMemberPage()}
-              refetch={() => refetchMembers()}
-              emptyMessage={debouncedMemberSearch ? "No users found." : "Type to search users."}
-              loadingHeight="h-10"
-              showBorder={false}
-              resetKey={debouncedMemberSearch}
-              renderActions={(user) => {
-                const isSelected = selectedMembers.some((m) => m.id === user.id);
-                return (
-                  <div
-                    key={user.id}
-                    className="flex items-center justify-between p-2 mx-4 hover:bg-muted rounded-md transition-colors cursor-pointer"
-                    onClick={() => toggleMember(user)}
-                  >
-                    <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden">
-                      <Checkbox checked={isSelected} className="pointer-events-none" />
-                      <Avatar>
-                        <AvatarImage src={user.avatar || undefined} />
-                        <AvatarFallback>{user.full_name[0]}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col min-w-0 w-full text-left">
-                        <span className="text-sm font-medium truncate">{user.full_name}</span>
-                        <span className="text-xs text-muted-foreground truncate">
-                          @{user.username}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+      <UserSelectionDialog
+        isOpen={addMemberOpen}
+        onClose={setAddMemberOpen}
+        onConfirm={handleAddMembers}
+        title="Add Members to Group"
+        existingMemberIds={selectedMembers.map((m) => m.id)}
+        confirmLabel="Add Selected"
+      />
     </>
   );
 }

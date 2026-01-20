@@ -1,20 +1,14 @@
-import { UserProfileDialog } from "@/components/modals/user-profile-dialog";
-import { useUserById } from "@/hooks/queries";
+import { useAuthStore, useUIStore } from "@/store";
 import { Message } from "@/types";
-import { useState } from "react";
 
 interface SystemMessageProps {
   message: Message;
 }
 
-import { useAuthStore } from "@/store";
-
 const SystemMessageUserLink = ({ userId, name }: { userId?: string; name: string }) => {
   const { user: currentUser } = useAuthStore();
+  const openProfileModal = useUIStore((state) => state.openProfileModal);
   const isMe = currentUser?.id === userId;
-
-  const [isOpen, setIsOpen] = useState(false);
-  const { data: user, isLoading } = useUserById(userId || null, { enabled: isOpen && !isMe });
 
   if (!userId) {
     return <span>{name}</span>;
@@ -25,24 +19,15 @@ const SystemMessageUserLink = ({ userId, name }: { userId?: string; name: string
   }
 
   return (
-    <>
-      <span
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsOpen(true);
-        }}
-        className="cursor-pointer hover:opacity-80 transition-opacity text-foreground"
-      >
-        {name}
-      </span>
-      <UserProfileDialog
-        isOpen={isOpen}
-        onClose={setIsOpen}
-        user={user || null}
-        isLoading={isLoading}
-        showDirectMessageButton={true}
-      />
-    </>
+    <span
+      onClick={(e) => {
+        e.stopPropagation();
+        openProfileModal(userId);
+      }}
+      className="cursor-pointer hover:opacity-80 transition-opacity text-foreground"
+    >
+      {name}
+    </span>
   );
 };
 

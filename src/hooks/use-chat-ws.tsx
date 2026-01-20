@@ -45,6 +45,7 @@ export const useChatWebSocket = (url: string) => {
     wsRef.current = ws;
 
     ws.onopen = () => {
+      console.log("Details: WS Connected");
       setIsConnected(true);
 
       if (!isFirstConnectionRef.current) {
@@ -58,6 +59,7 @@ export const useChatWebSocket = (url: string) => {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        console.log("Details: WS Event:", data.type, data);
 
         const currentUser = useAuthStore.getState().user;
 

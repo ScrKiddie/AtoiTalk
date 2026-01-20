@@ -6,6 +6,20 @@ import { Message } from "./message.types";
 export type ChatType = "private" | "group";
 
 /**
+ * Group member info
+ */
+export interface GroupMember {
+  id: string;
+  user_id: string;
+  full_name: string;
+  avatar: string | null;
+  role: "owner" | "admin" | "member";
+  username: string;
+  joined_at: string;
+  is_online?: boolean;
+}
+
+/**
  * Chat list item response (for sidebar)
  */
 export interface ChatListItem {
@@ -23,7 +37,8 @@ export interface ChatListItem {
   last_message: Message | null;
   is_online?: boolean;
   hidden_at?: string | null;
-
+  created_at?: string;
+  description?: string | null;
   my_role?: "owner" | "admin" | "member";
   other_user_is_deleted?: boolean;
   other_user_is_banned?: boolean;

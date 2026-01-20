@@ -14,7 +14,7 @@ import {
   ImageOff,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function formatBytes(bytes: number) {
   if (bytes === 0) return "0 B";
@@ -100,27 +100,28 @@ const AttachmentCard: React.FC<FilePreviewProps> = ({
   const [hasRetried, setHasRetried] = useState(false);
   const [hasFailed, setHasFailed] = useState(false);
 
+  useEffect(() => {
+    setHasRetried(false);
+    setHasFailed(false);
+    setIsLoaded(false);
+    setIsThumbLoaded(false);
+  }, [file.url]);
+
   const lastDotIndex = file?.original_name.lastIndexOf(".") ?? -1;
   const fileName =
     lastDotIndex !== -1 ? file.original_name.slice(0, lastDotIndex) : file.original_name;
   const fileExt = lastDotIndex !== -1 ? file.original_name.slice(lastDotIndex) : "";
 
-  const handleImageError = async (url: string) => {
+  const handleImageError = async () => {
     if (hasRetried || !onRefresh) {
       setHasFailed(true);
       setIsLoaded(true);
       return;
     }
 
+    setHasRetried(true);
     try {
-      const response = await fetch(url, { method: "HEAD" });
-      if (response.status === 403) {
-        setHasRetried(true);
-        await onRefresh(file.id);
-      } else {
-        setHasFailed(true);
-        setIsLoaded(true);
-      }
+      await onRefresh(file.id);
     } catch {
       setHasFailed(true);
       setIsLoaded(true);
@@ -155,7 +156,7 @@ const AttachmentCard: React.FC<FilePreviewProps> = ({
               onImageClick?.();
             }}
             onLoad={() => setIsLoaded(true)}
-            onError={() => handleImageError(file.url)}
+            onError={() => handleImageError()}
           />
         )}
       </div>
@@ -176,7 +177,9 @@ const AttachmentCard: React.FC<FilePreviewProps> = ({
       >
         {isImage ? (
           <>
-            {!isThumbLoaded && <Skeleton className="absolute inset-0 size-full rounded-md" />}
+            {!isThumbLoaded && !hasFailed && (
+              <Skeleton className="absolute inset-0 size-full rounded-md" />
+            )}
             {hasFailed ? (
               <ImageOff className="size-5 text-muted-foreground" />
             ) : (
@@ -186,7 +189,7 @@ const AttachmentCard: React.FC<FilePreviewProps> = ({
                 loading="lazy"
                 className={`size-full object-cover ${!isThumbLoaded ? "opacity-0" : ""}`}
                 onLoad={() => setIsThumbLoaded(true)}
-                onError={() => handleImageError(file.url)}
+                onError={() => handleImageError()}
               />
             )}
           </>

@@ -1,13 +1,9 @@
 import AttachmentCard from "@/components/attachment-card";
+import { GlobalLightbox } from "@/components/ui/lightbox";
 import { useRefreshMedia } from "@/hooks/use-refresh-media";
 import { toast } from "@/lib/toast";
 import { Media, Message } from "@/types";
 import React, { useState } from "react";
-import Lightbox from "yet-another-react-lightbox";
-import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
-import "yet-another-react-lightbox/plugins/thumbnails.css";
-import Zoom from "yet-another-react-lightbox/plugins/zoom";
-import "yet-another-react-lightbox/styles.css";
 
 interface MessageAttachmentsProps {
   message: Message;
@@ -35,7 +31,12 @@ export const MessageAttachments = ({ message, isCurrentUser }: MessageAttachment
     const nonImgs = attachs.filter(
       (att): att is Media => att !== null && !att.mime_type.startsWith("image/")
     );
-    const slds = imgs.map((img) => ({ src: img.url, alt: img.original_name }));
+    const slds = imgs.map((img) => ({
+      src: img.url,
+      alt: img.original_name,
+      mediaId: img.id,
+      messageId: message.id,
+    }));
 
     return { images: imgs, nonImages: nonImgs, slides: slds };
   }, [message.attachments]);
@@ -58,6 +59,7 @@ export const MessageAttachments = ({ message, isCurrentUser }: MessageAttachment
                   error.status = response.status;
                   throw error;
                 }
+
                 const blob = await response.blob();
                 const uniqueUrl = window.URL.createObjectURL(blob);
                 const a = document.createElement("a");
@@ -73,22 +75,25 @@ export const MessageAttachments = ({ message, isCurrentUser }: MessageAttachment
               try {
                 await downloadFile(currentUrl);
               } catch (error) {
-                const status = (error as { status?: number })?.status;
+                console.error("Download failed, attempting refresh...", error);
 
-                if (status === 403) {
-                  try {
-                    const { newUrl } = await refreshMedia({
-                      mediaId: item.id,
-                      messageId: message.id,
+                try {
+                  const { newUrl } = await refreshMedia({
+                    mediaId: item.id,
+                    messageId: message.id,
+                  });
+
+                  currentUrl = newUrl;
+                  await downloadFile(newUrl);
+                } catch (retryError) {
+                  console.error("Download failed after refresh", retryError);
+                  if (retryError instanceof Error && retryError.message === "File not found") {
+                    toast.error("File tidak ditemukan (mungkin sudah dihapus oleh server).", {
+                      id: "download-failed",
                     });
-                    currentUrl = newUrl;
-                    await downloadFile(newUrl);
-                  } catch (retryError) {
-                    console.error("Download failed after refresh", retryError);
-                    toast.error("Unable to download file", { id: "download-failed" });
+                  } else {
+                    toast.error("Gagal mendownload file.", { id: "download-failed" });
                   }
-                } else {
-                  toast.error("Unable to download file", { id: "download-failed" });
                 }
               }
             }}
@@ -138,32 +143,13 @@ export const MessageAttachments = ({ message, isCurrentUser }: MessageAttachment
         </div>
       )}
 
-      <Lightbox
+      <GlobalLightbox
         open={lightboxOpen}
         close={() => setLightboxOpen(false)}
         index={lightboxIndex}
         slides={slides}
-        plugins={[Zoom, ...(slides.length > 1 ? [Thumbnails] : [])]}
-        render={{
-          buttonPrev: slides.length <= 1 ? () => null : undefined,
-          buttonNext: slides.length <= 1 ? () => null : undefined,
-        }}
-        zoom={{
-          maxZoomPixelRatio: 5,
-          scrollToZoom: true,
-        }}
-        carousel={{
-          finite: true,
-        }}
-        styles={{
-          container: { backgroundColor: "#000" },
-        }}
-        controller={{
-          closeOnBackdropClick: true,
-        }}
-        on={{
-          view: ({ index: newIndex }) => setLightboxIndex(newIndex),
-        }}
+        showThumbnails={true}
+        onIndexChange={setLightboxIndex}
       />
     </>
   );

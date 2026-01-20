@@ -2,15 +2,23 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { Spinner } from "@/components/ui/spinner";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
+import { cn } from "@/lib/utils";
+
 interface LoadingModalProps {
   isOpen: boolean;
+  className?: string;
+  overlayClassName?: string;
 }
 
-export function LoadingModal({ isOpen }: LoadingModalProps) {
+export function LoadingModal({ isOpen, className, overlayClassName }: LoadingModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
       <DialogContent
-        className="bg-transparent border-none shadow-none flex items-center justify-center w-auto max-w-none [&>button]:hidden outline-none"
+        className={cn(
+          "bg-transparent border-none shadow-none flex items-center justify-center w-auto max-w-none [&>button]:hidden outline-none",
+          className
+        )}
+        overlayClassName={overlayClassName}
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
         onPointerDownOutside={(e) => e.preventDefault()}

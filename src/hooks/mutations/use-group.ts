@@ -1,5 +1,5 @@
 import { chatService } from "@/services";
-import { ApiError, ChatListItem, ChatResponse, PaginatedResponse } from "@/types";
+import { ApiError, ChatListItem, ChatResponse, Message, PaginatedResponse } from "@/types";
 import { InfiniteData, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 import { toast } from "sonner";
@@ -88,9 +88,21 @@ export const useAddGroupMember = () => {
   return useMutation({
     mutationFn: ({ groupId, userIds }: { groupId: string; userIds: string[] }) =>
       chatService.addGroupMember(groupId, userIds),
-    onSuccess: (_data, { groupId }) => {
+    onSuccess: (data, { groupId }) => {
       queryClient.invalidateQueries({ queryKey: ["group-members", groupId] });
       queryClient.invalidateQueries({ queryKey: ["chat", groupId] });
+      queryClient.setQueryData<InfiniteData<PaginatedResponse<Message>>>(
+        ["messages", groupId],
+        (oldData) => {
+          if (!oldData?.pages.length) return oldData;
+          const newPages = [...oldData.pages];
+          newPages[0] = {
+            ...newPages[0],
+            data: [data, ...newPages[0].data],
+          };
+          return { ...oldData, pages: newPages };
+        }
+      );
       toast.success("Members added successfully");
     },
     onError: (error) => {
@@ -107,9 +119,21 @@ export const useKickGroupMember = () => {
   return useMutation({
     mutationFn: ({ groupId, userId }: { groupId: string; userId: string }) =>
       chatService.kickGroupMember(groupId, userId),
-    onSuccess: (_data, { groupId }) => {
+    onSuccess: (data, { groupId }) => {
       queryClient.invalidateQueries({ queryKey: ["group-members", groupId] });
       queryClient.invalidateQueries({ queryKey: ["chat", groupId] });
+      queryClient.setQueryData<InfiniteData<PaginatedResponse<Message>>>(
+        ["messages", groupId],
+        (oldData) => {
+          if (!oldData?.pages.length) return oldData;
+          const newPages = [...oldData.pages];
+          newPages[0] = {
+            ...newPages[0],
+            data: [data, ...newPages[0].data],
+          };
+          return { ...oldData, pages: newPages };
+        }
+      );
       toast.success("Member removed successfully");
     },
     onError: (error) => {
@@ -126,8 +150,20 @@ export const useUpdateMemberRole = () => {
   return useMutation({
     mutationFn: ({ groupId, userId, role }: { groupId: string; userId: string; role: string }) =>
       chatService.updateMemberRole(groupId, userId, role),
-    onSuccess: (_data, { groupId }) => {
+    onSuccess: (data, { groupId }) => {
       queryClient.invalidateQueries({ queryKey: ["group-members", groupId] });
+      queryClient.setQueryData<InfiniteData<PaginatedResponse<Message>>>(
+        ["messages", groupId],
+        (oldData) => {
+          if (!oldData?.pages.length) return oldData;
+          const newPages = [...oldData.pages];
+          newPages[0] = {
+            ...newPages[0],
+            data: [data, ...newPages[0].data],
+          };
+          return { ...oldData, pages: newPages };
+        }
+      );
       toast.success("Role updated successfully");
     },
     onError: (error) => {
@@ -144,9 +180,21 @@ export const useTransferOwnership = () => {
   return useMutation({
     mutationFn: ({ groupId, newOwnerId }: { groupId: string; newOwnerId: string }) =>
       chatService.transferOwnership(groupId, newOwnerId),
-    onSuccess: (_data, { groupId }) => {
+    onSuccess: (data, { groupId }) => {
       queryClient.invalidateQueries({ queryKey: ["group-members", groupId] });
       queryClient.invalidateQueries({ queryKey: ["chat", groupId] });
+      queryClient.setQueryData<InfiniteData<PaginatedResponse<Message>>>(
+        ["messages", groupId],
+        (oldData) => {
+          if (!oldData?.pages.length) return oldData;
+          const newPages = [...oldData.pages];
+          newPages[0] = {
+            ...newPages[0],
+            data: [data, ...newPages[0].data],
+          };
+          return { ...oldData, pages: newPages };
+        }
+      );
       toast.success("Ownership transferred successfully");
     },
     onError: (error) => {

@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useHideChat } from "@/hooks/mutations/use-hide-chat";
 import { getInitials } from "@/lib/avatar-utils";
 import { formatChatPreviewDate } from "@/lib/date-utils";
+import { getSystemMessageText } from "@/lib/system-message-utils";
 import { cn } from "@/lib/utils";
 import { useAuthStore, useChatStore } from "@/store";
 import { ChatListItem } from "@/types";
@@ -155,7 +156,8 @@ export function NavChat({
                           {chat.name}
                         </span>
                         <div className="flex items-center gap-1 pr-1 shrink-0">
-                          {chat.last_message?.sender_id === currentUser?.id &&
+                          {chat.type !== "group" &&
+                            chat.last_message?.sender_id === currentUser?.id &&
                             (chat.other_last_read_at &&
                             chat.last_message?.created_at &&
                             new Date(chat.other_last_read_at) >=
@@ -172,7 +174,7 @@ export function NavChat({
                       <div className="flex items-center min-h-[16px] text-xs text-muted-foreground font-normal min-w-0">
                         {typingUsers[chat.id]?.some((id) => id !== currentUser?.id) ? (
                           <span className="text-muted-foreground italic animate-pulse truncate">
-                            Typing...
+                            {chat.type === "group" ? "Someone is typing..." : "Typing..."}
                           </span>
                         ) : chat.last_message ? (
                           <>
@@ -187,7 +189,11 @@ export function NavChat({
                                   <span className="text-foreground mr-0.5">: </span>
                                 </>
                               )}
-                            {chat.last_message.deleted_at ? (
+                            {chat.last_message.type.startsWith("system_") ? (
+                              <span className="italic opacity-80 truncate">
+                                {getSystemMessageText(chat.last_message, currentUser?.id)}
+                              </span>
+                            ) : chat.last_message.deleted_at ? (
                               <span className="italic opacity-70 flex items-center gap-1 min-w-0 truncate">
                                 <Ban className="size-3 shrink-0" />
                                 <span className="truncate">Pesan sudah dihapus</span>
@@ -196,12 +202,15 @@ export function NavChat({
                               <span className="truncate">{chat.last_message.content}</span>
                             ) : chat.last_message.attachments &&
                               chat.last_message.attachments.length > 0 ? (
-                              <>
-                                <File className="size-3 shrink-0 mr-1" />
+                              <span className="flex items-center gap-1 truncate">
+                                <File className="size-3 shrink-0" />
                                 <span className="truncate">File</span>
-                              </>
+                              </span>
                             ) : (
-                              <span className="truncate">File</span>
+                              <span className="flex items-center gap-1 truncate">
+                                <File className="size-3 shrink-0" />
+                                <span className="truncate">File</span>
+                              </span>
                             )}
                           </>
                         ) : (

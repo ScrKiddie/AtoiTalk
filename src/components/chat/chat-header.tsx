@@ -1,9 +1,9 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SidebarTrigger } from "@/components/ui/sidebar.tsx";
-import { useAuthStore, useChatStore } from "@/store";
+import { useAuthStore, useChatStore, useUIStore } from "@/store";
 import { ChatListItem, User } from "@/types";
 
-import { UserProfileDialog } from "@/components/modals/user-profile-dialog";
+import { GroupProfileDialog } from "@/components/modals/group-profile-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getInitials } from "@/lib/avatar-utils";
 import { formatLastSeen } from "@/lib/utils";
@@ -16,6 +16,9 @@ interface ChatHeaderProps {
   isProfileError?: boolean;
   isProfileLoading?: boolean;
   onRetryProfile?: () => void;
+  isChatLoading?: boolean;
+  isChatError?: boolean;
+  onRetryChat?: () => void;
 }
 
 const ChatHeader = ({
@@ -25,13 +28,17 @@ const ChatHeader = ({
   isProfileError,
   isProfileLoading,
   onRetryProfile,
+  isChatLoading,
+  isChatError,
+  onRetryChat,
 }: ChatHeaderProps) => {
   const typingUsers = useChatStore((state) => state.typingUsers);
   const { user: currentUser } = useAuthStore();
 
   const isTyping = typingUsers[chat.id]?.some((id) => id !== currentUser?.id);
+  const openProfileModal = useUIStore((state) => state.openProfileModal);
 
-  const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [showGroupDialog, setShowGroupDialog] = useState(false);
 
   const initials = getInitials(chat.name);
 
@@ -72,9 +79,30 @@ const ChatHeader = ({
       statusContent = "Offline";
     }
   } else {
-    if (isTyping) {
+    if (isChatLoading) {
+      statusContent = <Skeleton className="h-[13px] w-24 rounded-full" />;
+    } else if (isChatError) {
+      statusContent = (
+        <span className="flex items-center gap-1">
+          <span>Failed to load group info.</span>
+          <span
+            className="text-blue-500 cursor-pointer hover:text-blue-400 transition-colors font-medium"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRetryChat?.();
+            }}
+          >
+            Retry
+          </span>
+        </span>
+      );
+      statusColor = "text-foreground text-xs";
+    } else if (isTyping) {
       statusContent = "Someone is typing...";
       statusColor = "text-muted-foreground italic font-medium animate-pulse";
+    } else {
+      statusContent = `${chat.member_count || 0} members`;
+      statusColor = "text-muted-foreground";
     }
   }
 
@@ -86,15 +114,22 @@ const ChatHeader = ({
             <SidebarTrigger className={`mr-1`} />
 
             <div
-              className={`flex items-center gap-2 transition-opacity ${partnerProfile ? "cursor-pointer hover:opacity-80" : "cursor-default"}`}
+              className={`flex items-center gap-2 transition-opacity ${
+                (chat.type === "private" && partnerProfile) ||
+                (chat.type === "group" && !isChatLoading && !isChatError)
+                  ? "cursor-pointer hover:opacity-80"
+                  : "cursor-default"
+              }`}
               onClick={() => {
                 if (chat.type === "private" && partnerId && partnerProfile) {
-                  setShowProfileDialog(true);
+                  openProfileModal(partnerId, { hideMessageButton: true });
+                } else if (chat.type === "group" && !isChatLoading && !isChatError) {
+                  setShowGroupDialog(true);
                 }
               }}
             >
               <Avatar className="size-8">
-                {isProfileLoading ? (
+                {isProfileLoading || (chat.type === "group" && isChatLoading) ? (
                   <Skeleton className="size-full rounded-full" />
                 ) : (
                   <>
@@ -104,7 +139,7 @@ const ChatHeader = ({
                 )}
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                {isProfileLoading ? (
+                {isProfileLoading || (chat.type === "group" && isChatLoading) ? (
                   <Skeleton className="h-[13px] w-32 mb-1" />
                 ) : (
                   <span className="truncate font-medium">{chat.name}</span>
@@ -120,14 +155,7 @@ const ChatHeader = ({
         </div>
       </header>
 
-      <UserProfileDialog
-        isOpen={showProfileDialog}
-        isLoading={false}
-        user={partnerProfile || null}
-        onClose={setShowProfileDialog}
-        showDirectMessageButton={true}
-        isDirectMessageDisabled={true}
-      />
+      <GroupProfileDialog isOpen={showGroupDialog} onClose={setShowGroupDialog} chat={chat} />
     </>
   );
 };

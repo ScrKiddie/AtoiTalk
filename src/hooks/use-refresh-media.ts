@@ -11,8 +11,8 @@ export const useRefreshMedia = (chatId: string) => {
       return { mediaId, messageId, newUrl };
     },
     onSuccess: ({ mediaId, messageId, newUrl }) => {
-      queryClient.setQueryData<InfiniteData<PaginatedResponse<Message>>>(
-        ["messages", chatId],
+      queryClient.setQueriesData<InfiniteData<PaginatedResponse<Message>>>(
+        { queryKey: ["messages", chatId] },
         (old) => {
           if (!old) return old;
 

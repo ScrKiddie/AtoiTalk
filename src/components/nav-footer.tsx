@@ -31,6 +31,7 @@ import { useEffect, useRef } from "react";
 import { z } from "zod";
 import { ImageCropper } from "./image-cropper";
 
+import { GlobalLightbox } from "@/components/ui/lightbox";
 import {
   Ban,
   Camera,
@@ -45,9 +46,6 @@ import {
   Trash2,
   Unlock,
 } from "lucide-react";
-import Lightbox from "yet-another-react-lightbox";
-import Zoom from "yet-another-react-lightbox/plugins/zoom";
-import "yet-another-react-lightbox/styles.css";
 
 import { PasswordInput } from "@/components/ui/password-input";
 
@@ -147,7 +145,6 @@ export function NavFooter({
   const [isLoadingBlockedUsers, setIsLoadingBlockedUsers] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isModalAvatarLoaded, setIsModalAvatarLoaded] = useState(false);
-  const justClosedLightboxRef = useRef(false);
 
   const navigate = useNavigate();
   const setGlobalLoading = useUIStore((state) => state.setGlobalLoading);
@@ -704,11 +701,7 @@ export function NavFooter({
       >
         <DialogContent
           className="sm:max-w-[425px]"
-          onInteractOutside={(e) => {
-            if (isLightboxOpen || justClosedLightboxRef.current || isUpdatingProfile) {
-              e.preventDefault();
-            }
-          }}
+          onInteractOutside={(e) => (isLightboxOpen || isUpdatingProfile) && e.preventDefault()}
           onEscapeKeyDown={(e) => {
             if (isUpdatingProfile) {
               e.preventDefault();
@@ -1350,28 +1343,14 @@ export function NavFooter({
         }}
         userId={userToUnblock}
       />
-      <Lightbox
+      <GlobalLightbox
         open={isLightboxOpen}
-        close={() => {
-          justClosedLightboxRef.current = true;
-          setIsLightboxOpen(false);
-          setTimeout(() => {
-            justClosedLightboxRef.current = false;
-          }, 300);
-        }}
-        slides={accountData.avatarPreview ? [{ src: accountData.avatarPreview }] : []}
-        plugins={[Zoom]}
-        controller={{ closeOnBackdropClick: true }}
-        zoom={{ scrollToZoom: true }}
-        carousel={{ finite: true }}
-        render={{
-          buttonPrev: () => null,
-          buttonNext: () => null,
-        }}
-        styles={{
-          root: { zIndex: 2147483647, pointerEvents: "auto" },
-          container: { backgroundColor: "#000", zIndex: 2147483647 },
-        }}
+        close={() => setIsLightboxOpen(false)}
+        slides={
+          accountData.avatarPreview
+            ? [{ src: accountData.avatarPreview, alt: "Avatar Preview" }]
+            : []
+        }
       />
     </>
   );

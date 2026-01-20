@@ -20,6 +20,7 @@ interface ConfirmationDialogProps {
   isLoading?: boolean;
   className?: string;
   overlayClassName?: string;
+  modal?: boolean;
 }
 
 export function ConfirmationDialog({
@@ -34,9 +35,10 @@ export function ConfirmationDialog({
   isLoading = false,
   className,
   overlayClassName,
+  modal = true,
 }: ConfirmationDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={(val) => !isLoading && onOpenChange(val)}>
+    <Dialog open={open} onOpenChange={(val) => !isLoading && onOpenChange(val)} modal={modal}>
       <DialogContent
         className={`max-w-[320px] sm:max-w-[360px] ${className || ""}`}
         overlayClassName={overlayClassName}

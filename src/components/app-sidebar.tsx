@@ -17,7 +17,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage, isError, refetch } =
     useChats({ query: searchQuery });
 
-  const chats = data?.pages.flatMap((page) => page.data) || [];
+  const chats =
+    data?.pages.flatMap((page) => page.data).filter((chat) => chat.last_message !== null) || [];
 
   const { scrollRef, handleScroll, handleWheel } = useChatListScroll({
     hasNextPage: hasNextPage ?? false,

@@ -73,8 +73,9 @@ const ChatRoom = () => {
     isError: isChatError,
     refetch: refetchChat,
   } = useChat(currentChatId);
-  let chat =
-    chatsData?.pages.flatMap((p) => p.data).find((c) => c.id === currentChatId) || singleChat;
+
+  const chatFromList = chatsData?.pages.flatMap((p) => p.data).find((c) => c.id === currentChatId);
+  let chat = chatFromList?.type === "group" && singleChat ? singleChat : chatFromList || singleChat;
 
   const {
     data: messagesData,
@@ -101,10 +102,15 @@ const ChatRoom = () => {
     const isChatLoading = currentChatId ? isLoadingSingleChat : false;
 
     if (!isChatLoading && !chat && !isVirtual) {
-      console.warn("[ChatRoom] Chat not found, redirecting to home.");
-      navigate("/", { replace: true });
+      const timer = setTimeout(() => {
+        if (!chat) {
+          console.warn("[ChatRoom] Chat not found or deleted, redirecting to home.");
+          navigate("/", { replace: true });
+        }
+      }, 100);
+      return () => clearTimeout(timer);
     }
-  }, [isLoadingSingleChat, chat, isVirtual, navigate, anchorMessageId, currentChatId]);
+  }, [isLoadingSingleChat, chat, isVirtual, navigate, anchorMessageId, currentChatId, chatsData]);
 
   const derivedPartnerId =
     chat?.type === "private"
@@ -125,6 +131,7 @@ const ChatRoom = () => {
   } = useUserById(partnerId || null);
 
   useEffect(() => {
+    if (isCreatingChatRef.current) return;
     if (isVirtual && targetUserId && chatsData) {
       const existingChat = chatsData.pages
         .flatMap((p) => p.data)
@@ -163,6 +170,9 @@ const ChatRoom = () => {
           isProfileError={isProfileError}
           isProfileLoading={isProfileLoading}
           onRetryProfile={refetchProfile}
+          isChatLoading={isLoadingSingleChat}
+          isChatError={isChatError}
+          onRetryChat={refetchChat}
         />
       );
     }
@@ -210,6 +220,7 @@ const ChatRoom = () => {
 
   const [uploadingFiles, setUploadingFiles] = useState<File[]>([]);
   const uploadingKeysRef = useRef<Set<string>>(new Set());
+  const isCreatingChatRef = useRef(false);
   const { mutateAsync: uploadMediaMutation, isPending: isUploadingState } = useUploadMedia();
   const uploadMedia = useCallback(
     (variables: { file: File; signal?: AbortSignal }) => uploadMediaMutation(variables),
@@ -490,6 +501,7 @@ const ChatRoom = () => {
     };
 
     if (isVirtual && targetUserId) {
+      isCreatingChatRef.current = true;
       createPrivateChat(
         { target_user_id: targetUserId },
         {
@@ -500,10 +512,23 @@ const ChatRoom = () => {
                 onSuccess: () => {
                   onSuccess();
                   navigate(`/chat/${newChat.id}`, { replace: true });
+                  isCreatingChatRef.current = false;
                 },
-                onError: () => toast.error("Failed to send message"),
+                onError: (error: Error) => {
+                  console.error("SendMessage Error:", error);
+
+                  if ((error as { code?: string })?.code !== "ERR_CANCELED") {
+                    toast.error("Failed to send message");
+                  }
+
+                  isCreatingChatRef.current = false;
+                },
               }
             );
+          },
+          onError: () => {
+            isCreatingChatRef.current = false;
+            toast.error("Failed to create chat");
           },
         }
       );
@@ -567,9 +592,9 @@ const ChatRoom = () => {
           <ScrollArea
             viewportRef={scrollRef}
             onScroll={handleScroll}
-            className="flex-1 px-2 overflow-hidden chat-messages-scroll"
+            className="flex-1 px-2 overflow-hidden chat-messages-scroll [&>div]:!flex [&>div]:!flex-col [&>div]:!h-full"
           >
-            <div className="flex flex-col flex-1 bg-none min-h-full">
+            <div className="!flex flex-col flex-1 bg-none min-h-full relative">
               {!isMessagesError &&
               (isMessagesLoading || (anchorMessageId && groupedMessages.length === 0)) ? (
                 <div className="flex-1" />
@@ -600,7 +625,7 @@ const ChatRoom = () => {
                   </Button>
                 </div>
               ) : groupedMessages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center flex-1 text-center p-4">
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
                   <div className="flex items-center justify-center mb-1 text-primary">
                     <Logo width={80} height={80} />
                   </div>
@@ -670,7 +695,7 @@ const ChatRoom = () => {
                       </div>
                     ))}
 
-                    {chat && <TypingBubble chatId={chat.id} />}
+                    {chat && chat.type === "private" && <TypingBubble chatId={chat.id} />}
 
                     {hasPreviousPage && (
                       <div className="flex justify-center p-2 h-8 items-center">
@@ -738,6 +763,7 @@ const ChatRoom = () => {
         </div>
 
         {((!isMessagesError &&
+          !isVirtual &&
           (isMessagesLoading || (!!anchorMessageId && groupedMessages.length === 0))) ||
           (!isScrollReady && !anchorMessageId && groupedMessages.length > 0)) && (
           <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none">

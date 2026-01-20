@@ -7,6 +7,7 @@ interface UnblockUserDialogProps {
   onOpenChange: (open: boolean) => void;
   className?: string;
   overlayClassName?: string;
+  modal?: boolean;
 }
 
 export function UnblockUserDialog({
@@ -15,6 +16,7 @@ export function UnblockUserDialog({
   onOpenChange,
   className,
   overlayClassName,
+  modal = true,
 }: UnblockUserDialogProps) {
   const { mutate: unblockUser, isPending } = useUnblockUser();
 
@@ -40,6 +42,7 @@ export function UnblockUserDialog({
       onConfirm={handleConfirm}
       className={className}
       overlayClassName={overlayClassName}
+      modal={modal}
     />
   );
 }

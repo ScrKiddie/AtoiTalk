@@ -3,44 +3,32 @@ import { UnblockUserDialog } from "@/components/modals/unblock-user-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { GlobalLightbox } from "@/components/ui/lightbox";
+import { LoadingModal } from "@/components/ui/loading-modal";
 import { Spinner } from "@/components/ui/spinner";
-import { useCreatePrivateChat } from "@/hooks/queries";
+import { useChats, useCreatePrivateChat, useUserById } from "@/hooks/queries";
 import { toast } from "@/lib/toast";
 import { formatLastSeen } from "@/lib/utils";
-import { useAuthStore } from "@/store";
-import { User } from "@/types";
+import { useAuthStore, useUIStore } from "@/store";
 import { Copy } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import Lightbox from "yet-another-react-lightbox";
-import Zoom from "yet-another-react-lightbox/plugins/zoom";
-import "yet-another-react-lightbox/styles.css";
 
-interface UserProfileDialogProps {
-  isOpen: boolean;
-  onClose: (open: boolean) => void;
-  user: User | null;
-  isLoading: boolean;
-  showDirectMessageButton?: boolean;
-  isDirectMessageDisabled?: boolean;
-}
+export function UserProfileDialog() {
+  const { isOpen, userId, config } = useUIStore((state) => state.profileModal);
+  const closeProfileModal = useUIStore((state) => state.closeProfileModal);
 
-export function UserProfileDialog({
-  isOpen,
-  onClose,
-  user,
-  isLoading,
-  showDirectMessageButton = false,
-  isDirectMessageDisabled = false,
-}: UserProfileDialogProps) {
+  const { data: user, isLoading, isError } = useUserById(userId, { enabled: isOpen && !!userId });
+
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isAvatarLoaded, setIsAvatarLoaded] = useState(false);
   const [isBlockConfirmOpen, setIsBlockConfirmOpen] = useState(false);
+
   const { user: currentUser } = useAuthStore();
   const navigate = useNavigate();
   const { mutate: createPrivateChat, isPending: isCreatingChat } = useCreatePrivateChat();
+  const { data: chatsData } = useChats();
 
   const handleBlockUser = () => {
     setIsBlockConfirmOpen(true);
@@ -49,6 +37,13 @@ export function UserProfileDialog({
   useEffect(() => {
     if (!isOpen) setIsAvatarLoaded(false);
   }, [isOpen]);
+
+  useEffect(() => {
+    if (isError) {
+      toast.error("Failed to load user profile");
+      closeProfileModal();
+    }
+  }, [isError, closeProfileModal]);
 
   const initials = user?.full_name
     ? user.full_name
@@ -61,11 +56,22 @@ export function UserProfileDialog({
 
   const handleSendMessage = () => {
     if (!user) return;
+
+    const existingChat = chatsData?.pages
+      .flatMap((page) => page.data)
+      .find((chat) => chat.type === "private" && chat.other_user_id === user.id);
+
+    if (existingChat) {
+      closeProfileModal();
+      navigate(`/chat/${existingChat.id}`);
+      return;
+    }
+
     createPrivateChat(
       { target_user_id: user.id },
       {
         onSuccess: (chat) => {
-          onClose(false);
+          closeProfileModal();
           navigate(`/chat/${chat.id}`);
         },
         onError: () => toast.error("Failed to start chat"),
@@ -73,20 +79,17 @@ export function UserProfileDialog({
     );
   };
 
+  const showDirectMessageButton = !config?.hideMessageButton;
+  const isDirectMessageDisabled = false;
+
   return (
     <>
-      {isOpen &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[60] bg-black/50 animate-in fade-in-0"
-            aria-hidden="true"
-          />,
-          document.body
-        )}
+      <LoadingModal isOpen={isLoading && isOpen} className="z-[100]" overlayClassName="z-[100]" />
 
-      <Dialog open={isOpen} onOpenChange={onClose} modal={false}>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && closeProfileModal()} modal={true}>
         <DialogContent
-          className="sm:max-w-[425px] z-[61]"
+          className="max-w-[85%] sm:max-w-[380px] z-[71]"
+          overlayClassName="z-[70]"
           onInteractOutside={(e) => (isLightboxOpen || isBlockConfirmOpen) && e.preventDefault()}
         >
           <DialogHeader>
@@ -173,9 +176,9 @@ export function UserProfileDialog({
                     )}
                   </div>
                 </div>
-                {showDirectMessageButton && currentUser?.id !== user.id && (
+                {currentUser?.id !== user.id && (
                   <div className="flex flex-col gap-2">
-                    {!isDirectMessageDisabled && (
+                    {showDirectMessageButton && !isDirectMessageDisabled && (
                       <Button
                         className="w-full"
                         onClick={handleSendMessage}
@@ -216,22 +219,10 @@ export function UserProfileDialog({
         </DialogContent>
       </Dialog>
 
-      <Lightbox
+      <GlobalLightbox
         open={isLightboxOpen}
         close={() => setIsLightboxOpen(false)}
-        slides={user?.avatar ? [{ src: user.avatar }] : []}
-        plugins={[Zoom]}
-        controller={{ closeOnBackdropClick: true }}
-        zoom={{ scrollToZoom: true }}
-        carousel={{ finite: true }}
-        render={{
-          buttonPrev: () => null,
-          buttonNext: () => null,
-        }}
-        styles={{
-          root: { zIndex: 2147483647 },
-          container: { backgroundColor: "#000", zIndex: 2147483647 },
-        }}
+        slides={user?.avatar ? [{ src: user.avatar, alt: user.full_name }] : []}
       />
 
       {user && (
@@ -241,16 +232,18 @@ export function UserProfileDialog({
               userId={user.id}
               open={isBlockConfirmOpen}
               onOpenChange={setIsBlockConfirmOpen}
-              className="z-[70]"
-              overlayClassName="z-[65]"
+              className="z-[76]"
+              overlayClassName="z-[75]"
+              modal={true}
             />
           ) : (
             <BlockUserDialog
               userId={user.id}
               open={isBlockConfirmOpen}
               onOpenChange={setIsBlockConfirmOpen}
-              className="z-[70]"
-              overlayClassName="z-[65]"
+              className="z-[76]"
+              overlayClassName="z-[75]"
+              modal={true}
             />
           )}
         </>

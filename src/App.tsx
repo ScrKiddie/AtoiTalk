@@ -107,6 +107,7 @@ import { useState } from "react";
 
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
+import { UserProfileDialog } from "@/components/modals/user-profile-dialog";
 import { Toaster } from "@/components/ui/sonner";
 
 function App() {
@@ -142,6 +143,7 @@ function App() {
           message={globalLoading ? loadingMessage || "Loading..." : "Initializing AtoiTalk"}
         />
         <Router>
+          <UserProfileDialog />
           <AnimatedRoutes />
           <Toaster position="top-center" />
         </Router>

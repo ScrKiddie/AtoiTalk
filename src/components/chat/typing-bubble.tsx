@@ -1,6 +1,5 @@
-import { cn } from "@/lib/utils";
-import { useAuthStore, useChatStore } from "@/store";
-import { AnimatePresence, motion } from "motion/react";
+import { useChatStore } from "@/store";
+import { motion } from "motion/react";
 
 interface TypingBubbleProps {
   chatId: string;
@@ -8,45 +7,24 @@ interface TypingBubbleProps {
 
 export function TypingBubble({ chatId }: TypingBubbleProps) {
   const typingUsers = useChatStore((state) => state.typingUsers);
-  const currentUser = useAuthStore((state) => state.user);
+  const isTyper = (typingUsers[chatId] || []).length > 0;
 
-  const activeTyping = (typingUsers[chatId] || []).filter((id) => id !== currentUser?.id);
-  const isTyping = activeTyping.length > 0;
+  if (!isTyper) return null;
 
   return (
-    <AnimatePresence>
-      {isTyping && (
-        <motion.div
-          key="typing-indicator"
-          initial={{ opacity: 0, y: 10, scale: 0.9, x: -20 }}
-          animate={{ opacity: 1, y: 0, scale: 1, x: 0 }}
-          exit={{ opacity: 0, scale: 0.9, x: -20 }}
-          transition={{ duration: 0.2 }}
-          className="flex w-full justify-start items-end origin-bottom-left"
-        >
-          <div
-            className={cn(
-              "p-4 pb-3 rounded-md border bg-background text-foreground flex items-center gap-1.5 h-fit w-fit justify-center min-w-[60px]"
-            )}
-          >
-            <motion.div
-              className="w-2 h-2 bg-foreground/50 rounded-full"
-              animate={{ y: [0, -6, 0] }}
-              transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
-            />
-            <motion.div
-              className="w-2 h-2 bg-foreground/50 rounded-full"
-              animate={{ y: [0, -6, 0] }}
-              transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
-            />
-            <motion.div
-              className="w-2 h-2 bg-foreground/50 rounded-full"
-              animate={{ y: [0, -6, 0] }}
-              transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
-            />
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 10 }}
+      className="flex w-full justify-start mb-2"
+    >
+      <div className="flex items-end gap-2 max-w-[80%]">
+        <div className="bg-muted p-3 py-4 rounded-2xl rounded-bl-sm flex gap-1 items-center h-10">
+          <span className="w-2 h-2 bg-foreground/50 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+          <span className="w-2 h-2 bg-foreground/50 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+          <span className="w-2 h-2 bg-foreground/50 rounded-full animate-bounce"></span>
+        </div>
+      </div>
+    </motion.div>
   );
 }

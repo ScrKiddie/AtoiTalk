@@ -7,6 +7,7 @@ interface BlockUserDialogProps {
   onOpenChange: (open: boolean) => void;
   className?: string;
   overlayClassName?: string;
+  modal?: boolean;
 }
 
 export function BlockUserDialog({
@@ -15,6 +16,7 @@ export function BlockUserDialog({
   onOpenChange,
   className,
   overlayClassName,
+  modal = true,
 }: BlockUserDialogProps) {
   const { mutate: blockUser, isPending } = useBlockUser();
 
@@ -40,6 +42,7 @@ export function BlockUserDialog({
       onConfirm={handleConfirm}
       className={className}
       overlayClassName={overlayClassName}
+      modal={modal}
     />
   );
 }

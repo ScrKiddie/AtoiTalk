@@ -5,6 +5,8 @@ import type {
   ChatResponse,
   CreatePrivateChatRequest,
   GetChatsParams,
+  GroupMember,
+  Message,
   PaginatedResponse,
 } from "@/types";
 
@@ -79,36 +81,67 @@ export const chatService = {
   /**
    * Leave group
    */
-  async leaveGroup(groupId: string): Promise<void> {
-    await api.post(`/api/chats/group/${groupId}/leave`);
+  async leaveGroup(groupId: string): Promise<Message> {
+    const response = await api.post<ApiResponse<Message>>(`/api/chats/group/${groupId}/leave`);
+    return response.data.data;
   },
 
   /**
    * Add member to group
    */
-  async addGroupMember(groupId: string, userIds: string[]): Promise<void> {
-    await api.post(`/api/chats/group/${groupId}/members`, { user_ids: userIds });
+  async addGroupMember(groupId: string, userIds: string[]): Promise<Message> {
+    const response = await api.post<ApiResponse<Message>>(`/api/chats/group/${groupId}/members`, {
+      user_ids: userIds,
+    });
+    return response.data.data;
   },
 
   /**
    * Kick member from group
    */
-  async kickGroupMember(groupId: string, userId: string): Promise<void> {
-    await api.post(`/api/chats/group/${groupId}/members/${userId}/kick`);
+  async kickGroupMember(groupId: string, userId: string): Promise<Message> {
+    const response = await api.post<ApiResponse<Message>>(
+      `/api/chats/group/${groupId}/members/${userId}/kick`
+    );
+    return response.data.data;
   },
 
   /**
    * Update member role
    */
-  async updateMemberRole(groupId: string, userId: string, role: string): Promise<void> {
-    await api.put(`/api/chats/group/${groupId}/members/${userId}/role`, { role });
+  async updateMemberRole(groupId: string, userId: string, role: string): Promise<Message> {
+    const response = await api.put<ApiResponse<Message>>(
+      `/api/chats/group/${groupId}/members/${userId}/role`,
+      {
+        role,
+      }
+    );
+    return response.data.data;
   },
 
   /**
    * Transfer ownership
    */
-  async transferOwnership(groupId: string, newOwnerId: string): Promise<void> {
-    await api.post(`/api/chats/group/${groupId}/transfer`, { new_owner_id: newOwnerId });
+  async transferOwnership(groupId: string, newOwnerId: string): Promise<Message> {
+    const response = await api.post<ApiResponse<Message>>(`/api/chats/group/${groupId}/transfer`, {
+      new_owner_id: newOwnerId,
+    });
+    return response.data.data;
+  },
+
+  /**
+   * Get group members with pagination
+   */
+  async getGroupMembers(
+    groupId: string,
+    params: { query?: string; cursor?: string; limit?: number } = {},
+    signal?: AbortSignal
+  ): Promise<PaginatedResponse<GroupMember>> {
+    const response = await api.get<PaginatedResponse<GroupMember>>(
+      `/api/chats/group/${groupId}/members`,
+      { params, signal }
+    );
+    return response.data;
   },
 };
 

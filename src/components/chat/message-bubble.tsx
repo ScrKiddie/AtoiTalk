@@ -13,10 +13,10 @@ import {
   X,
 } from "lucide-react";
 
-import { UserProfileDialog } from "@/components/modals/user-profile-dialog";
 import { Spinner } from "@/components/ui/spinner.tsx";
 import { useUserById } from "@/hooks/queries";
 import { cn } from "@/lib/utils";
+import { useUIStore } from "@/store";
 import { motion } from "motion/react";
 import * as React from "react";
 import { MessageAttachments } from "./message-attachments";
@@ -25,7 +25,7 @@ import { MessageReplyPreview } from "./message-reply-preview";
 interface MessageBubbleProps {
   message: Message;
   current: User | null;
-  chat: ChatListItem;
+  chat: ChatListItem | undefined;
   activeMessageId: string | null;
   editMessage: EditMessage | null;
   messageRefs: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
@@ -67,8 +67,6 @@ const MessageBubble = ({
   highlightedMessageId,
   isBusy,
 }: MessageBubbleProps) => {
-  if (!chat || !message) return null;
-
   const isCurrentUser = message.sender_id === current?.id;
 
   const handleReply = () => {
@@ -105,19 +103,19 @@ const MessageBubble = ({
   };
 
   const { data: sender } = useUserById(
-    !isCurrentUser && chat.type === "group" ? message.sender_id : null
+    !isCurrentUser && chat?.type === "group" ? message.sender_id : null
   );
 
   const senderName = isCurrentUser
     ? "You"
-    : chat.type === "group"
+    : chat?.type === "group"
       ? sender?.full_name || message.sender_name
-      : chat.name;
+      : chat?.name || "Unknown User";
   const senderAvatar = isCurrentUser
     ? current?.avatar
-    : chat.type === "group"
+    : chat?.type === "group"
       ? sender?.avatar || message.sender_avatar
-      : chat.avatar;
+      : chat?.avatar;
 
   const formattedTime = new Date(message.created_at).toLocaleTimeString([], {
     hour: "2-digit",
@@ -126,7 +124,7 @@ const MessageBubble = ({
 
   const hasImages = message.attachments?.some((att) => att.mime_type.startsWith("image/"));
 
-  const [isProfileOpen, setIsProfileOpen] = React.useState(false);
+  const openProfileModal = useUIStore((state) => state.openProfileModal);
 
   return (
     <>
@@ -143,17 +141,17 @@ const MessageBubble = ({
           }}
           className={cn(
             "group relative flex items-end max-w-[calc(100%-100px)] sm:max-w-[calc(100%-120px)] md:max-w-[60%] lg:max-w-[550px] min-w-0",
-            !isCurrentUser && chat.type === "group" && "gap-2",
+            !isCurrentUser && chat?.type === "group" && "gap-2",
             hasImages && "w-full"
           )}
           onClick={() => handleClick(message.id)}
         >
-          {!isCurrentUser && chat.type === "group" && (
+          {!isCurrentUser && chat?.type === "group" && (
             <Avatar
               className="shrink-0 w-10 h-10 self-end cursor-pointer hover:opacity-80 transition-opacity"
               onClick={(e) => {
                 e.stopPropagation();
-                setIsProfileOpen(true);
+                openProfileModal(message.sender_id);
               }}
             >
               <AvatarImage src={senderAvatar || undefined} className="object-cover w-full h-full" />
@@ -251,12 +249,12 @@ const MessageBubble = ({
               highlightedMessageId === message.id && "ring-2 ring-blue-500"
             )}
           >
-            {!isCurrentUser && chat.type === "group" && (
+            {!isCurrentUser && chat?.type === "group" && (
               <p
                 className="text-sm font-[500] line-clamp-1 cursor-pointer hover:opacity-80 transition-opacity text-foreground"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setIsProfileOpen(true);
+                  openProfileModal(message.sender_id);
                 }}
               >
                 {senderName}
@@ -324,7 +322,8 @@ const MessageBubble = ({
                 !isError &&
                 isCurrentUser &&
                 !message.deleted_at &&
-                (chat.other_last_read_at &&
+                chat?.type !== "group" &&
+                (chat?.other_last_read_at &&
                 message.created_at &&
                 new Date(chat.other_last_read_at) >= new Date(message.created_at) ? (
                   <CheckCheck className="size-3 text-blue-500" />
@@ -367,17 +366,6 @@ const MessageBubble = ({
           )}
         </div>
       </motion.div>
-
-      {sender && (
-        <UserProfileDialog
-          user={sender}
-          isLoading={false}
-          isOpen={isProfileOpen}
-          onClose={setIsProfileOpen}
-          showDirectMessageButton={true}
-          isDirectMessageDisabled={false}
-        />
-      )}
     </>
   );
 };
