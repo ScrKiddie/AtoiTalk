@@ -62,8 +62,16 @@ export const useChatScroll = ({
     isFetchingRef.current = isFetchingNextPage;
     if (isFetchingNextPage && scrollRef.current) {
       prevScrollHeightRef.current = scrollRef.current.scrollHeight;
+    } else {
+      wasInTopZoneRef.current = false;
     }
   }, [isFetchingNextPage]);
+
+  useEffect(() => {
+    if (!isFetchingPreviousPage) {
+      wasInBottomZoneRef.current = false;
+    }
+  }, [isFetchingPreviousPage]);
 
   useLayoutEffect(() => {
     if (anchorMessageId) return;
@@ -162,10 +170,10 @@ export const useChatScroll = ({
 
       isAtBottomRef.current = scrollHeight - scrollTop - clientHeight < 150;
 
-      const isNearTop = scrollTop < 35;
+      const isNearTop = scrollTop < 100;
 
       if (anchorMessageId && !isJumpingRef.current) {
-        const isNearBottom = scrollHeight - scrollTop - clientHeight < 35;
+        const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
 
         if (
           isNearBottom &&

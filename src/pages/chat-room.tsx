@@ -592,7 +592,7 @@ const ChatRoom = () => {
           <ScrollArea
             viewportRef={scrollRef}
             onScroll={handleScroll}
-            className="flex-1 px-2 overflow-hidden chat-messages-scroll [&>div]:!flex [&>div]:!flex-col [&>div]:!h-full"
+            className="flex-1 px-2 overflow-hidden chat-messages-scroll [&>[data-radix-scroll-area-viewport]]:!flex [&>[data-radix-scroll-area-viewport]]:!flex-col [&>[data-radix-scroll-area-viewport]]:!h-full"
           >
             <div className="!flex flex-col flex-1 bg-none min-h-full relative">
               {!isMessagesError &&

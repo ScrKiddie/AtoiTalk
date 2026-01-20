@@ -541,6 +541,10 @@ export const useChatWebSocket = (url: string) => {
               is_blocked_by_other: payload.is_blocked_by_other,
               last_message: payload.last_message || null,
               is_online: payload.is_online,
+              my_role: payload.my_role,
+              description: payload.description,
+              is_public: payload.is_public,
+              member_count: payload.member_count,
             };
 
             queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
@@ -548,7 +552,11 @@ export const useChatWebSocket = (url: string) => {
               (oldData) => {
                 if (!oldData) return oldData;
 
-                const newPages = [...oldData.pages];
+                const newPages = oldData.pages.map((page) => ({
+                  ...page,
+                  data: page.data.filter((c) => c.id !== payload.id),
+                }));
+
                 if (newPages.length > 0) {
                   newPages[0] = {
                     ...newPages[0],

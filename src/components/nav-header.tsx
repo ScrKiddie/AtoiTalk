@@ -1,4 +1,14 @@
-import { Camera, MailPlus, MessageSquare, Plus, Search, Trash2, Users, X } from "lucide-react";
+import {
+  Camera,
+  Loader2,
+  MailPlus,
+  MessageSquare,
+  Plus,
+  Search,
+  Trash2,
+  Users,
+  X,
+} from "lucide-react";
 
 import { ImageCropper } from "@/components/image-cropper";
 import { InfiniteUserList } from "@/components/infinite-user-list";
@@ -29,7 +39,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
-import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -412,7 +421,7 @@ export function NavHeader() {
                                   disabled={creatingChatUserId === user.id}
                                 >
                                   {creatingChatUserId === user.id ? (
-                                    <Spinner className="size-4" />
+                                    <Loader2 className="size-4 animate-spin" />
                                   ) : (
                                     <MessageSquare className="size-4" />
                                   )}
@@ -600,17 +609,15 @@ export function NavHeader() {
                             )}
                           </div>
                           <Button
-                            className="w-full"
+                            className="w-full relative"
                             onClick={handleCreateGroup}
                             disabled={isGroupFormBusy || !groupName.trim()}
                           >
-                            {isCreatingGroup ? (
-                              <>
-                                <Spinner className="size-4 mr-2" />
-                                Creating...
-                              </>
-                            ) : (
-                              <>Create Group</>
+                            <span className={isCreatingGroup ? "opacity-0" : ""}>Create Group</span>
+                            {isCreatingGroup && (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              </div>
                             )}
                           </Button>
                         </div>

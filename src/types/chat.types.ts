@@ -43,6 +43,7 @@ export interface ChatListItem {
   other_user_is_deleted?: boolean;
   other_user_is_banned?: boolean;
   member_count?: number;
+  is_public?: boolean;
 }
 
 /**

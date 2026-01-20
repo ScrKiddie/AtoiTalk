@@ -1,5 +1,6 @@
 import { InfiniteUserList } from "@/components/infinite-user-list";
 import { AddMembersDialog } from "@/components/modals/add-members-dialog";
+import { EditGroupDialog } from "@/components/modals/edit-group-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
@@ -14,13 +15,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { GlobalLightbox } from "@/components/ui/lightbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import {
   useDeleteGroup,
   useKickGroupMember,
   useLeaveGroup,
   useTransferOwnership,
-  useUpdateGroup,
   useUpdateMemberRole,
 } from "@/hooks/mutations/use-group";
 import { useChat } from "@/hooks/queries";
@@ -30,17 +29,16 @@ import { useAuthStore, useUIStore } from "@/store";
 import { ChatListItem, GroupMember, PaginatedResponse } from "@/types";
 import { InfiniteData, useQueryClient } from "@tanstack/react-query";
 import {
-  Check,
   Crown,
+  Globe,
   Info,
-  Pencil,
+  Lock,
   Plus,
   Search,
   Settings,
   Shield,
   User,
   UserMinus,
-  X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -70,10 +68,7 @@ export function GroupProfileDialog({
   const [demoteCandidate, setDemoteCandidate] = useState<GroupMember | null>(null);
   const [transferCandidate, setTransferCandidate] = useState<GroupMember | null>(null);
   const [debouncedMemberSearch, setDebouncedMemberSearch] = useState("");
-
-  const [isEditing, setIsEditing] = useState(false);
-  const [editName, setEditName] = useState(chat.name);
-  const [editDescription, setEditDescription] = useState(chat.description || "");
+  const [isEditGroupOpen, setIsEditGroupOpen] = useState(false);
 
   const openProfileModal = useUIStore((state) => state.openProfileModal);
   const queryClient = useQueryClient();
@@ -83,7 +78,6 @@ export function GroupProfileDialog({
 
   const { mutate: leaveGroup, isPending: isLeaving } = useLeaveGroup();
   const { mutate: deleteGroup, isPending: isDeleting } = useDeleteGroup();
-  const { mutate: updateGroup, isPending: isUpdating } = useUpdateGroup();
   const { mutate: kickMember, isPending: isKicking } = useKickGroupMember();
   const { mutate: updateRole, isPending: isUpdatingRole } = useUpdateMemberRole();
   const { mutate: transferOwnership, isPending: isTransferring } = useTransferOwnership();
@@ -121,9 +115,7 @@ export function GroupProfileDialog({
       const timer = setTimeout(() => {
         setActiveTab("overview");
         setMemberSearch("");
-        setIsEditing(false);
-        setEditName(chat.name);
-        setEditDescription(chat.description || "");
+        setIsEditGroupOpen(false);
       }, 200);
       return () => clearTimeout(timer);
     }
@@ -193,23 +185,6 @@ export function GroupProfileDialog({
     openProfileModal(member.user_id);
   };
 
-  const handleSaveGroupInfo = () => {
-    if (!editName.trim()) return;
-
-    const formData = new FormData();
-    formData.append("name", editName);
-    formData.append("description", editDescription);
-
-    updateGroup(
-      { groupId: chat.id, data: formData },
-      {
-        onSuccess: () => {
-          setIsEditing(false);
-        },
-      }
-    );
-  };
-
   const handleKickMember = () => {
     if (!kickCandidate) return;
     kickMember(
@@ -256,13 +231,21 @@ export function GroupProfileDialog({
 
       <Dialog open={isOpen} onOpenChange={(val) => !isLeaving && onClose(val)}>
         <DialogContent
-          className="sm:max-w-[425px] h-[420px] flex flex-col z-[61]"
+          className="sm:max-w-[425px] max-h-[85vh] flex flex-col z-[61]"
           onInteractOutside={(e) =>
-            (isLightboxOpen || isLeaveConfirmOpen || kickCandidate || isAddMemberOpen) &&
+            (isLightboxOpen ||
+              isLeaveConfirmOpen ||
+              kickCandidate ||
+              isAddMemberOpen ||
+              isEditGroupOpen) &&
             e.preventDefault()
           }
           onEscapeKeyDown={(e) =>
-            (isLightboxOpen || isLeaveConfirmOpen || kickCandidate || isAddMemberOpen) &&
+            (isLightboxOpen ||
+              isLeaveConfirmOpen ||
+              kickCandidate ||
+              isAddMemberOpen ||
+              isEditGroupOpen) &&
             e.preventDefault()
           }
         >
@@ -280,18 +263,16 @@ export function GroupProfileDialog({
               <TabsTrigger value="members">Members</TabsTrigger>
             </TabsList>
 
-            <div className="flex-1 overflow-hidden mt-4 relative">
+            <div className="mt-4 flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar">
               <TabsContent
                 value="overview"
-                className="absolute inset-0 flex flex-col"
+                className="flex flex-col min-h-[400px]"
                 forceMount={activeTab === "overview" ? true : undefined}
               >
                 <div className="flex flex-col items-center gap-1 mb-4 w-full shrink-0 relative group/avatar">
                   <Avatar
                     className={`h-20 w-20 ${chat.avatar && isAvatarLoaded ? "cursor-pointer hover:opacity-90 transition-opacity" : ""}`}
-                    onClick={() =>
-                      chat.avatar && isAvatarLoaded && !isEditing && setIsLightboxOpen(true)
-                    }
+                    onClick={() => chat.avatar && isAvatarLoaded && setIsLightboxOpen(true)}
                   >
                     <AvatarImage
                       src={chat.avatar || undefined}
@@ -301,99 +282,62 @@ export function GroupProfileDialog({
                     <AvatarFallback className="text-3xl">{initials}</AvatarFallback>
                   </Avatar>
 
-                  {isEditing ? (
-                    <div className="mt-2 w-full px-8">
-                      <Input
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        className="text-center font-semibold text-lg h-9"
-                        placeholder="Group Name"
-                        disabled={isUpdating}
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center gap-2 mt-1 w-full relative">
-                      <h3 className="font-semibold text-lg text-center break-all line-clamp-2 px-6">
-                        {chat.name}
-                      </h3>
-                      {(chat.my_role === "owner" || chat.my_role === "admin") && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-6 w-6 absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover/avatar:opacity-100 transition-opacity"
-                          onClick={() => setIsEditing(true)}
+                  <div className="flex justify-center mt-1 w-full px-6">
+                    <div className="flex items-center gap-1 max-w-full">
+                      <h3 className="font-semibold text-lg truncate">{chat.name}</h3>
+                      {chat.type === "group" && (
+                        <div
+                          title={chat.is_public ? "Public Group" : "Private Group"}
+                          className="shrink-0 flex items-center"
                         >
-                          <Pencil className="size-3.5" />
-                        </Button>
+                          {chat.is_public ? (
+                            <Globe className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <Lock className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </div>
                       )}
                     </div>
-                  )}
+                  </div>
 
                   <div className="text-xs text-muted-foreground">
                     {chat.member_count || 0} {(chat.member_count || 0) === 1 ? "member" : "members"}
                   </div>
                 </div>
 
-                <div className="flex-1 flex flex-col min-h-0">
+                <div className="flex flex-col min-h-0 mb-4">
                   <div className="flex items-center justify-between mb-1 shrink-0">
                     <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Description
                     </div>
                   </div>
 
-                  {isEditing ? (
-                    <Textarea
-                      value={editDescription}
-                      onChange={(e) => setEditDescription(e.target.value)}
-                      className="flex-1 min-h-[100px] resize-none text-sm bg-background"
-                      placeholder="Add a description..."
-                      disabled={isUpdating}
-                    />
-                  ) : (
-                    <div className="flex-1 text-sm bg-muted/50 p-2.5 rounded-md border text-foreground whitespace-pre-wrap break-words overflow-y-auto custom-scrollbar">
-                      {chat.description || (
-                        <span className="text-muted-foreground/60 italic">No description</span>
-                      )}
-                    </div>
-                  )}
+                  <div className="min-h-[120px] text-sm bg-muted/50 p-2.5 rounded-md border text-foreground whitespace-pre-wrap break-words">
+                    {chat.description || (
+                      <span className="text-muted-foreground/60 italic">No description</span>
+                    )}
+                  </div>
                 </div>
 
-                <div className="pt-3 shrink-0 flex gap-2">
-                  {isEditing ? (
-                    <>
-                      <Button
-                        variant="outline"
-                        className="flex-1 h-9"
-                        onClick={() => setIsEditing(false)}
-                        disabled={isUpdating}
-                      >
-                        <X className="w-4 h-4 mr-2" />
-                        Cancel
-                      </Button>
-                      <Button
-                        className="flex-1 h-9"
-                        onClick={handleSaveGroupInfo}
-                        disabled={isUpdating}
-                      >
-                        <Check className="w-4 h-4 mr-2" />
-                        Save
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      variant="destructive"
-                      className="w-full h-9"
-                      onClick={() => setIsLeaveConfirmOpen(true)}
-                    >
-                      {chat.my_role === "owner" ? "Delete Group" : "Leave Group"}
+                <div className="shrink-0 flex flex-col gap-2">
+                  {(chat.my_role === "owner" || chat.my_role === "admin") && (
+                    <Button className="w-full h-9" onClick={() => setIsEditGroupOpen(true)}>
+                      Edit Group
                     </Button>
                   )}
+                  <Button
+                    variant="destructive"
+                    className="w-full h-9"
+                    onClick={() => setIsLeaveConfirmOpen(true)}
+                  >
+                    {chat.my_role === "owner" ? "Delete Group" : "Leave Group"}
+                  </Button>
                 </div>
               </TabsContent>
 
               <TabsContent
                 value="members"
-                className="absolute inset-0 flex flex-col"
+                className="h-[400px] flex flex-col"
                 forceMount={activeTab === "members" ? true : undefined}
               >
                 <div className="pb-4 shrink-0">
@@ -622,6 +566,8 @@ export function GroupProfileDialog({
         groupId={chat.id}
         existingMemberIds={[]}
       />
+
+      <EditGroupDialog isOpen={isEditGroupOpen} onClose={setIsEditGroupOpen} chat={chat} />
     </>
   );
 }

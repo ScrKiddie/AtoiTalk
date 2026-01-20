@@ -49,7 +49,10 @@ export const useUpdateGroup = () => {
           return { ...oldData, pages: newPages };
         }
       );
-      queryClient.invalidateQueries({ queryKey: ["chat", groupId] });
+      queryClient.setQueryData<ChatListItem>(["chat", groupId], (oldChat) => {
+        if (!oldChat) return updatedGroup;
+        return { ...oldChat, ...updatedGroup };
+      });
       toast.success("Group updated successfully");
     },
     onError: (error) => {
