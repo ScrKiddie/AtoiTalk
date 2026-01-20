@@ -1,4 +1,4 @@
-import { ChatListItem } from "./chat.types";
+import { ChatListItem, GroupMember } from "./chat.types";
 import { Message } from "./message.types";
 import { UserUpdateEventPayload } from "./user.types";
 
@@ -17,7 +17,10 @@ export type EventType =
   | "user.block"
   | "user.unblock"
   | "user.banned"
-  | "user.deleted";
+  | "user.deleted"
+  | "group.member_add"
+  | "group.member_remove"
+  | "group.role_update";
 
 export interface EventMeta {
   timestamp: number;
@@ -96,3 +99,21 @@ export type ClientTyping = BaseEvent<{
 }>;
 
 export type ServerTyping = BaseEvent<Record<string, never>>;
+
+export type ServerGroupMemberAdd = BaseEvent<{
+  group_id: string;
+  member: GroupMember;
+  member_count: number;
+}>;
+
+export type ServerGroupMemberRemove = BaseEvent<{
+  group_id: string;
+  user_id: string;
+  member_count: number;
+}>;
+
+export type ServerGroupRoleUpdate = BaseEvent<{
+  group_id: string;
+  user_id: string;
+  role: "owner" | "admin" | "member";
+}>;

@@ -1,5 +1,12 @@
 import { chatService } from "@/services";
-import { ApiError, ChatListItem, ChatResponse, Message, PaginatedResponse } from "@/types";
+import {
+  ApiError,
+  ChatListItem,
+  ChatResponse,
+  GroupMember,
+  Message,
+  PaginatedResponse,
+} from "@/types";
 import { InfiniteData, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 import { toast } from "sonner";
@@ -72,12 +79,42 @@ export const useLeaveGroup = () => {
       );
       queryClient.removeQueries({ queryKey: ["messages", groupId] });
       queryClient.invalidateQueries({ queryKey: ["chats"] });
+      queryClient.invalidateQueries({ queryKey: ["users", "search"] });
       toast.success("Left group successfully");
     },
     onError: (error) => {
       console.error("Failed to leave group:", error);
       const axiosError = error as AxiosError<ApiError>;
       toast.error(axiosError.response?.data?.error || "Failed to leave group");
+    },
+  });
+};
+
+export const useDeleteGroup = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (groupId: string) => chatService.deleteGroup(groupId),
+    onSuccess: (_data, groupId) => {
+      queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
+        { queryKey: ["chats"] },
+        (oldData) => {
+          if (!oldData) return oldData;
+          const newPages = oldData.pages.map((page) => ({
+            ...page,
+            data: page.data.filter((chat) => chat.id !== groupId),
+          }));
+          return { ...oldData, pages: newPages };
+        }
+      );
+      queryClient.removeQueries({ queryKey: ["messages", groupId] });
+      queryClient.invalidateQueries({ queryKey: ["chats"] });
+      toast.success("Group deleted successfully");
+    },
+    onError: (error) => {
+      console.error("Failed to delete group:", error);
+      const axiosError = error as AxiosError<ApiError>;
+      toast.error(axiosError.response?.data?.error || "Failed to delete group");
     },
   });
 };
@@ -91,9 +128,13 @@ export const useAddGroupMember = () => {
     onSuccess: (data, { groupId, userIds }) => {
       queryClient.setQueryData<ChatListItem>(["chat", groupId], (oldChat) => {
         if (!oldChat) return oldChat;
+        const backendMemberCount = (data as Message & { member_count?: number }).member_count;
         return {
           ...oldChat,
-          member_count: (oldChat.member_count || 0) + userIds.length,
+          member_count:
+            typeof backendMemberCount === "number"
+              ? backendMemberCount
+              : (oldChat.member_count || 0) + userIds.length,
         };
       });
 
@@ -101,11 +142,18 @@ export const useAddGroupMember = () => {
         { queryKey: ["chats"] },
         (oldData) => {
           if (!oldData) return oldData;
+          const backendMemberCount = (data as Message & { member_count?: number }).member_count;
           const newPages = oldData.pages.map((page) => ({
             ...page,
             data: page.data.map((chat) =>
               chat.id === groupId
-                ? { ...chat, member_count: (chat.member_count || 0) + userIds.length }
+                ? {
+                    ...chat,
+                    member_count:
+                      typeof backendMemberCount === "number"
+                        ? backendMemberCount
+                        : (chat.member_count || 0) + userIds.length,
+                  }
                 : chat
             ),
           }));
@@ -144,9 +192,13 @@ export const useKickGroupMember = () => {
     onSuccess: (data, { groupId }) => {
       queryClient.setQueryData<ChatListItem>(["chat", groupId], (oldChat) => {
         if (!oldChat) return oldChat;
+        const backendMemberCount = (data as Message & { member_count?: number }).member_count;
         return {
           ...oldChat,
-          member_count: Math.max(0, (oldChat.member_count || 0) - 1),
+          member_count:
+            typeof backendMemberCount === "number"
+              ? backendMemberCount
+              : Math.max(0, (oldChat.member_count || 0) - 1),
         };
       });
 
@@ -154,11 +206,18 @@ export const useKickGroupMember = () => {
         { queryKey: ["chats"] },
         (oldData) => {
           if (!oldData) return oldData;
+          const backendMemberCount = (data as Message & { member_count?: number }).member_count;
           const newPages = oldData.pages.map((page) => ({
             ...page,
             data: page.data.map((chat) =>
               chat.id === groupId
-                ? { ...chat, member_count: Math.max(0, (chat.member_count || 0) - 1) }
+                ? {
+                    ...chat,
+                    member_count:
+                      typeof backendMemberCount === "number"
+                        ? backendMemberCount
+                        : Math.max(0, (chat.member_count || 0) - 1),
+                  }
                 : chat
             ),
           }));
@@ -178,6 +237,7 @@ export const useKickGroupMember = () => {
           return { ...oldData, pages: newPages };
         }
       );
+      queryClient.invalidateQueries({ queryKey: ["users", "search"] });
       toast.success("Member removed successfully");
     },
     onError: (error) => {
@@ -194,8 +254,23 @@ export const useUpdateMemberRole = () => {
   return useMutation({
     mutationFn: ({ groupId, userId, role }: { groupId: string; userId: string; role: string }) =>
       chatService.updateMemberRole(groupId, userId, role),
-    onSuccess: (data, { groupId }) => {
-      queryClient.invalidateQueries({ queryKey: ["group-members", groupId] });
+    onSuccess: (data, { groupId, userId, role }) => {
+      queryClient.setQueriesData<InfiniteData<PaginatedResponse<GroupMember>>>(
+        { queryKey: ["group-members", "infinite", groupId] },
+        (oldData) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page) => ({
+              ...page,
+              data: page.data.map((member) =>
+                member.user_id === userId ? { ...member, role: role as "admin" | "member" } : member
+              ),
+            })),
+          };
+        }
+      );
+
       queryClient.setQueryData<InfiniteData<PaginatedResponse<Message>>>(
         ["messages", groupId],
         (oldData) => {
@@ -224,9 +299,25 @@ export const useTransferOwnership = () => {
   return useMutation({
     mutationFn: ({ groupId, newOwnerId }: { groupId: string; newOwnerId: string }) =>
       chatService.transferOwnership(groupId, newOwnerId),
-    onSuccess: (data, { groupId }) => {
-      queryClient.invalidateQueries({ queryKey: ["group-members", groupId] });
-      queryClient.invalidateQueries({ queryKey: ["chat", groupId] });
+    onSuccess: (data, { groupId, newOwnerId }) => {
+      queryClient.setQueriesData<InfiniteData<PaginatedResponse<GroupMember>>>(
+        { queryKey: ["group-members", "infinite", groupId] },
+        (oldData) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page) => ({
+              ...page,
+              data: page.data.map((member) => {
+                if (member.user_id === newOwnerId) {
+                  return { ...member, role: "owner" };
+                }
+                return member;
+              }),
+            })),
+          };
+        }
+      );
       queryClient.setQueryData<InfiniteData<PaginatedResponse<Message>>>(
         ["messages", groupId],
         (oldData) => {

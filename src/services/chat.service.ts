@@ -107,6 +107,13 @@ export const chatService = {
   },
 
   /**
+   * Delete group
+   */
+  async deleteGroup(groupId: string): Promise<void> {
+    await api.delete(`/api/chats/group/${groupId}`);
+  },
+
+  /**
    * Update member role
    */
   async updateMemberRole(groupId: string, userId: string, role: string): Promise<Message> {

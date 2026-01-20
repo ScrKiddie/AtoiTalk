@@ -11,7 +11,7 @@ const SystemMessageUserLink = ({ userId, name }: { userId?: string; name: string
   const isMe = currentUser?.id === userId;
 
   if (!userId) {
-    return <span>{name}</span>;
+    return <span className="max-w-[100px] truncate inline-block align-bottom">{name}</span>;
   }
 
   if (isMe) {
@@ -24,7 +24,7 @@ const SystemMessageUserLink = ({ userId, name }: { userId?: string; name: string
         e.stopPropagation();
         openProfileModal(userId);
       }}
-      className="cursor-pointer hover:opacity-80 transition-opacity text-foreground"
+      className="cursor-pointer hover:opacity-80 transition-opacity text-foreground max-w-[100px] truncate inline-block align-bottom"
     >
       {name}
     </span>

@@ -41,9 +41,10 @@ export function AddMembersDialog({
               }));
 
               const newPages = [...oldData.pages];
-              newPages[0] = {
-                ...newPages[0],
-                data: [...newMembers, ...newPages[0].data],
+              const lastPageIndex = newPages.length - 1;
+              newPages[lastPageIndex] = {
+                ...newPages[lastPageIndex],
+                data: [...newPages[lastPageIndex].data, ...newMembers],
               };
 
               return { ...oldData, pages: newPages };

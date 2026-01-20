@@ -1,5 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SidebarTrigger } from "@/components/ui/sidebar.tsx";
+import { useChat } from "@/hooks/queries";
 import { useAuthStore, useChatStore, useUIStore } from "@/store";
 import { ChatListItem, User } from "@/types";
 
@@ -38,14 +39,17 @@ const ChatHeader = ({
   const isTyping = typingUsers[chat.id]?.some((id) => id !== currentUser?.id);
   const openProfileModal = useUIStore((state) => state.openProfileModal);
 
+  const { data: latestChat } = useChat(chat.id);
+  const displayChat = latestChat || chat;
+
   const [showGroupDialog, setShowGroupDialog] = useState(false);
 
-  const initials = getInitials(chat.name);
+  const initials = getInitials(displayChat.name);
 
   let statusContent: React.ReactNode = "Messages";
   let statusColor = "text-muted-foreground";
 
-  if (chat.type === "private") {
+  if (displayChat.type === "private") {
     if (isProfileLoading) {
       statusContent = <Skeleton className="h-[13px] w-24 rounded-full" />;
     } else if (isProfileError) {
@@ -101,7 +105,7 @@ const ChatHeader = ({
       statusContent = "Someone is typing...";
       statusColor = "text-muted-foreground italic font-medium animate-pulse";
     } else {
-      statusContent = `${chat.member_count || 0} members`;
+      statusContent = `${displayChat.member_count || 0} members`;
       statusColor = "text-muted-foreground";
     }
   }
@@ -115,34 +119,34 @@ const ChatHeader = ({
 
             <div
               className={`flex items-center gap-2 transition-opacity ${
-                (chat.type === "private" && partnerProfile) ||
-                (chat.type === "group" && !isChatLoading && !isChatError)
+                (displayChat.type === "private" && partnerProfile) ||
+                (displayChat.type === "group" && !isChatLoading && !isChatError)
                   ? "cursor-pointer hover:opacity-80"
                   : "cursor-default"
               }`}
               onClick={() => {
-                if (chat.type === "private" && partnerId && partnerProfile) {
+                if (displayChat.type === "private" && partnerId && partnerProfile) {
                   openProfileModal(partnerId, { hideMessageButton: true });
-                } else if (chat.type === "group" && !isChatLoading && !isChatError) {
+                } else if (displayChat.type === "group" && !isChatLoading && !isChatError) {
                   setShowGroupDialog(true);
                 }
               }}
             >
               <Avatar className="size-8">
-                {isProfileLoading || (chat.type === "group" && isChatLoading) ? (
+                {isProfileLoading || (displayChat.type === "group" && isChatLoading) ? (
                   <Skeleton className="size-full rounded-full" />
                 ) : (
                   <>
-                    <AvatarImage src={chat.avatar || undefined} className="object-cover" />
+                    <AvatarImage src={displayChat.avatar || undefined} className="object-cover" />
                     <AvatarFallback>{initials}</AvatarFallback>
                   </>
                 )}
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                {isProfileLoading || (chat.type === "group" && isChatLoading) ? (
+                {isProfileLoading || (displayChat.type === "group" && isChatLoading) ? (
                   <Skeleton className="h-[13px] w-32 mb-1" />
                 ) : (
-                  <span className="truncate font-medium">{chat.name}</span>
+                  <span className="truncate font-medium">{displayChat.name}</span>
                 )}
                 <div className={`truncate text-xs ${statusColor} min-h-[16px] flex items-center`}>
                   {statusContent}
@@ -155,7 +159,11 @@ const ChatHeader = ({
         </div>
       </header>
 
-      <GroupProfileDialog isOpen={showGroupDialog} onClose={setShowGroupDialog} chat={chat} />
+      <GroupProfileDialog
+        isOpen={showGroupDialog}
+        onClose={setShowGroupDialog}
+        chat={displayChat}
+      />
     </>
   );
 };

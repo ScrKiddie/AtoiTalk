@@ -56,6 +56,8 @@ export function useSearchUsers(
     getNextPageParam: (lastPage) =>
       lastPage.meta.has_next ? lastPage.meta.next_cursor : undefined,
     enabled: options?.enabled ?? true,
+    staleTime: 0,
+    gcTime: 0,
   });
 }
 

@@ -86,7 +86,11 @@ export function UserProfileDialog() {
     <>
       <LoadingModal isOpen={isLoading && isOpen} className="z-[100]" overlayClassName="z-[100]" />
 
-      <Dialog open={isOpen} onOpenChange={(open) => !open && closeProfileModal()} modal={true}>
+      <Dialog
+        open={isOpen && !!user && !isLoading}
+        onOpenChange={(open) => !open && closeProfileModal()}
+        modal={true}
+      >
         <DialogContent
           className="max-w-[85%] sm:max-w-[380px] z-[71]"
           overlayClassName="z-[70]"
@@ -96,11 +100,7 @@ export function UserProfileDialog() {
             <DialogTitle className="flex items-center gap-2">User Profile</DialogTitle>
           </DialogHeader>
 
-          {isLoading ? (
-            <div className="flex justify-center p-8">
-              <Spinner className="size-8" />
-            </div>
-          ) : user ? (
+          {user ? (
             <div className="grid gap-6 pt-4">
               <div className="flex flex-col items-center gap-1 mb-2 w-full px-4 overflow-hidden">
                 <Avatar

@@ -16,6 +16,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDeleteGroup, useLeaveGroup } from "@/hooks/mutations/use-group";
 import { useHideChat } from "@/hooks/mutations/use-hide-chat";
 import { getInitials } from "@/lib/avatar-utils";
 import { formatChatPreviewDate } from "@/lib/date-utils";
@@ -30,6 +31,7 @@ import {
   EllipsisVertical,
   File,
   Loader2,
+  LogOut,
   RefreshCcw,
   Trash2,
   Unlock,
@@ -74,6 +76,9 @@ export function NavChat({
   const [deleteChatIndex, setDeleteChatIndex] = useState<number | null>(null);
 
   const { mutate: hideChat, isPending: isHidingChat } = useHideChat();
+  const { mutate: leaveGroup, isPending: isLeavingGroup } = useLeaveGroup();
+  const { mutate: deleteGroup, isPending: isDeletingGroup } = useDeleteGroup();
+
   const [userToBlock, setUserToBlock] = useState<string | null>(null);
   const [userToUnblock, setUserToUnblock] = useState<string | null>(null);
 
@@ -255,9 +260,30 @@ export function NavChat({
                           setActiveMenu(null);
                           setTimeout(() => setDeleteChatIndex(index), 100);
                         }}
+                        className={cn(
+                          chat.type === "group" && chat.my_role === "owner"
+                            ? "text-destructive focus:text-destructive"
+                            : ""
+                        )}
                       >
-                        <Trash2 className="text-muted-foreground mr-2 size-4" />
-                        <span>Delete Chat</span>
+                        {chat.type === "group" ? (
+                          chat.my_role === "owner" ? (
+                            <>
+                              <Trash2 className="mr-2 size-4" />
+                              <span>Delete Group</span>
+                            </>
+                          ) : (
+                            <>
+                              <LogOut className="text-muted-foreground mr-2 size-4" />
+                              <span>Leave Group</span>
+                            </>
+                          )
+                        ) : (
+                          <>
+                            <Trash2 className="text-muted-foreground mr-2 size-4" />
+                            <span>Delete Chat</span>
+                          </>
+                        )}
                       </DropdownMenuItem>
 
                       {chat.type === "private" && chat.other_user_id && (
@@ -310,25 +336,68 @@ export function NavChat({
       <ConfirmationDialog
         open={deleteChatIndex !== null}
         onOpenChange={(open) => !open && setDeleteChatIndex(null)}
-        title="Delete Chat"
-        description="Are you sure you want to delete this chat? This action cannot be undone."
-        confirmText="Delete"
+        title={
+          deleteChatIndex !== null
+            ? chats[deleteChatIndex].type === "group"
+              ? chats[deleteChatIndex].my_role === "owner"
+                ? "Delete Group?"
+                : "Leave Group?"
+              : "Delete Chat"
+            : ""
+        }
+        description={
+          deleteChatIndex !== null
+            ? chats[deleteChatIndex].type === "group"
+              ? chats[deleteChatIndex].my_role === "owner"
+                ? `Are you sure you want to delete "${chats[deleteChatIndex].name}"? This action cannot be undone.`
+                : `Are you sure you want to leave "${chats[deleteChatIndex].name}"?`
+              : "Are you sure you want to delete this chat? It will be hidden until a new message is sent."
+            : ""
+        }
+        confirmText={
+          deleteChatIndex !== null
+            ? chats[deleteChatIndex].type === "group"
+              ? chats[deleteChatIndex].my_role === "owner"
+                ? "Delete Group"
+                : "Leave"
+              : "Delete"
+            : "Delete"
+        }
         cancelText="Cancel"
         variant="destructive"
         onConfirm={() => {
           if (deleteChatIndex !== null) {
             const chat = chats[deleteChatIndex];
-            hideChat(chat.id, {
-              onSuccess: () => {
-                setDeleteChatIndex(null);
-                if (chat.id === activeId) {
-                  navigate("/");
-                }
-              },
-            });
+
+            if (chat.type === "group") {
+              if (chat.my_role === "owner") {
+                deleteGroup(chat.id, {
+                  onSuccess: () => {
+                    setDeleteChatIndex(null);
+                    if (chat.id === activeId) navigate("/");
+                  },
+                });
+              } else {
+                leaveGroup(chat.id, {
+                  onSuccess: () => {
+                    setDeleteChatIndex(null);
+                    if (chat.id === activeId) navigate("/");
+                  },
+                });
+              }
+            } else {
+              hideChat(chat.id, {
+                onSuccess: () => {
+                  setDeleteChatIndex(null);
+                  if (chat.id === activeId) {
+                    navigate("/");
+                  }
+                },
+              });
+            }
           }
         }}
-        isLoading={isHidingChat}
+        isLoading={isHidingChat || isLeavingGroup || isDeletingGroup}
       />
 
       <BlockUserDialog
