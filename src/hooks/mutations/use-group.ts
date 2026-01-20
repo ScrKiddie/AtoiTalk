@@ -88,9 +88,31 @@ export const useAddGroupMember = () => {
   return useMutation({
     mutationFn: ({ groupId, userIds }: { groupId: string; userIds: string[] }) =>
       chatService.addGroupMember(groupId, userIds),
-    onSuccess: (data, { groupId }) => {
-      queryClient.invalidateQueries({ queryKey: ["group-members", groupId] });
-      queryClient.invalidateQueries({ queryKey: ["chat", groupId] });
+    onSuccess: (data, { groupId, userIds }) => {
+      queryClient.setQueryData<ChatListItem>(["chat", groupId], (oldChat) => {
+        if (!oldChat) return oldChat;
+        return {
+          ...oldChat,
+          member_count: (oldChat.member_count || 0) + userIds.length,
+        };
+      });
+
+      queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
+        { queryKey: ["chats"] },
+        (oldData) => {
+          if (!oldData) return oldData;
+          const newPages = oldData.pages.map((page) => ({
+            ...page,
+            data: page.data.map((chat) =>
+              chat.id === groupId
+                ? { ...chat, member_count: (chat.member_count || 0) + userIds.length }
+                : chat
+            ),
+          }));
+          return { ...oldData, pages: newPages };
+        }
+      );
+
       queryClient.setQueryData<InfiniteData<PaginatedResponse<Message>>>(
         ["messages", groupId],
         (oldData) => {
@@ -120,8 +142,30 @@ export const useKickGroupMember = () => {
     mutationFn: ({ groupId, userId }: { groupId: string; userId: string }) =>
       chatService.kickGroupMember(groupId, userId),
     onSuccess: (data, { groupId }) => {
-      queryClient.invalidateQueries({ queryKey: ["group-members", groupId] });
-      queryClient.invalidateQueries({ queryKey: ["chat", groupId] });
+      queryClient.setQueryData<ChatListItem>(["chat", groupId], (oldChat) => {
+        if (!oldChat) return oldChat;
+        return {
+          ...oldChat,
+          member_count: Math.max(0, (oldChat.member_count || 0) - 1),
+        };
+      });
+
+      queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
+        { queryKey: ["chats"] },
+        (oldData) => {
+          if (!oldData) return oldData;
+          const newPages = oldData.pages.map((page) => ({
+            ...page,
+            data: page.data.map((chat) =>
+              chat.id === groupId
+                ? { ...chat, member_count: Math.max(0, (chat.member_count || 0) - 1) }
+                : chat
+            ),
+          }));
+          return { ...oldData, pages: newPages };
+        }
+      );
+
       queryClient.setQueryData<InfiniteData<PaginatedResponse<Message>>>(
         ["messages", groupId],
         (oldData) => {

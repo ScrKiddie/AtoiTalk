@@ -35,9 +35,12 @@ export function useUpdateProfile() {
   });
 }
 
-export function useSearchUsers(query: string, options?: { enabled?: boolean }) {
+export function useSearchUsers(
+  query: string,
+  options?: { enabled?: boolean; excludeGroupId?: string }
+) {
   return useInfiniteQuery({
-    queryKey: ["users", "search", query],
+    queryKey: ["users", "search", query, options?.excludeGroupId],
     queryFn: ({ pageParam, signal }) =>
       userService.searchUsers(
         {
@@ -45,6 +48,7 @@ export function useSearchUsers(query: string, options?: { enabled?: boolean }) {
           cursor: pageParam as string | undefined,
           limit: 20,
           include_chat_id: true,
+          exclude_group_id: options?.excludeGroupId,
         },
         signal
       ),

@@ -20,6 +20,7 @@ interface UserSelectionDialogProps {
   existingMemberIds?: string[];
   isSubmitting?: boolean;
   confirmLabel?: string;
+  excludeGroupId?: string;
 }
 
 export function UserSelectionDialog({
@@ -30,6 +31,7 @@ export function UserSelectionDialog({
   existingMemberIds = [],
   isSubmitting = false,
   confirmLabel = "Add",
+  excludeGroupId,
 }: UserSelectionDialogProps) {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -46,6 +48,7 @@ export function UserSelectionDialog({
     refetch,
   } = useSearchUsers(trimmedSearch, {
     enabled: !!trimmedSearch && trimmedSearch.length >= 3,
+    excludeGroupId,
   });
 
   useEffect(() => {

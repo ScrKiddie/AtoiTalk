@@ -49,4 +49,5 @@ export interface SearchUsersParams {
   cursor?: string;
   limit?: number;
   include_chat_id?: boolean;
+  exclude_group_id?: string;
 }

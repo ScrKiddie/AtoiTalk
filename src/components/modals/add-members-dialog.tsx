@@ -1,6 +1,7 @@
 import { UserSelectionDialog } from "@/components/modals/user-selection-dialog";
 import { useAddGroupMember } from "@/hooks/mutations/use-group";
-import { User } from "@/types";
+import { GroupMember, PaginatedResponse, User } from "@/types";
+import { InfiniteData, useQueryClient } from "@tanstack/react-query";
 
 interface AddMembersDialogProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ export function AddMembersDialog({
   groupId,
   existingMemberIds,
 }: AddMembersDialogProps) {
+  const queryClient = useQueryClient();
   const { mutate: addMembers, isPending } = useAddGroupMember();
 
   const handleAddMembers = (users: User[]) => {
@@ -22,6 +24,31 @@ export function AddMembersDialog({
       { groupId, userIds: users.map((u) => u.id) },
       {
         onSuccess: () => {
+          queryClient.removeQueries({ queryKey: ["users", "search"] });
+          queryClient.setQueryData<InfiniteData<PaginatedResponse<GroupMember>>>(
+            ["group-members", "infinite", groupId, ""],
+            (oldData) => {
+              if (!oldData) return oldData;
+              const newMembers: GroupMember[] = users.map((u) => ({
+                id: u.id,
+                user_id: u.id,
+                full_name: u.full_name,
+                avatar: u.avatar,
+                role: "member",
+                username: u.username,
+                joined_at: new Date().toISOString(),
+                is_online: u.is_online,
+              }));
+
+              const newPages = [...oldData.pages];
+              newPages[0] = {
+                ...newPages[0],
+                data: [...newMembers, ...newPages[0].data],
+              };
+
+              return { ...oldData, pages: newPages };
+            }
+          );
           onClose(false);
         },
       }
@@ -37,6 +64,7 @@ export function AddMembersDialog({
       existingMemberIds={existingMemberIds}
       isSubmitting={isPending}
       confirmLabel="Add"
+      excludeGroupId={groupId}
     />
   );
 }

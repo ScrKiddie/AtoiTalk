@@ -8,10 +8,11 @@ import { Input } from "@/components/ui/input";
 import { GlobalLightbox } from "@/components/ui/lightbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useKickGroupMember, useLeaveGroup } from "@/hooks/mutations/use-group";
-import { useGroupMembers, useInfiniteGroupMembers } from "@/hooks/queries/use-group-members";
+import { useInfiniteGroupMembers } from "@/hooks/queries/use-group-members";
 import { getInitials } from "@/lib/avatar-utils";
 import { useAuthStore, useUIStore } from "@/store";
-import { ChatListItem, GroupMember } from "@/types";
+import { ChatListItem, GroupMember, PaginatedResponse } from "@/types";
+import { InfiniteData, useQueryClient } from "@tanstack/react-query";
 import { Info, Plus, Search, Shield, UserMinus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -34,13 +35,13 @@ export function GroupProfileDialog({ isOpen, onClose, chat }: GroupProfileDialog
   const [debouncedMemberSearch, setDebouncedMemberSearch] = useState("");
 
   const openProfileModal = useUIStore((state) => state.openProfileModal);
+  const queryClient = useQueryClient();
 
   const { user: currentUser } = useAuthStore();
   const navigate = useNavigate();
 
   const { mutate: leaveGroup, isPending: isLeaving } = useLeaveGroup();
   const { mutate: kickMember, isPending: isKicking } = useKickGroupMember();
-  const { data: members } = useGroupMembers(chat.id, isOpen);
 
   const {
     data: membersData,
@@ -98,7 +99,28 @@ export function GroupProfileDialog({ isOpen, onClose, chat }: GroupProfileDialog
     kickMember(
       { groupId: chat.id, userId: kickCandidate.user_id },
       {
-        onSuccess: () => setKickCandidate(null),
+        onSuccess: () => {
+          queryClient.setQueryData<InfiniteData<PaginatedResponse<GroupMember>>>(
+            [
+              "group-members",
+              "infinite",
+              chat.id,
+              debouncedMemberSearch.length >= 3 ? debouncedMemberSearch : "",
+            ],
+            (oldData) => {
+              if (!oldData) return oldData;
+              return {
+                ...oldData,
+                pages: oldData.pages.map((page) => ({
+                  ...page,
+                  data: page.data.filter((m) => m.id !== kickCandidate.id),
+                })),
+              };
+            }
+          );
+          queryClient.removeQueries({ queryKey: ["users", "search"] });
+          setKickCandidate(null);
+        },
       }
     );
   };
@@ -334,7 +356,7 @@ export function GroupProfileDialog({ isOpen, onClose, chat }: GroupProfileDialog
         isOpen={isAddMemberOpen}
         onClose={setIsAddMemberOpen}
         groupId={chat.id}
-        existingMemberIds={members?.map((m) => m.user_id) || []}
+        existingMemberIds={[]}
       />
     </>
   );
