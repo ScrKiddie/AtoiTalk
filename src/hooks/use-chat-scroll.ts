@@ -17,6 +17,7 @@ interface UseChatScrollProps {
   setReturnToMessageId: (id: string | null) => void;
   isPartnerTyping: boolean;
   isJumpingRef: React.MutableRefObject<boolean>;
+  scrollRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export const useChatScroll = ({
@@ -35,8 +36,10 @@ export const useChatScroll = ({
   setReturnToMessageId,
   isPartnerTyping,
   isJumpingRef,
+  scrollRef: providedScrollRef,
 }: UseChatScrollProps) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const localScrollRef = useRef<HTMLDivElement>(null);
+  const scrollRef = providedScrollRef || localScrollRef;
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
 
@@ -47,6 +50,7 @@ export const useChatScroll = ({
   const isAtBottomRef = useRef(true);
   const wasInTopZoneRef = useRef(false);
   const wasInBottomZoneRef = useRef(false);
+  const shouldForceScrollToBottomRef = useRef(false);
 
   const [prevCurrentChatId, setPrevCurrentChatId] = useState<string | null>(currentChatId);
   if (currentChatId !== prevCurrentChatId) {
@@ -56,13 +60,12 @@ export const useChatScroll = ({
     wasInTopZoneRef.current = false;
     wasInBottomZoneRef.current = false;
     prevScrollHeightRef.current = 0;
+    shouldForceScrollToBottomRef.current = false;
   }
 
   useEffect(() => {
     isFetchingRef.current = isFetchingNextPage;
-    if (isFetchingNextPage && scrollRef.current) {
-      prevScrollHeightRef.current = scrollRef.current.scrollHeight;
-    } else {
+    if (!isFetchingNextPage) {
       wasInTopZoneRef.current = false;
     }
   }, [isFetchingNextPage]);
@@ -73,8 +76,13 @@ export const useChatScroll = ({
     }
   }, [isFetchingPreviousPage]);
 
+  useEffect(() => {
+    wasInTopZoneRef.current = false;
+    wasInBottomZoneRef.current = false;
+  }, [anchorMessageId]);
+
   useLayoutEffect(() => {
-    if (anchorMessageId) return;
+    if (anchorMessageId && prevScrollHeightRef.current === 0) return;
 
     if (!isFetchingNextPage && prevScrollHeightRef.current > 0 && scrollRef.current) {
       const newScrollHeight = scrollRef.current.scrollHeight;
@@ -89,6 +97,17 @@ export const useChatScroll = ({
   useLayoutEffect(() => {
     if (scrollRef.current && messages.length > 0 && !isMessagesLoading) {
       const isChatSwitched = prevChatIdRef.current !== currentChatId;
+
+      if (shouldForceScrollToBottomRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        requestAnimationFrame(() => {
+          if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+          }
+        });
+        shouldForceScrollToBottomRef.current = false;
+        return;
+      }
 
       if (anchorMessageId) {
         if (isChatSwitched) {
@@ -186,6 +205,7 @@ export const useChatScroll = ({
         wasInBottomZoneRef.current = isNearBottom;
 
         if (isNearTop && !wasInTopZoneRef.current && hasNextPage && !isFetchingNextPage) {
+          prevScrollHeightRef.current = scrollHeight;
           fetchNextPage();
         }
         wasInTopZoneRef.current = isNearTop;
@@ -193,6 +213,14 @@ export const useChatScroll = ({
       }
 
       if (isNearTop && !wasInTopZoneRef.current && hasNextPage && !isFetchingNextPage) {
+        prevScrollHeightRef.current = scrollHeight;
+
+        console.log("[Scroll] Triggering NEXT page fetch", {
+          isNearTop,
+          wasInTop: wasInTopZoneRef.current,
+          height: scrollHeight,
+        });
+
         fetchNextPage();
       }
       wasInTopZoneRef.current = isNearTop;
@@ -224,14 +252,16 @@ export const useChatScroll = ({
   );
 
   const scrollToBottom = useCallback(() => {
+    shouldForceScrollToBottomRef.current = true;
     if (anchorMessageId) {
       setAnchorMessageId(null);
     }
+
     setTimeout(() => {
       if (scrollRef.current) {
-        scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+        scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "auto" });
       }
-    }, 100);
+    }, 0);
   }, [anchorMessageId, setAnchorMessageId]);
 
   return {

@@ -71,6 +71,29 @@ export const useChatWebSocket = (url: string) => {
 
         const currentUser = useAuthStore.getState().user;
 
+        if (data.type === "chat.delete") {
+          console.log("Explicit IF match for chat.delete!");
+        } else if (data.type.trim() === "chat.delete") {
+          console.warn("Match with TRIM only! Hidden characters present.");
+        }
+
+        if (data.type === "chat.delete") {
+          const payload = data.payload as { chat_id?: string; id?: string };
+          const chatId =
+            payload.chat_id ||
+            payload.id ||
+            ((data.payload as Record<string, unknown>)?.chat_id as string | undefined);
+
+          if (chatId) {
+            console.log("FORCE HANDLING chat.delete for:", chatId);
+            const activeChatId = useChatStore.getState().activeChatId;
+            const isActive = activeChatId === chatId;
+            console.log("Force handle active check:", isActive);
+
+            window.dispatchEvent(new CustomEvent("kicked-from-chat", { detail: { chatId } }));
+          }
+        }
+
         switch (data.type) {
           case "message.new": {
             const payload = data.payload as Message;
@@ -174,25 +197,127 @@ export const useChatWebSocket = (url: string) => {
                 const backendMemberCount = (payload as Message & { member_count?: number })
                   .member_count;
 
-                queryClient.setQueriesData<InfiniteData<PaginatedResponse<GroupMember>>>(
-                  { queryKey: ["group-members", "infinite", payload.chat_id] },
-                  (oldData) => {
-                    if (!oldData) return oldData;
-                    const newPages = oldData.pages.map((page) => ({
-                      ...page,
-                      data: page.data.filter((m) => m.user_id !== removedUserId),
-                    }));
-                    return { ...oldData, pages: newPages };
-                  }
-                );
+                const amIKicked =
+                  payload.type === "system_kick" && removedUserId === currentUser?.id;
+
+                if (amIKicked) {
+                  import("sonner").then(({ toast }) => {
+                    toast.error("You have been removed from the group", {
+                      id: `kicked-${payload.chat_id}`,
+                    });
+                  });
+
+                  queryClient.cancelQueries({ queryKey: ["chat", payload.chat_id] });
+                  queryClient.cancelQueries({ queryKey: ["messages", payload.chat_id] });
+
+                  queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
+                    { queryKey: ["chats"] },
+                    (oldData) => {
+                      if (!oldData) return oldData;
+                      const newPages = oldData.pages.map((page) => ({
+                        ...page,
+                        data: page.data.filter((chat) => chat.id !== payload.chat_id),
+                      }));
+                      return { ...oldData, pages: newPages };
+                    }
+                  );
+
+                  queryClient.removeQueries({ queryKey: ["chat", payload.chat_id] });
+                  queryClient.removeQueries({ queryKey: ["messages", payload.chat_id] });
+                  queryClient.removeQueries({
+                    queryKey: ["group-members", "infinite", payload.chat_id],
+                  });
+
+                  queryClient.invalidateQueries({ queryKey: ["chats"], refetchType: "none" });
+
+                  window.dispatchEvent(
+                    new CustomEvent("kicked-from-chat", { detail: { chatId: payload.chat_id } })
+                  );
+
+                  return;
+                } else {
+                  queryClient.setQueriesData<InfiniteData<PaginatedResponse<GroupMember>>>(
+                    { queryKey: ["group-members", "infinite", payload.chat_id] },
+                    (oldData) => {
+                      if (!oldData) return oldData;
+                      const newPages = oldData.pages.map((page) => ({
+                        ...page,
+                        data: page.data.filter((m) => m.user_id !== removedUserId),
+                      }));
+                      return { ...oldData, pages: newPages };
+                    }
+                  );
+
+                  queryClient.setQueryData<ChatListItem>(["chat", payload.chat_id], (oldChat) => {
+                    if (!oldChat) return oldChat;
+                    const newCount =
+                      typeof backendMemberCount === "number"
+                        ? backendMemberCount
+                        : Math.max(0, (oldChat.member_count || 0) - 1);
+                    return { ...oldChat, member_count: newCount };
+                  });
+
+                  queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
+                    { queryKey: ["chats"] },
+                    (oldData) => {
+                      if (!oldData) return oldData;
+                      const newPages = oldData.pages.map((page) => ({
+                        ...page,
+                        data: page.data.map((chat) => {
+                          if (chat.id === payload.chat_id) {
+                            const newCount =
+                              typeof backendMemberCount === "number"
+                                ? backendMemberCount
+                                : Math.max(0, (chat.member_count || 0) - 1);
+                            return { ...chat, member_count: newCount };
+                          }
+                          return chat;
+                        }),
+                      }));
+                      return { ...oldData, pages: newPages };
+                    }
+                  );
+                }
+              }
+
+              if (payload.type === "system_rename") {
+                const actionData = payload.action_data as { new_name?: string };
+                if (actionData.new_name) {
+                  queryClient.setQueryData<ChatListItem>(["chat", payload.chat_id], (oldChat) => {
+                    if (!oldChat) return oldChat;
+                    return { ...oldChat, name: actionData.new_name! };
+                  });
+
+                  queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
+                    { queryKey: ["chats"] },
+                    (oldData) => {
+                      if (!oldData) return oldData;
+                      const newPages = oldData.pages.map((page) => ({
+                        ...page,
+                        data: page.data.map((chat) => {
+                          if (chat.id === payload.chat_id) {
+                            return { ...chat, name: actionData.new_name! };
+                          }
+                          return chat;
+                        }),
+                      }));
+                      return { ...oldData, pages: newPages };
+                    }
+                  );
+                }
+              }
+
+              if (payload.type === "system_visibility") {
+                const actionData = payload.action_data as { new_visibility?: "public" | "private" };
+                const isPublic = actionData.new_visibility === "public";
 
                 queryClient.setQueryData<ChatListItem>(["chat", payload.chat_id], (oldChat) => {
                   if (!oldChat) return oldChat;
-                  const newCount =
-                    typeof backendMemberCount === "number"
-                      ? backendMemberCount
-                      : Math.max(0, (oldChat.member_count || 0) - 1);
-                  return { ...oldChat, member_count: newCount };
+                  return {
+                    ...oldChat,
+                    is_public: isPublic,
+                    invite_code: !isPublic ? undefined : oldChat.invite_code,
+                  };
                 });
 
                 queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
@@ -203,11 +328,11 @@ export const useChatWebSocket = (url: string) => {
                       ...page,
                       data: page.data.map((chat) => {
                         if (chat.id === payload.chat_id) {
-                          const newCount =
-                            typeof backendMemberCount === "number"
-                              ? backendMemberCount
-                              : Math.max(0, (chat.member_count || 0) - 1);
-                          return { ...chat, member_count: newCount };
+                          return {
+                            ...chat,
+                            is_public: isPublic,
+                            invite_code: !isPublic ? undefined : chat.invite_code,
+                          };
                         }
                         return chat;
                       }),
@@ -215,6 +340,13 @@ export const useChatWebSocket = (url: string) => {
                     return { ...oldData, pages: newPages };
                   }
                 );
+              }
+
+              if (payload.type === "system_description" || payload.type === "system_avatar") {
+                queryClient.invalidateQueries({ queryKey: ["chat", payload.chat_id] });
+                if (payload.type === "system_avatar") {
+                  queryClient.invalidateQueries({ queryKey: ["chats"] });
+                }
               }
 
               if (payload.type === "system_add") {
@@ -412,8 +544,7 @@ export const useChatWebSocket = (url: string) => {
             break;
           }
 
-          case "chat.hide":
-          case "chat.delete": {
+          case "chat.hide": {
             const { chat_id } = data.payload as { chat_id: string };
             queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
               { queryKey: ["chats"] },
@@ -930,6 +1061,73 @@ export const useChatWebSocket = (url: string) => {
                 return { ...oldChat, my_role: role };
               });
             }
+            break;
+          }
+
+          case "chat.delete": {
+            console.log("chat.delete RAW event:", data);
+
+            const payload = data.payload as { chat_id?: string; id?: string };
+            const chatId =
+              payload.chat_id ||
+              payload.id ||
+              ((data.payload as Record<string, unknown>)?.chat_id as string | undefined);
+
+            console.log("chat.delete event received:", { chatId, payload });
+
+            if (!chatId) {
+              console.error("chat.delete: No chat_id found in payload", data);
+              break;
+            }
+
+            import("sonner").then(({ toast }) => {
+              toast.error("You have been removed from the group", {
+                id: `chat-deleted-${chatId}`,
+              });
+            });
+
+            if (!chatId) {
+              console.error("chat.delete: No chat_id found in payload", data);
+              break;
+            }
+
+            console.log("chat.delete: Processing removal for:", chatId);
+
+            const activeChatId = useChatStore.getState().activeChatId;
+            const isActive = activeChatId === chatId;
+            console.log("chat.delete: Is active chat?", isActive, { activeChatId, chatId });
+
+            window.dispatchEvent(new CustomEvent("kicked-from-chat", { detail: { chatId } }));
+
+            import("sonner").then(({ toast }) => {
+              console.log("chat.delete: Showing toast");
+              toast.error("You have been removed from the group", {
+                id: `chat-deleted-${chatId}`,
+              });
+            });
+
+            queryClient.cancelQueries({ queryKey: ["chat", chatId] });
+            queryClient.cancelQueries({ queryKey: ["messages", chatId] });
+
+            queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
+              { queryKey: ["chats"] },
+              (oldData) => {
+                if (!oldData) return oldData;
+                console.log("chat.delete: Filtering chats, removing:", chatId);
+                const newPages = oldData.pages.map((page) => ({
+                  ...page,
+                  data: page.data.filter((chat) => chat.id !== chatId),
+                }));
+                return { ...oldData, pages: newPages };
+              }
+            );
+
+            queryClient.removeQueries({ queryKey: ["chat", chatId] });
+            queryClient.removeQueries({ queryKey: ["messages", chatId] });
+            queryClient.removeQueries({ queryKey: ["group-members", "infinite", chatId] });
+
+            queryClient.invalidateQueries({ queryKey: ["chats"], refetchType: "none" });
+
             break;
           }
         }

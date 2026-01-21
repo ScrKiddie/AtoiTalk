@@ -19,9 +19,12 @@ import {
   useDeleteGroup,
   useKickGroupMember,
   useLeaveGroup,
+  useResetInviteCode,
   useTransferOwnership,
   useUpdateMemberRole,
 } from "@/hooks/mutations/use-group";
+import { toast } from "sonner";
+
 import { useChat } from "@/hooks/queries";
 import { useInfiniteGroupMembers } from "@/hooks/queries/use-group-members";
 import { getInitials } from "@/lib/avatar-utils";
@@ -29,11 +32,14 @@ import { useAuthStore, useUIStore } from "@/store";
 import { ChatListItem, GroupMember, PaginatedResponse } from "@/types";
 import { InfiniteData, useQueryClient } from "@tanstack/react-query";
 import {
+  Copy,
   Crown,
   Globe,
   Info,
+  Loader2,
   Lock,
   Plus,
+  RefreshCw,
   Search,
   Settings,
   Shield,
@@ -43,6 +49,166 @@ import {
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
+
+interface InviteLinkSectionProps {
+  chatId: string;
+  inviteCode: string | null | undefined;
+  isPublic: boolean;
+  isAdminOrOwner: boolean;
+  inviteExpiresAt?: string | null;
+}
+
+const InviteLinkSection = ({
+  chatId,
+  inviteCode,
+  isPublic,
+  isAdminOrOwner,
+  inviteExpiresAt,
+}: InviteLinkSectionProps) => {
+  const { mutate: resetInvite, isPending: isResetting } = useResetInviteCode();
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const isExpired = inviteExpiresAt ? new Date(inviteExpiresAt) < new Date() : false;
+
+  const inviteLink = inviteCode ? `${window.location.origin}/invite/${inviteCode}` : "";
+
+  const handleCopy = () => {
+    if (!inviteLink) return;
+    navigator.clipboard.writeText(inviteLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    toast.success("Link copied to clipboard");
+  };
+
+  const handleReset = () => {
+    resetInvite(chatId, {
+      onSuccess: () => {
+        setIsResetConfirmOpen(false);
+      },
+    });
+  };
+
+  if (!inviteCode) {
+    return null;
+  }
+
+  return (
+    <div className="flex flex-col gap-2 mb-4">
+      <div className="flex items-center justify-between">
+        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          Invite Link
+        </div>
+        {!isPublic && (
+          <div className="flex flex-col items-end gap-0.5">
+            <span className="text-[10px] text-green-600 font-medium bg-green-500/10 px-2 py-0.5 rounded-full border border-green-500/20">
+              Active
+            </span>
+            {inviteExpiresAt && (
+              <span className="text-[9px] text-muted-foreground">
+                Expires{" "}
+                {new Date(inviteExpiresAt).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </span>
+            )}
+          </div>
+        )}
+        {isPublic && (
+          <span className="text-[10px] text-blue-600 font-medium bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">
+            Permanent
+          </span>
+        )}
+      </div>
+
+      <div
+        className={`p-3 border rounded-md ${isExpired ? "bg-red-500/5 border-red-200 dark:border-red-900/50" : "bg-muted/30"}`}
+      >
+        <div className="flex items-center gap-2 mb-3">
+          <Input
+            readOnly
+            value={isExpired ? "Invite link has expired" : inviteLink}
+            className={`flex-1 h-9 font-mono text-xs ${isExpired ? "text-muted-foreground line-through opacity-70" : ""}`}
+            onClick={(e) => !isExpired && (e.target as HTMLInputElement).select()}
+          />
+          <Button
+            size="icon"
+            variant="outline"
+            className="h-9 w-9 shrink-0"
+            onClick={handleCopy}
+            disabled={!inviteCode || isExpired}
+            title="Copy Link"
+          >
+            {copied ? (
+              <span className="text-green-500 font-bold">✓</span>
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+
+        <div className="flex items-center justify-between gap-3">
+          {isAdminOrOwner ? (
+            <>
+              <span className="text-[10px] text-muted-foreground leading-tight">
+                {isExpired
+                  ? "Generate a new link to allow users to join."
+                  : "Resetting will invalidate the current link immediately."}
+              </span>
+
+              {isExpired ? (
+                <Button
+                  size="sm"
+                  onClick={handleReset}
+                  disabled={isResetting}
+                  className="h-7 text-xs"
+                >
+                  {isResetting ? (
+                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                  ) : (
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                  )}
+                  Generate New Link
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                  onClick={() => setIsResetConfirmOpen(true)}
+                  disabled={isResetting}
+                >
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  Reset Link
+                </Button>
+              )}
+            </>
+          ) : (
+            <span className="text-[10px] text-muted-foreground leading-tight">
+              Share this link to invite others to the group.
+            </span>
+          )}
+        </div>
+      </div>
+
+      <ConfirmationDialog
+        open={isResetConfirmOpen}
+        onOpenChange={setIsResetConfirmOpen}
+        title="Reset Invite Link?"
+        description="The current invite link will no longer work. Users attempting to join with the old link will be rejected. Are you sure you want to generate a new one?"
+        confirmText="Reset Link"
+        cancelText="Cancel"
+        variant="destructive"
+        onConfirm={handleReset}
+        isLoading={isResetting}
+        className="z-[75]"
+        overlayClassName="z-[70]"
+      />
+    </div>
+  );
+};
 
 interface GroupProfileDialogProps {
   isOpen: boolean;
@@ -318,6 +484,17 @@ export function GroupProfileDialog({
                     )}
                   </div>
                 </div>
+
+                {(chat.is_public || chat.my_role === "owner" || chat.my_role === "admin") &&
+                  chat.invite_code && (
+                    <InviteLinkSection
+                      chatId={chat.id}
+                      inviteCode={chat.invite_code}
+                      isPublic={!!chat.is_public}
+                      isAdminOrOwner={chat.my_role === "owner" || chat.my_role === "admin"}
+                      inviteExpiresAt={chat.invite_expires_at}
+                    />
+                  )}
 
                 <div className="shrink-0 flex flex-col gap-2">
                   {(chat.my_role === "owner" || chat.my_role === "admin") && (

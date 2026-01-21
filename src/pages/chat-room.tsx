@@ -60,6 +60,30 @@ const ChatRoom = () => {
     return () => setActiveChatId(null);
   }, [currentChatId, setActiveChatId]);
 
+  useEffect(() => {
+    const handleKicked = (e: CustomEvent<{ chatId: string }>) => {
+      console.log("[ChatRoom] KICK EVENT RECEIVED!", {
+        eventChatId: e.detail.chatId,
+        currentChatId,
+        match: e.detail.chatId === currentChatId,
+      });
+
+      if (e.detail.chatId === currentChatId) {
+        console.warn("[ChatRoom] MATCH! Redirecting to home...");
+        navigate("/", { replace: true });
+      } else {
+        console.log("[ChatRoom] ID Mismatch, ignoring.");
+      }
+    };
+
+    console.log("[ChatRoom] Registering kick listener for:", currentChatId);
+    window.addEventListener("kicked-from-chat", handleKicked as EventListener);
+    return () => {
+      console.log("[ChatRoom] Unregistering kick listener for:", currentChatId);
+      window.removeEventListener("kicked-from-chat", handleKicked as EventListener);
+    };
+  }, [currentChatId, navigate]);
+
   useLayoutEffect(() => {
     if ("scrollRestoration" in history) {
       history.scrollRestoration = "manual";
@@ -244,16 +268,28 @@ const ChatRoom = () => {
     setAnchorMessageId(targetId);
   }, []);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const { jumpToMessage: internalJumpToMessage, highlightedMessageId } = useJumpToMessage({
     onRemoteJump: handleRemoteJump,
+    scrollRef: containerRef,
   });
 
   const handleJumpToMessage = useCallback(
     (targetId: string, fromMessageId?: string) => {
       if (fromMessageId) {
         setReturnToMessageId(fromMessageId);
+      } else {
+        setAnchorMessageId(null);
       }
-      internalJumpToMessage(targetId);
+      isJumpingRef.current = true;
+
+      requestAnimationFrame(() => {
+        internalJumpToMessage(targetId);
+        setTimeout(() => {
+          isJumpingRef.current = false;
+        }, 1000);
+      });
     },
     [internalJumpToMessage]
   );
@@ -282,6 +318,7 @@ const ChatRoom = () => {
       setReturnToMessageId,
       isPartnerTyping,
       isJumpingRef,
+      scrollRef: containerRef,
     });
 
   const prevIsFetchingNextPage = useRef(isFetchingNextPage);
@@ -639,7 +676,7 @@ const ChatRoom = () => {
                 >
                   <div
                     className={cn(
-                      "flex flex-col gap-2 w-full transition-opacity",
+                      "flex flex-col gap-3 w-full transition-opacity",
                       !isScrollReady && !anchorMessageId
                         ? "opacity-0 duration-0"
                         : "opacity-100 duration-500"

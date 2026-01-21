@@ -31,6 +31,10 @@ export function getSystemMessageText(message: Message, currentUserId?: string): 
       return `${actorSubject} demoted ${targetName} to ${actionData.new_role}`;
     case "system_transfer":
       return `${actorSubject} transferred ownership to ${targetName}`;
+    case "system_visibility":
+      return `${actorSubject} made the group ${actionData.new_visibility}`;
+    case "system_join":
+      return `${actorSubject} joined the group`;
     default:
       return message.content || "System notification";
   }

@@ -1,32 +1,25 @@
 import { useAuthStore, useUIStore } from "@/store";
 import { Message } from "@/types";
-import {
-  AlignLeft,
-  Crown,
-  DoorOpen,
-  Image as ImageIcon,
-  Pencil,
-  Plus,
-  Settings,
-  Shield,
-  User,
-  UserMinus,
-  UserPlus,
-} from "lucide-react";
 
 interface SystemMessageProps {
   message: Message;
 }
 
+const truncateString = (str: string, num: number) => {
+  if (str.length <= num) {
+    return str;
+  }
+  return str.slice(0, num) + "...";
+};
+
 const SystemMessageUserLink = ({ userId, name }: { userId?: string; name: string }) => {
   const { user: currentUser } = useAuthStore();
   const openProfileModal = useUIStore((state) => state.openProfileModal);
   const isMe = currentUser?.id === userId;
+  const displayName = truncateString(name, 30);
 
   if (!userId) {
-    return (
-      <span className="max-w-[100px] truncate inline-block align-bottom font-medium">{name}</span>
-    );
+    return <span className="font-medium align-bottom">{displayName}</span>;
   }
 
   if (isMe) {
@@ -39,9 +32,9 @@ const SystemMessageUserLink = ({ userId, name }: { userId?: string; name: string
         e.stopPropagation();
         openProfileModal(userId);
       }}
-      className="cursor-pointer hover:no-underline hover:opacity-80 transition-opacity font-medium max-w-[100px] truncate inline-block align-bottom"
+      className="cursor-pointer hover:no-underline hover:opacity-80 transition-opacity font-medium align-bottom"
     >
-      {name}
+      {displayName}
     </span>
   );
 };
@@ -60,116 +53,101 @@ export const SystemMessage = ({ message }: SystemMessageProps) => {
     switch (msg.type) {
       case "system_create":
         return (
-          <>
-            <Plus className="w-3.5 h-3.5 mr-1" />
-            <span>
-              Group "
-              <span className="max-w-[150px] truncate inline-block align-bottom font-medium">
-                {actionData.initial_name || "Group"}
-              </span>
-              " created by <Actor />
+          <span>
+            Group "
+            <span className="font-medium align-bottom">
+              {truncateString(actionData.initial_name || "Group", 30)}
             </span>
-          </>
+            " created by <Actor />
+          </span>
         );
       case "system_rename":
         return (
-          <>
-            <Pencil className="w-3.5 h-3.5 mr-1" />
-            <span>
-              <Actor /> changed group name to "
-              <span className="max-w-[150px] truncate inline-block align-bottom font-medium">
-                {actionData.new_name}
-              </span>
-              "
+          <span>
+            <Actor /> changed group name to "
+            <span className="font-medium align-bottom">
+              {truncateString(actionData.new_name, 30)}
             </span>
-          </>
+            "
+          </span>
         );
       case "system_description":
         return (
-          <>
-            <AlignLeft className="w-3.5 h-3.5 mr-1" />
-            <span>
-              <Actor /> updated group description
-            </span>
-          </>
+          <span>
+            <Actor /> updated group description
+          </span>
         );
-      case "system_avatar":
+      case "system_avatar": {
         const isRemoved = actionData.action === "removed" || actionData.delete_avatar === "true";
         return (
-          <>
-            <ImageIcon className="w-3.5 h-3.5 mr-1" />
-            <span>
-              <Actor /> {isRemoved ? "removed group icon" : "updated group icon"}
-            </span>
-          </>
+          <span>
+            <Actor /> {isRemoved ? "removed group icon" : "updated group icon"}
+          </span>
         );
+      }
       case "system_add":
         return (
-          <>
-            <UserPlus className="w-3.5 h-3.5 mr-1" />
-            <span>
-              <Actor /> added <Target />
-            </span>
-          </>
+          <span>
+            <Actor /> added <Target />
+          </span>
         );
       case "system_leave":
         return (
-          <>
-            <DoorOpen className="w-3.5 h-3.5 mr-1" />
-            <span>
-              <Actor /> left the group
-            </span>
-          </>
+          <span>
+            <Actor /> left the group
+          </span>
         );
       case "system_kick":
         return (
-          <>
-            <UserMinus className="w-3.5 h-3.5 mr-1" />
-            <span>
-              <Actor /> removed <Target />
-            </span>
-          </>
+          <span>
+            <Actor /> removed <Target />
+          </span>
         );
       case "system_promote":
-        return (
-          <>
-            <Shield className="w-3.5 h-3.5 mr-1" />
-            <span>
-              <Actor /> promoted <Target /> to {actionData.new_role}
-            </span>
-          </>
-        );
-      case "system_demote":
-        return (
-          <>
-            <User className="w-3.5 h-3.5 mr-1" />
-            <span>
-              <Actor /> demoted <Target /> to {actionData.new_role}
-            </span>
-          </>
-        );
-      case "system_transfer":
-        return (
-          <>
-            <Crown className="w-3.5 h-3.5 mr-1" />
+        if (actionData.new_role === "owner" || actionData.action === "ownership_transferred") {
+          return (
             <span>
               <Actor /> transferred ownership to <Target />
             </span>
-          </>
+          );
+        }
+        return (
+          <span>
+            <Actor /> promoted <Target /> to {actionData.new_role}
+          </span>
+        );
+      case "system_demote":
+        return (
+          <span>
+            <Actor /> demoted <Target /> to {actionData.new_role}
+          </span>
+        );
+      case "system_transfer":
+        return (
+          <span>
+            <Actor /> transferred ownership to <Target />
+          </span>
+        );
+      case "system_join":
+        return (
+          <span>
+            <Actor /> joined the group
+          </span>
+        );
+      case "system_visibility":
+        return (
+          <span>
+            <Actor /> made the group {actionData.new_visibility}
+          </span>
         );
       default:
-        return (
-          <>
-            <Settings className="w-3.5 h-3.5 mr-1" />
-            <span>{msg.content || "System notification"}</span>
-          </>
-        );
+        return <span>{msg.content || "System notification"}</span>;
     }
   };
 
   return (
-    <div className="flex justify-center">
-      <div className="bg-background border text-foreground rounded-full px-3 py-1 text-xs font-normal flex items-center justify-center">
+    <div className="flex justify-center text-center">
+      <div className="bg-background border text-foreground rounded-full px-3 py-1.5 text-xs font-normal inline-block text-center w-fit max-w-[85%] break-words">
         {getSystemMessageNodes(message)}
       </div>
     </div>

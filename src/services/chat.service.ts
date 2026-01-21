@@ -150,6 +150,46 @@ export const chatService = {
     );
     return response.data;
   },
+
+  async getGroupInviteCode(
+    groupId: string,
+    signal?: AbortSignal
+  ): Promise<{ code: string; expires_at: string }> {
+    const response = await api.get<
+      ApiResponse<{ invite_code?: string; code?: string; expires_at: string }>
+    >(`/api/chats/group/${groupId}/invite`, { signal });
+    const data = response.data.data;
+    return {
+      code: data.invite_code || data.code,
+      expires_at: data.expires_at,
+    };
+  },
+
+  async resetGroupInviteCode(groupId: string): Promise<{ code: string; expires_at: string }> {
+    const response = await api.put<
+      ApiResponse<{ invite_code?: string; code?: string; expires_at: string }>
+    >(`/api/chats/group/${groupId}/invite`);
+    const data = response.data.data;
+    return {
+      code: data.invite_code || data.code,
+      expires_at: data.expires_at,
+    };
+  },
+
+  async getGroupPreview(inviteCode: string, signal?: AbortSignal): Promise<ChatListItem> {
+    const response = await api.get<ApiResponse<ChatListItem>>(
+      `/api/chats/group/invite/${inviteCode}`,
+      { signal }
+    );
+    return response.data.data;
+  },
+
+  async joinGroupByInvite(inviteCode: string): Promise<ChatListItem> {
+    const response = await api.post<ApiResponse<ChatListItem>>("/api/chats/group/join/invite", {
+      invite_code: inviteCode,
+    });
+    return response.data.data;
+  },
 };
 
 export default chatService;

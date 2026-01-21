@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar.tsx";
 import { WebSocketProvider } from "@/context/websocket-context";
 import ChatRoom from "@/pages/chat-room.tsx";
+import InvitePage from "@/pages/invite";
 import Login from "@/pages/login";
 import Verify from "@/pages/verify";
 import { AnimatePresence } from "framer-motion";
@@ -53,7 +54,6 @@ const AnimatedRoutes = () => {
       return "app-layout";
     }
     return pathname;
-    return pathname;
   };
 
   const navigate = useNavigate();
@@ -72,6 +72,8 @@ const AnimatedRoutes = () => {
   return (
     <AnimatePresence mode="wait" initial={true}>
       <Routes location={location} key={getPageKey(location.pathname)}>
+        <Route path="/invite/:code" element={<InvitePage />} />
+
         <Route element={<PublicRoute />}>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Verify />} />

@@ -44,6 +44,8 @@ export interface ChatListItem {
   other_user_is_banned?: boolean;
   member_count?: number;
   is_public?: boolean;
+  invite_code?: string | null;
+  invite_expires_at?: string | null;
 }
 
 /**

@@ -342,3 +342,38 @@ export const useTransferOwnership = () => {
     },
   });
 };
+
+export const useResetInviteCode = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (groupId: string) => chatService.resetGroupInviteCode(groupId),
+    onSuccess: (data, groupId) => {
+      queryClient.setQueryData<ChatListItem>(["chat", groupId], (oldChat) => {
+        if (!oldChat) return oldChat;
+        return { ...oldChat, invite_code: data.code };
+      });
+      queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
+        { queryKey: ["chats"] },
+        (oldData) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page) => ({
+              ...page,
+              data: page.data.map((chat) =>
+                chat.id === groupId ? { ...chat, invite_code: data.code } : chat
+              ),
+            })),
+          };
+        }
+      );
+      toast.success("Invite link has been reset");
+    },
+    onError: (error) => {
+      console.error("Failed to reset invite code:", error);
+      const axiosError = error as AxiosError<ApiError>;
+      toast.error(axiosError.response?.data?.error || "Failed to reset invite link");
+    },
+  });
+};
