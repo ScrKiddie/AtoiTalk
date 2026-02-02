@@ -51,7 +51,12 @@ export const useUpdateGroup = () => {
       );
       queryClient.setQueryData<ChatListItem>(["chat", groupId], (oldChat) => {
         if (!oldChat) return updatedGroup;
-        return { ...oldChat, ...updatedGroup };
+        const inviteCode = updatedGroup.invite_code || (updatedGroup as { code?: string }).code;
+        return {
+          ...oldChat,
+          ...updatedGroup,
+          invite_code: inviteCode !== undefined ? inviteCode : oldChat.invite_code,
+        };
       });
       toast.success("Group updated successfully");
     },

@@ -308,7 +308,11 @@ export const useChatWebSocket = (url: string) => {
               }
 
               if (payload.type === "system_visibility") {
-                const actionData = payload.action_data as { new_visibility?: "public" | "private" };
+                const actionData = payload.action_data as {
+                  new_visibility?: "public" | "private";
+                  invite_code?: string;
+                  invite_expires_at?: string;
+                };
                 const isPublic = actionData.new_visibility === "public";
 
                 queryClient.setQueryData<ChatListItem>(["chat", payload.chat_id], (oldChat) => {
@@ -316,7 +320,8 @@ export const useChatWebSocket = (url: string) => {
                   return {
                     ...oldChat,
                     is_public: isPublic,
-                    invite_code: !isPublic ? undefined : oldChat.invite_code,
+                    invite_code: actionData.invite_code || oldChat.invite_code,
+                    invite_expires_at: actionData.invite_expires_at || oldChat.invite_expires_at,
                   };
                 });
 
@@ -331,7 +336,9 @@ export const useChatWebSocket = (url: string) => {
                           return {
                             ...chat,
                             is_public: isPublic,
-                            invite_code: !isPublic ? undefined : chat.invite_code,
+                            invite_code: actionData.invite_code || chat.invite_code,
+                            invite_expires_at:
+                              actionData.invite_expires_at || chat.invite_expires_at,
                           };
                         }
                         return chat;
@@ -676,6 +683,8 @@ export const useChatWebSocket = (url: string) => {
               description: payload.description,
               is_public: payload.is_public,
               member_count: payload.member_count,
+              invite_code: payload.invite_code,
+              invite_expires_at: payload.invite_expires_at,
             };
 
             queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
@@ -697,6 +706,25 @@ export const useChatWebSocket = (url: string) => {
                 return { ...oldData, pages: newPages };
               }
             );
+
+            queryClient.setQueryData<ChatListItem>(["chat", payload.id], (oldChat) => {
+              if (oldChat) {
+                const merged = { ...oldChat };
+
+                if (payload.invite_code !== undefined) merged.invite_code = payload.invite_code;
+                if (payload.invite_expires_at !== undefined)
+                  merged.invite_expires_at = payload.invite_expires_at;
+
+                if (payload.name) merged.name = payload.name;
+                if (payload.avatar !== undefined) merged.avatar = payload.avatar;
+                if (payload.description !== undefined) merged.description = payload.description;
+                if (payload.member_count !== undefined) merged.member_count = payload.member_count;
+                if (payload.my_role !== undefined) merged.my_role = payload.my_role;
+
+                return merged;
+              }
+              return newChat;
+            });
             break;
           }
 

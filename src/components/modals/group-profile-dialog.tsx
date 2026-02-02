@@ -23,7 +23,7 @@ import {
   useTransferOwnership,
   useUpdateMemberRole,
 } from "@/hooks/mutations/use-group";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { useChat } from "@/hooks/queries";
 import { useInfiniteGroupMembers } from "@/hooks/queries/use-group-members";
@@ -67,7 +67,6 @@ const InviteLinkSection = ({
 }: InviteLinkSectionProps) => {
   const { mutate: resetInvite, isPending: isResetting } = useResetInviteCode();
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
 
   const isExpired = inviteExpiresAt ? new Date(inviteExpiresAt) < new Date() : false;
 
@@ -76,9 +75,9 @@ const InviteLinkSection = ({
   const handleCopy = () => {
     if (!inviteLink) return;
     navigator.clipboard.writeText(inviteLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    toast.success("Link copied to clipboard");
+    toast.success("Link copied to clipboard", {
+      id: "copy-invite-link-success",
+    });
   };
 
   const handleReset = () => {
@@ -141,11 +140,7 @@ const InviteLinkSection = ({
             disabled={!inviteCode || isExpired}
             title="Copy Link"
           >
-            {copied ? (
-              <span className="text-green-500 font-bold">✓</span>
-            ) : (
-              <Copy className="h-4 w-4" />
-            )}
+            <Copy className="h-4 w-4" />
           </Button>
         </div>
 
@@ -432,7 +427,7 @@ export function GroupProfileDialog({
             <div className="mt-4 flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar">
               <TabsContent
                 value="overview"
-                className="flex flex-col min-h-[400px]"
+                className="flex flex-col"
                 forceMount={activeTab === "overview" ? true : undefined}
               >
                 <div className="flex flex-col items-center gap-1 mb-4 w-full shrink-0 relative group/avatar">

@@ -16,7 +16,7 @@ const SystemMessageUserLink = ({ userId, name }: { userId?: string; name: string
   const { user: currentUser } = useAuthStore();
   const openProfileModal = useUIStore((state) => state.openProfileModal);
   const isMe = currentUser?.id === userId;
-  const displayName = truncateString(name, 30);
+  const displayName = truncateString(name, 15);
 
   if (!userId) {
     return <span className="font-medium align-bottom">{displayName}</span>;
@@ -56,7 +56,7 @@ export const SystemMessage = ({ message }: SystemMessageProps) => {
           <span>
             Group "
             <span className="font-medium align-bottom">
-              {truncateString(actionData.initial_name || "Group", 30)}
+              {truncateString(actionData.initial_name || "Group", 15)}
             </span>
             " created by <Actor />
           </span>
@@ -66,7 +66,7 @@ export const SystemMessage = ({ message }: SystemMessageProps) => {
           <span>
             <Actor /> changed group name to "
             <span className="font-medium align-bottom">
-              {truncateString(actionData.new_name, 30)}
+              {truncateString(actionData.new_name, 15)}
             </span>
             "
           </span>
@@ -147,7 +147,7 @@ export const SystemMessage = ({ message }: SystemMessageProps) => {
 
   return (
     <div className="flex justify-center text-center">
-      <div className="bg-background border text-foreground rounded-full px-3 py-1.5 text-xs font-normal inline-block text-center w-fit max-w-[85%] break-words">
+      <div className="bg-background border text-foreground rounded-full px-3 py-1.5 text-xs font-normal text-center w-fit max-w-[85%] break-words">
         {getSystemMessageNodes(message)}
       </div>
     </div>
