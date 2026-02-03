@@ -30,6 +30,7 @@ import {
   CheckCheck,
   EllipsisVertical,
   File,
+  Flag,
   Loader2,
   LogOut,
   RefreshCcw,
@@ -40,6 +41,7 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { BlockUserDialog } from "@/components/modals/block-user-dialog";
+import { ReportDialog } from "@/components/modals/report-dialog";
 import { UnblockUserDialog } from "@/components/modals/unblock-user-dialog";
 import { Button } from "@/components/ui/button";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog.tsx";
@@ -81,6 +83,12 @@ export function NavChat({
 
   const [userToBlock, setUserToBlock] = useState<string | null>(null);
   const [userToUnblock, setUserToUnblock] = useState<string | null>(null);
+  const [reportTarget, setReportTarget] = useState<{
+    type: "group" | "user";
+    id: string;
+    name: string;
+  } | null>(null);
+  const [isReportOpen, setIsReportOpen] = useState(false);
 
   const handleChatClick = (chat: ChatListItem) => {
     setActiveMenu(null);
@@ -283,9 +291,43 @@ export function NavChat({
                         )}
                       </DropdownMenuItem>
 
+                      {chat.type === "group" && chat.my_role === "member" && (
+                        <DropdownMenuItem
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            setActiveMenu(null);
+                            setReportTarget({
+                              type: "group",
+                              id: chat.id,
+                              name: chat.name,
+                            });
+                            setIsReportOpen(true);
+                          }}
+                        >
+                          <Flag className="text-muted-foreground mr-2 size-4" />
+                          <span>Report Group</span>
+                        </DropdownMenuItem>
+                      )}
+
                       {chat.type === "private" && chat.other_user_id && (
                         <>
                           <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              setActiveMenu(null);
+                              setReportTarget({
+                                type: "user",
+                                id: chat.other_user_id!,
+                                name: chat.name,
+                              });
+                              setIsReportOpen(true);
+                            }}
+                          >
+                            <Flag className="text-muted-foreground mr-2 size-4" />
+                            <span>Report User</span>
+                          </DropdownMenuItem>
+
                           {chat.is_blocked_by_me ? (
                             <DropdownMenuItem
                               onSelect={(e) => {
@@ -396,6 +438,16 @@ export function NavChat({
         }}
         isLoading={isHidingChat || isLeavingGroup || isDeletingGroup}
       />
+
+      {reportTarget && (
+        <ReportDialog
+          isOpen={isReportOpen}
+          onClose={setIsReportOpen}
+          targetType={reportTarget.type}
+          targetId={reportTarget.id}
+          targetName={reportTarget.name}
+        />
+      )}
 
       <BlockUserDialog
         open={!!userToBlock}

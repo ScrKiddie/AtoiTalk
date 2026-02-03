@@ -6,6 +6,7 @@ import {
   Ban,
   Check,
   CheckCheck,
+  Flag,
   RefreshCcw,
   Reply,
   SquarePen,
@@ -13,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 
+import { ReportDialog } from "@/components/modals/report-dialog";
 import { Spinner } from "@/components/ui/spinner.tsx";
 import { useUserById } from "@/hooks/queries";
 import { cn } from "@/lib/utils";
@@ -68,6 +70,7 @@ const MessageBubble = ({
   isBusy,
 }: MessageBubbleProps) => {
   const isCurrentUser = message.sender_id === current?.id;
+  const [isReportOpen, setIsReportOpen] = React.useState(false);
 
   const handleReply = () => {
     if (editMessage) {
@@ -338,7 +341,7 @@ const MessageBubble = ({
           {!isCurrentUser && !message.deleted_at && (
             <div
               className={cn(
-                "absolute top-1/2 -translate-y-1/2 left-full pl-2 flex items-center gap-1 z-10 transition-all duration-200 ease-in-out",
+                "absolute top-1/2 -translate-y-1/2 left-full pl-2 flex flex-col items-center gap-1 z-10 transition-all duration-200 ease-in-out",
                 "opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:delay-0",
                 activeMessageId === message.id && "opacity-100 visible"
               )}
@@ -362,10 +365,27 @@ const MessageBubble = ({
               >
                 <Reply className="text-foreground size-4" />
               </Button>
+
+              <Button
+                size={"icon"}
+                disabled={isBusy}
+                className="size-fit p-[6px] bg-background border rounded-full transition-all duration-200 hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => setIsReportOpen(true)}
+              >
+                <Flag className="text-foreground size-4" />
+              </Button>
             </div>
           )}
         </div>
       </motion.div>
+
+      <ReportDialog
+        isOpen={isReportOpen}
+        onClose={setIsReportOpen}
+        targetType="message"
+        targetId={message.id}
+        targetName="this message"
+      />
     </>
   );
 };

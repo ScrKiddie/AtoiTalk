@@ -34,21 +34,26 @@ import { InfiniteData, useQueryClient } from "@tanstack/react-query";
 import {
   Copy,
   Crown,
+  Flag,
   Globe,
   Info,
   Loader2,
   Lock,
+  LogOut,
   Plus,
   RefreshCw,
   Search,
   Settings,
   Shield,
+  SquarePen,
+  Trash2,
   User,
   UserMinus,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
+import { ReportDialog } from "./report-dialog";
 
 interface InviteLinkSectionProps {
   chatId: string;
@@ -230,6 +235,7 @@ export function GroupProfileDialog({
   const [transferCandidate, setTransferCandidate] = useState<GroupMember | null>(null);
   const [debouncedMemberSearch, setDebouncedMemberSearch] = useState("");
   const [isEditGroupOpen, setIsEditGroupOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
 
   const openProfileModal = useUIStore((state) => state.openProfileModal);
   const queryClient = useQueryClient();
@@ -466,6 +472,57 @@ export function GroupProfileDialog({
                   </div>
                 </div>
 
+                <div className="grid grid-cols-2 gap-4 w-full px-4 mb-4">
+                  {chat.my_role === "owner" || chat.my_role === "admin" ? (
+                    <>
+                      <Button
+                        variant="outline"
+                        className="flex-1 flex flex-col gap-1 h-auto py-3"
+                        onClick={() => setIsEditGroupOpen(true)}
+                      >
+                        <SquarePen className="size-5" />
+                        <span className="text-xs font-medium">Edit</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="flex-1 flex flex-col gap-1 h-auto py-3 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
+                        onClick={() => setIsLeaveConfirmOpen(true)}
+                      >
+                        {chat.my_role === "owner" ? (
+                          <>
+                            <Trash2 className="size-5" />
+                            <span className="text-xs font-medium">Delete</span>
+                          </>
+                        ) : (
+                          <>
+                            <LogOut className="size-5" />
+                            <span className="text-xs font-medium">Leave</span>
+                          </>
+                        )}
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        variant="outline"
+                        className="flex-1 flex flex-col gap-1 h-auto py-3 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
+                        onClick={() => setIsReportOpen(true)}
+                      >
+                        <Flag className="size-5" />
+                        <span className="text-xs font-medium">Report</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="flex-1 flex flex-col gap-1 h-auto py-3 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
+                        onClick={() => setIsLeaveConfirmOpen(true)}
+                      >
+                        <LogOut className="size-5" />
+                        <span className="text-xs font-medium">Leave</span>
+                      </Button>
+                    </>
+                  )}
+                </div>
+
                 <div className="flex flex-col min-h-0 mb-4">
                   <div className="flex items-center justify-between mb-1 shrink-0">
                     <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -490,21 +547,6 @@ export function GroupProfileDialog({
                       inviteExpiresAt={chat.invite_expires_at}
                     />
                   )}
-
-                <div className="shrink-0 flex flex-col gap-2">
-                  {(chat.my_role === "owner" || chat.my_role === "admin") && (
-                    <Button className="w-full h-9" onClick={() => setIsEditGroupOpen(true)}>
-                      Edit Group
-                    </Button>
-                  )}
-                  <Button
-                    variant="destructive"
-                    className="w-full h-9"
-                    onClick={() => setIsLeaveConfirmOpen(true)}
-                  >
-                    {chat.my_role === "owner" ? "Delete Group" : "Leave Group"}
-                  </Button>
-                </div>
               </TabsContent>
 
               <TabsContent
@@ -740,6 +782,13 @@ export function GroupProfileDialog({
       />
 
       <EditGroupDialog isOpen={isEditGroupOpen} onClose={setIsEditGroupOpen} chat={chat} />
+      <ReportDialog
+        isOpen={isReportOpen}
+        onClose={setIsReportOpen}
+        targetType="group"
+        targetId={chat.id}
+        targetName={chat.name}
+      />
     </>
   );
 }

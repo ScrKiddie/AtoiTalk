@@ -1,4 +1,5 @@
 import { BlockUserDialog } from "@/components/modals/block-user-dialog";
+import { ReportDialog } from "@/components/modals/report-dialog";
 import { UnblockUserDialog } from "@/components/modals/unblock-user-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { useChats, useCreatePrivateChat, useUserById } from "@/hooks/queries";
 import { toast } from "@/lib/toast";
 import { formatLastSeen } from "@/lib/utils";
 import { useAuthStore, useUIStore } from "@/store";
-import { Copy } from "lucide-react";
+import { Ban, Copy, Flag, MessageCircle } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -24,6 +25,7 @@ export function UserProfileDialog() {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isAvatarLoaded, setIsAvatarLoaded] = useState(false);
   const [isBlockConfirmOpen, setIsBlockConfirmOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
 
   const { user: currentUser } = useAuthStore();
   const navigate = useNavigate();
@@ -140,6 +142,63 @@ export function UserProfileDialog() {
                 </div>
               </div>
 
+              {currentUser?.id !== user.id && (
+                <div
+                  className={`grid gap-4 w-full px-4 mb-2 ${showDirectMessageButton && !isDirectMessageDisabled ? "grid-cols-3" : "grid-cols-2"}`}
+                >
+                  {showDirectMessageButton && !isDirectMessageDisabled && (
+                    <Button
+                      variant="outline"
+                      className="flex-1 flex flex-col gap-1 h-auto py-3"
+                      onClick={handleSendMessage}
+                      disabled={isCreatingChat || user.is_blocked_by_me || user.is_blocked_by_other}
+                    >
+                      {isCreatingChat ? (
+                        <Spinner className="size-5" />
+                      ) : (
+                        <MessageCircle className="size-5" />
+                      )}
+                      <span className="text-xs font-medium">Message</span>
+                    </Button>
+                  )}
+
+                  <Button
+                    variant="outline"
+                    className="flex-1 flex flex-col gap-1 h-auto py-3 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
+                    onClick={() => setIsReportOpen(true)}
+                  >
+                    <Flag className="size-5" />
+                    <span className="text-xs font-medium">Report</span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    className="flex-1 flex flex-col gap-1 h-auto py-3 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
+                    onClick={handleBlockUser}
+                  >
+                    <motion.div
+                      key={user.is_blocked_by_me ? "unblock" : "block"}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex flex-col items-center gap-1"
+                    >
+                      {user.is_blocked_by_me ? (
+                        <>
+                          <Ban className="size-5" />
+                          <span className="text-xs font-medium">Unblock</span>
+                        </>
+                      ) : (
+                        <>
+                          <Ban className="size-5" />
+                          <span className="text-xs font-medium">Block</span>
+                        </>
+                      )}
+                    </motion.div>
+                  </Button>
+                </div>
+              )}
+
               <div className="grid gap-4">
                 <div className="grid gap-1.5">
                   <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -176,41 +235,6 @@ export function UserProfileDialog() {
                     )}
                   </div>
                 </div>
-                {currentUser?.id !== user.id && (
-                  <div className="flex flex-col gap-2">
-                    {showDirectMessageButton && !isDirectMessageDisabled && (
-                      <Button
-                        className="w-full"
-                        onClick={handleSendMessage}
-                        disabled={
-                          isCreatingChat || user.is_blocked_by_me || user.is_blocked_by_other
-                        }
-                      >
-                        {isCreatingChat && <Spinner className="size-4 mr-2" />}
-                        {user.is_blocked_by_other
-                          ? "You have been blocked"
-                          : user.is_blocked_by_me
-                            ? "Unblock to message"
-                            : "Message"}
-                      </Button>
-                    )}
-
-                    <Button
-                      variant="destructive"
-                      className="w-full transition-all duration-300"
-                      onClick={handleBlockUser}
-                    >
-                      <motion.span
-                        key={user.is_blocked_by_me ? "unblock" : "block"}
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        {user.is_blocked_by_me ? "Unblock" : "Block"}
-                      </motion.span>
-                    </Button>
-                  </div>
-                )}
               </div>
             </div>
           ) : (
@@ -227,6 +251,14 @@ export function UserProfileDialog() {
 
       {user && (
         <>
+          <ReportDialog
+            isOpen={isReportOpen}
+            onClose={setIsReportOpen}
+            targetType="user"
+            targetId={user.id}
+            targetName={user.full_name}
+          />
+
           {user.is_blocked_by_me ? (
             <UnblockUserDialog
               userId={user.id}
