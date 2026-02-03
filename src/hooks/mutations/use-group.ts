@@ -382,3 +382,21 @@ export const useResetInviteCode = () => {
     },
   });
 };
+
+export const useJoinGroup = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (inviteCode: string) => chatService.joinGroupByInvite(inviteCode),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["chats"] });
+      queryClient.setQueryData<ChatListItem>(["chat", data.id], data);
+      toast.success("Joined group successfully");
+    },
+    onError: (error) => {
+      console.error("Failed to join group:", error);
+      const axiosError = error as AxiosError<ApiError>;
+      toast.error(axiosError.response?.data?.error || "Failed to join group");
+    },
+  });
+};

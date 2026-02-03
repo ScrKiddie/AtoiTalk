@@ -16,7 +16,7 @@ import {
 } from "@tanstack/react-query";
 import { useMemo } from "react";
 
-export function useChats(params?: GetChatsParams) {
+export function useChats(params?: GetChatsParams, options?: { enabled?: boolean }) {
   const normalizedQuery = params?.query || undefined;
 
   return useInfiniteQuery({
@@ -37,6 +37,7 @@ export function useChats(params?: GetChatsParams) {
     staleTime: 1000 * 30,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
+    enabled: options?.enabled,
   });
 }
 

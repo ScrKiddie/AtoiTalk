@@ -17,6 +17,7 @@ import {
 import { toast } from "@/lib/toast";
 import { useAuthStore, useChatStore } from "@/store";
 import { ChatListItem, EditMessageRequest, Media, Message, MessageType } from "@/types";
+import { AxiosError } from "axios";
 
 import ChatFooter from "@/components/chat/chat-footer";
 import ChatHeader from "@/components/chat/chat-header";
@@ -113,7 +114,18 @@ const ChatRoom = () => {
     isError: isMessagesError,
     isRefetching,
     refetch,
+    error: messagesError,
   } = useMessages(currentChatId, { anchorId: anchorMessageId ?? undefined });
+
+  useEffect(() => {
+    if (isMessagesError && messagesError) {
+      const axiosError = messagesError as AxiosError;
+      if (axiosError?.response?.status === 403) {
+        toast.error("You are not a member of this group");
+        navigate("/", { replace: true });
+      }
+    }
+  }, [isMessagesError, messagesError, navigate]);
 
   const messages = useMemo(
     () => messagesData?.pages.flatMap((p) => p.data || []).filter((m) => !!m) || [],
@@ -257,12 +269,14 @@ const ChatRoom = () => {
   const isGlobalBusy = isSending || isEditing || isDeleteSubmitting || isUploading;
 
   useEffect(() => {
-    if (currentChatId) {
-      if (!chat || (chat.unread_count && chat.unread_count > 0)) {
+    if (currentChatId && chat) {
+      if (chat.type === "group" && !chat.my_role) return;
+
+      if (chat.unread_count && chat.unread_count > 0) {
         markAsRead(currentChatId);
       }
     }
-  }, [currentChatId, chat, chat?.unread_count, markAsRead]);
+  }, [currentChatId, chat, markAsRead]);
 
   const handleRemoteJump = useCallback((targetId: string) => {
     setAnchorMessageId(targetId);

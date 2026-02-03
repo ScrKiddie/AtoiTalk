@@ -28,7 +28,7 @@ export function UserProfileDialog() {
   const { user: currentUser } = useAuthStore();
   const navigate = useNavigate();
   const { mutate: createPrivateChat, isPending: isCreatingChat } = useCreatePrivateChat();
-  const { data: chatsData } = useChats();
+  const { data: chatsData } = useChats(undefined, { enabled: isOpen });
 
   const handleBlockUser = () => {
     setIsBlockConfirmOpen(true);

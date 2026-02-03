@@ -35,7 +35,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     };
     debounced.cancel = () => clearTimeout(timeoutId);
     return debounced;
-  }, []);
+  }, [setSearchQuery]);
 
   React.useEffect(() => {
     return () => {
@@ -75,7 +75,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           refetch={refetch}
         />
       </SidebarContent>
-      <SidebarFooter className="border-t bg-background">
+      <SidebarFooter className="bg-background">
         {currentUser && (
           <NavFooter current={currentUser} activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
         )}

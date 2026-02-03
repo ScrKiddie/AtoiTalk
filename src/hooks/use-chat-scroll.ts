@@ -92,7 +92,7 @@ export const useChatScroll = ({
         prevScrollHeightRef.current = 0;
       }
     }
-  }, [messages, isFetchingNextPage, anchorMessageId]);
+  }, [messages, isFetchingNextPage, anchorMessageId, scrollRef]);
 
   useLayoutEffect(() => {
     if (scrollRef.current && messages.length > 0 && !isMessagesLoading) {
@@ -149,7 +149,7 @@ export const useChatScroll = ({
         }
       }
     }
-  }, [messages.length, currentChatId, isMessagesLoading, anchorMessageId]);
+  }, [messages.length, currentChatId, isMessagesLoading, anchorMessageId, scrollRef]);
 
   useEffect(() => {
     if (anchorMessageId) {
@@ -172,14 +172,14 @@ export const useChatScroll = ({
         });
       }
     }
-  }, [isPartnerTyping, anchorMessageId]);
+  }, [isPartnerTyping, anchorMessageId, scrollRef]);
 
   useEffect(() => {
     if (!scrollRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
     const isDistanceFromBottom = scrollHeight - scrollTop - clientHeight > 400;
     setShowScrollButton(isDistanceFromBottom || hasPreviousPage);
-  }, [hasPreviousPage, messages.length, anchorMessageId, returnToMessageId]);
+  }, [hasPreviousPage, messages.length, anchorMessageId, returnToMessageId, scrollRef]);
 
   const handleScroll = useCallback(
     (e: React.UIEvent<HTMLDivElement>) => {
@@ -262,7 +262,7 @@ export const useChatScroll = ({
         scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "auto" });
       }
     }, 0);
-  }, [anchorMessageId, setAnchorMessageId]);
+  }, [anchorMessageId, setAnchorMessageId, scrollRef]);
 
   return {
     scrollRef,

@@ -120,10 +120,7 @@ export function NavChat({
             const initials = getInitials(chat.name);
 
             return (
-              <SidebarMenuItem
-                key={chat.id}
-                className="border-b border-sidebar-border last:border-0 group-data-[collapsible=icon]:border-none"
-              >
+              <SidebarMenuItem className="border-b border-sidebar-border group-data-[collapsible=icon]:border-none">
                 <div
                   className="relative w-full"
                   onMouseEnter={() => setHoveredIndex(index)}

@@ -7,6 +7,7 @@ import type {
   SendMessageRequest,
 } from "@/types";
 import { InfiniteData, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { AxiosError } from "axios";
 
 export function useMessages(
   chatId: string | null,
@@ -42,7 +43,11 @@ export function useMessages(
     getPreviousPageParam: (firstPage) =>
       firstPage.meta.has_prev ? firstPage.meta.prev_cursor : undefined,
     enabled: chatId !== null,
-    retry: 3,
+    retry: (failureCount, error) => {
+      const axiosError = error as AxiosError;
+      if (axiosError?.response?.status === 403) return false;
+      return failureCount < 3;
+    },
     refetchOnWindowFocus: false,
   });
 }
