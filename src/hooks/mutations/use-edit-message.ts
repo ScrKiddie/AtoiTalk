@@ -1,8 +1,8 @@
+import { toast } from "@/lib/toast";
 import { messageService } from "@/services/message.service";
 import { ApiError, EditMessageRequest, Media, Message, PaginatedResponse } from "@/types";
 import { InfiniteData, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
-import { toast } from "sonner";
 
 interface EditMessageVariables {
   messageId: string;

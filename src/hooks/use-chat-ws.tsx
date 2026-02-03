@@ -578,6 +578,16 @@ export const useChatWebSocket = (url: string) => {
                   ...page,
                   data: page.data.map((chat: ChatListItem) => {
                     if (chat.type === "private" && chat.other_user_id === user_id) {
+                      queryClient.setQueryData<ChatListItem>(["chat", chat.id], (oldChat) => {
+                        if (!oldChat) return oldChat;
+                        return {
+                          ...oldChat,
+                          other_user_is_banned: data.type === "user.banned",
+                          other_user_is_deleted: data.type === "user.deleted",
+                          is_online: false,
+                        };
+                      });
+
                       return {
                         ...chat,
                         other_user_is_banned: data.type === "user.banned",

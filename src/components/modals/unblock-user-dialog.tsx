@@ -1,5 +1,6 @@
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useUnblockUser } from "@/hooks/mutations/use-block-user";
+import { useState } from "react";
 
 interface UnblockUserDialogProps {
   userId: string | null;
@@ -19,12 +20,18 @@ export function UnblockUserDialog({
   modal = true,
 }: UnblockUserDialogProps) {
   const { mutate: unblockUser, isPending } = useUnblockUser();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleConfirm = () => {
-    if (userId) {
+    if (userId && !isSubmitting) {
+      setIsSubmitting(true);
       unblockUser(userId, {
         onSuccess: () => {
           onOpenChange(false);
+          setIsSubmitting(false);
+        },
+        onError: () => {
+          setIsSubmitting(false);
         },
       });
     }

@@ -1,3 +1,4 @@
+import { toast } from "@/lib/toast";
 import { chatService } from "@/services";
 import { useChatStore } from "@/store";
 import type {
@@ -128,6 +129,10 @@ export function useCreatePrivateChat() {
       } catch (error) {
         console.error("Failed to fetch full chat details on create:", error);
       }
+    },
+    onError: (error) => {
+      console.error("Failed to create private chat:", error);
+      toast.error("Failed to start chat");
     },
   });
 }

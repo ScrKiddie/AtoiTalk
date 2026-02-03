@@ -214,9 +214,7 @@ export function UserProfileDialog() {
                       className="h-auto w-10 shrink-0 aspect-square"
                       onClick={() => {
                         navigator.clipboard.writeText(user.username);
-                        toast.success("Username copied to clipboard", {
-                          id: "copy-username-success",
-                        });
+                        toast.success("Username copied to clipboard");
                       }}
                     >
                       <Copy className="h-4 w-4" />

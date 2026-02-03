@@ -63,3 +63,10 @@ export interface AuthResponse {
   token: string;
   user: User;
 }
+
+/**
+ * Delete account request payload
+ */
+export interface DeleteAccountRequest {
+  password?: string;
+}

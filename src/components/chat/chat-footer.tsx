@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button.tsx";
 import { Card } from "@/components/ui/card.tsx";
 import * as FileUpload from "@/components/ui/file-upload";
+import { toast } from "@/lib/toast";
 import { ChatListItem, EditMessage, EditMessageRequest, Media, Message, User } from "@/types";
 import { File as FileIcon, Loader2, SendHorizonal, Shredder, Smile, Unlock, X } from "lucide-react";
-import { toast } from "sonner";
 
 import AttachmentCard from "@/components/attachment-card";
 import {
@@ -15,6 +15,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea.tsx";
 import { useWebSocketContext } from "@/context/websocket-context";
+import { useUserById } from "@/hooks/queries";
 import { useRefreshMedia } from "@/hooks/use-refresh-media";
 import { AnimatePresence, motion } from "motion/react";
 import * as React from "react";
@@ -90,9 +91,31 @@ const ChatFooter = ({
 
   const isBlockedByMe = partnerProfile?.is_blocked_by_me;
   const isBlockedByOther = partnerProfile?.is_blocked_by_other;
+  const isDeleted = chat?.type === "private" && chat?.other_user_is_deleted;
 
   const { sendTyping } = useWebSocketContext();
   const { mutateAsync: refreshMedia } = useRefreshMedia(chat?.id ?? "");
+
+  const {
+    data: replySender,
+    isError: isReplySenderError,
+    isLoading: isReplySenderLoading,
+  } = useUserById(replyTo?.sender_id ?? null);
+
+  const isReplyProfileMissing = !isReplySenderLoading && (!replySender || isReplySenderError);
+  const replySenderNameFromProfile = replySender?.full_name;
+
+  const effectiveReplySenderName = isReplyProfileMissing
+    ? "Deleted Account"
+    : replySenderNameFromProfile || replyTo?.sender_name || "Unknown User";
+
+  const isReplySenderDeleted =
+    effectiveReplySenderName === "Deleted Account" ||
+    effectiveReplySenderName === "Deleted User" ||
+    (!!replySender && !replySenderNameFromProfile) ||
+    isReplyProfileMissing;
+
+  const finalReplySenderName = isReplySenderDeleted ? "Deleted Account" : effectiveReplySenderName;
 
   const handleRefreshMedia = async (mediaId: string) => {
     if (!editMessage?.id) return;
@@ -156,6 +179,29 @@ const ChatFooter = ({
       fileListRef.current.scrollTop = fileListRef.current.scrollHeight;
     }
   }, [attachments, editMessage?.attachments, uploadingFiles]);
+
+  if (isDeleted) {
+    return (
+      <footer className="relative mx-auto p-2 gap-2 w-full flex flex-col items-start bg-background">
+        <FloatingChatButtons
+          showReturnButton={showReturnButton}
+          onReturnJump={onReturnJump}
+          showScrollButton={showScrollButton}
+          scrollToBottom={scrollToBottom}
+        />
+        <div className="flex items-center justify-center gap-2 bg-muted/30 p-2 rounded-xl border shadow-sm w-full min-h-[58px]">
+          <div className="flex flex-col items-center justify-center gap-0.5">
+            <p className="text-sm text-muted-foreground font-medium">
+              This account has been deleted.
+            </p>
+            <p className="text-[10px] text-muted-foreground">
+              You cannot send messages to this user.
+            </p>
+          </div>
+        </div>
+      </footer>
+    );
+  }
 
   if (isBlockedByMe) {
     return (
@@ -404,7 +450,7 @@ const ChatFooter = ({
                     </p>
                     {replyTo && (
                       <p className="text-sm font-semibold text-primary truncate">
-                        {replyTo.sender_id === current?.id ? "You" : replyTo.sender_name || "User"}
+                        {replyTo.sender_id === current?.id ? "You" : finalReplySenderName}
                       </p>
                     )}
                   </div>

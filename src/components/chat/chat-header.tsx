@@ -41,16 +41,21 @@ const ChatHeader = ({
 
   const { data: latestChat } = useChat(chat.id);
   const displayChat = latestChat || chat;
+  const isDeleted = displayChat.type === "private" && displayChat.other_user_is_deleted;
+  const displayName = isDeleted ? "Deleted Account" : displayChat.name;
 
   const [showGroupDialog, setShowGroupDialog] = useState(false);
 
-  const initials = getInitials(displayChat.name);
+  const initials = getInitials(displayName);
 
   let statusContent: React.ReactNode = "Messages";
   let statusColor = "text-muted-foreground";
 
   if (displayChat.type === "private") {
-    if (isProfileLoading) {
+    if (isDeleted) {
+      statusContent = "last seen a long time ago";
+      statusColor = "text-muted-foreground";
+    } else if (isProfileLoading) {
       statusContent = <Skeleton className="h-[13px] w-24 rounded-full" />;
     } else if (isProfileError) {
       statusContent = (
@@ -119,13 +124,13 @@ const ChatHeader = ({
 
             <div
               className={`flex items-center gap-2 transition-opacity ${
-                (displayChat.type === "private" && partnerProfile) ||
+                (displayChat.type === "private" && partnerProfile && !isDeleted) ||
                 (displayChat.type === "group" && !isChatLoading && !isChatError)
                   ? "cursor-pointer hover:opacity-80"
                   : "cursor-default"
               }`}
               onClick={() => {
-                if (displayChat.type === "private" && partnerId && partnerProfile) {
+                if (displayChat.type === "private" && partnerId && partnerProfile && !isDeleted) {
                   openProfileModal(partnerId, { hideMessageButton: true });
                 } else if (displayChat.type === "group" && !isChatLoading && !isChatError) {
                   setShowGroupDialog(true);
@@ -137,7 +142,10 @@ const ChatHeader = ({
                   <Skeleton className="size-full rounded-full" />
                 ) : (
                   <>
-                    <AvatarImage src={displayChat.avatar || undefined} className="object-cover" />
+                    <AvatarImage
+                      src={isDeleted ? undefined : displayChat.avatar || undefined}
+                      className="object-cover"
+                    />
                     <AvatarFallback>{initials}</AvatarFallback>
                   </>
                 )}
@@ -146,7 +154,7 @@ const ChatHeader = ({
                 {isProfileLoading || (displayChat.type === "group" && isChatLoading) ? (
                   <Skeleton className="h-[13px] w-32 mb-1" />
                 ) : (
-                  <span className="truncate font-medium">{displayChat.name}</span>
+                  <span className="truncate font-medium">{displayName}</span>
                 )}
                 <div className={`truncate text-xs ${statusColor} min-h-[16px] flex items-center`}>
                   {statusContent}

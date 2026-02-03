@@ -1,8 +1,8 @@
+import { toast } from "@/lib/toast";
 import { reportService } from "@/services";
 import { CreateReportRequest } from "@/types";
 import { useMutation } from "@tanstack/react-query";
 import { AxiosError } from "axios";
-import { toast } from "sonner";
 
 interface ErrorResponse {
   error: string;

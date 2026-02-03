@@ -1,15 +1,7 @@
+import { toast } from "@/lib/toast";
 import { chatService } from "@/services";
-import {
-  ApiError,
-  ChatListItem,
-  ChatResponse,
-  GroupMember,
-  Message,
-  PaginatedResponse,
-} from "@/types";
+import { ChatListItem, ChatResponse, GroupMember, Message, PaginatedResponse } from "@/types";
 import { InfiniteData, useMutation, useQueryClient } from "@tanstack/react-query";
-import { AxiosError } from "axios";
-import { toast } from "sonner";
 
 export const useCreateGroup = () => {
   const queryClient = useQueryClient();
@@ -23,8 +15,7 @@ export const useCreateGroup = () => {
     },
     onError: (error) => {
       console.error("Failed to create group:", error);
-      const axiosError = error as AxiosError<ApiError>;
-      toast.error(axiosError.response?.data?.error || "Failed to create group");
+      toast.error("Failed to create group");
     },
   });
 };
@@ -62,8 +53,7 @@ export const useUpdateGroup = () => {
     },
     onError: (error) => {
       console.error("Failed to update group:", error);
-      const axiosError = error as AxiosError<ApiError>;
-      toast.error(axiosError.response?.data?.error || "Failed to update group");
+      toast.error("Failed to update group");
     },
   });
 };
@@ -92,8 +82,7 @@ export const useLeaveGroup = () => {
     },
     onError: (error) => {
       console.error("Failed to leave group:", error);
-      const axiosError = error as AxiosError<ApiError>;
-      toast.error(axiosError.response?.data?.error || "Failed to leave group");
+      toast.error("Failed to leave group");
     },
   });
 };
@@ -121,8 +110,7 @@ export const useDeleteGroup = () => {
     },
     onError: (error) => {
       console.error("Failed to delete group:", error);
-      const axiosError = error as AxiosError<ApiError>;
-      toast.error(axiosError.response?.data?.error || "Failed to delete group");
+      toast.error("Failed to delete group");
     },
   });
 };
@@ -185,8 +173,7 @@ export const useAddGroupMember = () => {
     },
     onError: (error) => {
       console.error("Failed to add members:", error);
-      const axiosError = error as AxiosError<ApiError>;
-      toast.error(axiosError.response?.data?.error || "Failed to add members");
+      toast.error("Failed to add members");
     },
   });
 };
@@ -250,8 +237,7 @@ export const useKickGroupMember = () => {
     },
     onError: (error) => {
       console.error("Failed to remove member:", error);
-      const axiosError = error as AxiosError<ApiError>;
-      toast.error(axiosError.response?.data?.error || "Failed to remove member");
+      toast.error("Failed to remove member");
     },
   });
 };
@@ -295,8 +281,7 @@ export const useUpdateMemberRole = () => {
     },
     onError: (error) => {
       console.error("Failed to update role:", error);
-      const axiosError = error as AxiosError<ApiError>;
-      toast.error(axiosError.response?.data?.error || "Failed to update role");
+      toast.error("Failed to update role");
     },
   });
 };
@@ -342,8 +327,7 @@ export const useTransferOwnership = () => {
     },
     onError: (error) => {
       console.error("Failed to transfer ownership:", error);
-      const axiosError = error as AxiosError<ApiError>;
-      toast.error(axiosError.response?.data?.error || "Failed to transfer ownership");
+      toast.error("Failed to transfer ownership");
     },
   });
 };
@@ -377,8 +361,7 @@ export const useResetInviteCode = () => {
     },
     onError: (error) => {
       console.error("Failed to reset invite code:", error);
-      const axiosError = error as AxiosError<ApiError>;
-      toast.error(axiosError.response?.data?.error || "Failed to reset invite link");
+      toast.error("Failed to reset invite link");
     },
   });
 };
@@ -395,8 +378,7 @@ export const useJoinGroup = () => {
     },
     onError: (error) => {
       console.error("Failed to join group:", error);
-      const axiosError = error as AxiosError<ApiError>;
-      toast.error(axiosError.response?.data?.error || "Failed to join group");
+      toast.error("Failed to join group");
     },
   });
 };

@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import { useUserById } from "@/hooks/queries";
 import { cn } from "@/lib/utils";
 import { ChatListItem, Message, User } from "@/types";
 import { Ban, File as FileIcon } from "lucide-react";
@@ -18,14 +19,32 @@ export const MessageReplyPreview = ({
   isCurrentUser,
   jumpToMessage,
 }: MessageReplyPreviewProps) => {
+  const replySenderId = message.reply_to?.sender_id ?? null;
+
+  const {
+    data: sender,
+    isError: isSenderError,
+    isLoading: isSenderLoading,
+  } = useUserById(replySenderId);
+
   if (!message.reply_to) return null;
 
-  const isSelfReply =
-    message.reply_to &&
-    current &&
-    (message.reply_to.sender_id === current.id ||
-      message.reply_to.sender_name === current.full_name ||
-      message.reply_to.sender_name === current.email);
+  const isProfileMissing = !isSenderLoading && (!sender || isSenderError);
+  const senderNameFromProfile = sender?.full_name;
+
+  const senderName = isProfileMissing
+    ? "Deleted Account"
+    : senderNameFromProfile || message.reply_to.sender_name || "Unknown User";
+
+  const isSenderDeleted =
+    senderName === "Deleted Account" ||
+    senderName === "Deleted User" ||
+    (!!sender && !senderNameFromProfile) ||
+    isProfileMissing;
+
+  const finalSenderName = isSenderDeleted ? "Deleted Account" : senderName;
+
+  const isSelfReply = message.reply_to && current && message.reply_to.sender_id === current.id;
 
   const replyDate = message.reply_to.created_at ? new Date(message.reply_to.created_at) : null;
   const hiddenDate = chat?.hidden_at ? new Date(chat.hidden_at) : null;
@@ -52,7 +71,7 @@ export const MessageReplyPreview = ({
     >
       <div className={"flex justify-between items-center w-full gap-2"}>
         <p className="text-sm font-semibold text-primary truncate">
-          {isSelfReply ? "You" : message.reply_to.sender_name}
+          {isSelfReply ? "You" : finalSenderName}
         </p>
       </div>
       {message.reply_to.deleted_at ? (

@@ -1,5 +1,5 @@
+import { toast } from "@/lib/toast";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
 
 export function useJumpToMessage({
   onRemoteJump,

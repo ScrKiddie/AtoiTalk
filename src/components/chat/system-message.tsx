@@ -1,3 +1,4 @@
+import { useUserById } from "@/hooks/queries";
 import { useAuthStore, useUIStore } from "@/store";
 import { Message } from "@/types";
 
@@ -15,11 +16,38 @@ const truncateString = (str: string, num: number) => {
 const SystemMessageUserLink = ({ userId, name }: { userId?: string; name: string }) => {
   const { user: currentUser } = useAuthStore();
   const openProfileModal = useUIStore((state) => state.openProfileModal);
-  const isMe = currentUser?.id === userId;
-  const displayName = truncateString(name, 15);
 
-  if (!userId) {
-    return <span className="font-medium align-bottom">{displayName}</span>;
+  const { data: user, isError, isLoading } = useUserById(userId || null);
+
+  const isMe = currentUser?.id === userId;
+
+  const isProfileMissing = !isLoading && (!user || isError);
+  const userNameFromProfile = user?.full_name;
+
+  const effectiveName = isProfileMissing
+    ? "Deleted Account"
+    : userNameFromProfile || name || "Unknown User";
+
+  const isDeleted =
+    effectiveName === "Deleted Account" ||
+    effectiveName === "Deleted User" ||
+    (!!user && !userNameFromProfile) ||
+    isProfileMissing;
+
+  const displayName = truncateString(isDeleted ? "Deleted Account" : effectiveName, 15);
+
+  if (!userId || isDeleted) {
+    return (
+      <span
+        className={
+          isDeleted
+            ? "italic text-muted-foreground/80 font-medium align-bottom"
+            : "font-medium align-bottom"
+        }
+      >
+        {displayName}
+      </span>
+    );
   }
 
   if (isMe) {

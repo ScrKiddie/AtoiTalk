@@ -80,9 +80,7 @@ const InviteLinkSection = ({
   const handleCopy = () => {
     if (!inviteLink) return;
     navigator.clipboard.writeText(inviteLink);
-    toast.success("Link copied to clipboard", {
-      id: "copy-invite-link-success",
-    });
+    toast.success("Link copied to clipboard");
   };
 
   const handleReset = () => {
@@ -595,13 +593,27 @@ export function GroupProfileDialog({
                       >
                         <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden">
                           <Avatar>
-                            <AvatarImage src={member.avatar || undefined} />
-                            <AvatarFallback>{member.full_name[0]}</AvatarFallback>
+                            <AvatarImage
+                              src={
+                                !member.full_name || member.full_name === "Deleted Account"
+                                  ? undefined
+                                  : member.avatar || undefined
+                              }
+                            />
+                            <AvatarFallback>
+                              {!member.full_name || member.full_name === "Deleted Account"
+                                ? "?"
+                                : member.full_name[0]}
+                            </AvatarFallback>
                           </Avatar>
                           <div className="flex flex-col text-left min-w-0 w-full">
                             <div className="flex items-center gap-1.5">
                               <span className="text-sm font-medium truncate">
-                                {member.user_id === currentUser?.id ? "You" : member.full_name}
+                                {member.user_id === currentUser?.id
+                                  ? "You"
+                                  : !member.full_name || member.full_name === "Deleted Account"
+                                    ? "Deleted Account"
+                                    : member.full_name}
                               </span>
                               {member.role === "owner" && (
                                 <Shield className="size-3 text-yellow-500 fill-yellow-500 shrink-0" />
@@ -617,74 +629,82 @@ export function GroupProfileDialog({
                           </div>
                         </div>
 
-                        {member.user_id !== currentUser?.id && (
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="icon"
-                              variant="outline"
-                              className="size-8"
-                              onClick={() => handleViewMemberProfile(member)}
-                              title="View Profile"
-                            >
-                              <Info className="size-4" />
-                            </Button>
+                        {member.user_id !== currentUser?.id &&
+                          member.full_name &&
+                          member.full_name !== "Deleted Account" && (
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="icon"
+                                variant="outline"
+                                className="size-8"
+                                onClick={() => handleViewMemberProfile(member)}
+                                title="View Profile"
+                              >
+                                <Info className="size-4" />
+                              </Button>
 
-                            {chat.my_role === "owner" ? (
-                              <DropdownMenu modal={false}>
-                                <DropdownMenuTrigger asChild>
+                              {chat.my_role === "owner" ? (
+                                <DropdownMenu modal={false}>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button
+                                      size="icon"
+                                      variant="outline"
+                                      className="size-8"
+                                      title="Member Settings"
+                                    >
+                                      <Settings className="size-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-48 z-[65]">
+                                    {member.role === "member" && (
+                                      <DropdownMenuItem
+                                        onClick={() => handlePromoteToAdmin(member)}
+                                      >
+                                        <Shield className="mr-2 h-4 w-4 text-blue-500" />
+                                        <span>Promote to Admin</span>
+                                      </DropdownMenuItem>
+                                    )}
+                                    {member.role === "admin" && (
+                                      <DropdownMenuItem
+                                        onClick={() => handleDemoteToMember(member)}
+                                      >
+                                        <User className="mr-2 h-4 w-4" />
+                                        <span>Demote to Member</span>
+                                      </DropdownMenuItem>
+                                    )}
+                                    <DropdownMenuItem
+                                      onClick={() => handleTransferOwnership(member)}
+                                    >
+                                      <Crown className="mr-2 h-4 w-4 text-yellow-500" />
+                                      <span>Transfer Ownership</span>
+                                    </DropdownMenuItem>
+
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      className="text-destructive focus:text-destructive"
+                                      onClick={() => setKickCandidate(member)}
+                                    >
+                                      <UserMinus className="mr-2 h-4 w-4" />
+                                      <span>Remove Member</span>
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              ) : (
+                                chat.my_role === "admin" &&
+                                member.role === "member" && (
                                   <Button
                                     size="icon"
                                     variant="outline"
-                                    className="size-8"
-                                    title="Member Settings"
-                                  >
-                                    <Settings className="size-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-48 z-[65]">
-                                  {member.role === "member" && (
-                                    <DropdownMenuItem onClick={() => handlePromoteToAdmin(member)}>
-                                      <Shield className="mr-2 h-4 w-4 text-blue-500" />
-                                      <span>Promote to Admin</span>
-                                    </DropdownMenuItem>
-                                  )}
-                                  {member.role === "admin" && (
-                                    <DropdownMenuItem onClick={() => handleDemoteToMember(member)}>
-                                      <User className="mr-2 h-4 w-4" />
-                                      <span>Demote to Member</span>
-                                    </DropdownMenuItem>
-                                  )}
-                                  <DropdownMenuItem onClick={() => handleTransferOwnership(member)}>
-                                    <Crown className="mr-2 h-4 w-4 text-yellow-500" />
-                                    <span>Transfer Ownership</span>
-                                  </DropdownMenuItem>
-
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    className="text-destructive focus:text-destructive"
+                                    className="size-8 text-destructive hover:text-destructive"
                                     onClick={() => setKickCandidate(member)}
+                                    title="Remove Member"
                                   >
-                                    <UserMinus className="mr-2 h-4 w-4" />
-                                    <span>Remove Member</span>
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            ) : (
-                              chat.my_role === "admin" &&
-                              member.role === "member" && (
-                                <Button
-                                  size="icon"
-                                  variant="outline"
-                                  className="size-8 text-destructive hover:text-destructive"
-                                  onClick={() => setKickCandidate(member)}
-                                  title="Remove Member"
-                                >
-                                  <UserMinus className="size-4" />
-                                </Button>
-                              )
-                            )}
-                          </div>
-                        )}
+                                    <UserMinus className="size-4" />
+                                  </Button>
+                                )
+                              )}
+                            </div>
+                          )}
                       </div>
                     )}
                   />

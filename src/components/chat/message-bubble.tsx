@@ -105,20 +105,48 @@ const MessageBubble = ({
     }
   };
 
-  const { data: sender } = useUserById(
-    !isCurrentUser && chat?.type === "group" ? message.sender_id : null
-  );
+  const {
+    data: sender,
+    isError: isSenderError,
+    isLoading: isSenderLoading,
+  } = useUserById(!isCurrentUser && chat?.type === "group" ? message.sender_id : null);
+
+  const isProfileMissing = !isSenderLoading && (!sender || isSenderError);
+
+  const senderNameFromProfile = sender?.full_name;
+  const isProfileLoaded = !!sender;
+
+  const effectiveSenderName = isProfileLoaded
+    ? senderNameFromProfile || "Deleted Account"
+    : isProfileMissing
+      ? "Deleted Account"
+      : message.sender_name || "Unknown User";
 
   const senderName = isCurrentUser
     ? "You"
     : chat?.type === "group"
-      ? sender?.full_name || message.sender_name
+      ? effectiveSenderName
       : chat?.name || "Unknown User";
+
+  const isSenderDeleted =
+    !isCurrentUser &&
+    (senderName === "Deleted Account" ||
+      senderName === "Deleted User" ||
+      (chat?.type === "private" && chat.other_user_is_deleted) ||
+      (isProfileLoaded && !senderNameFromProfile) ||
+      isProfileMissing);
+
+  const finalSenderName = isSenderDeleted ? "Deleted Account" : senderName;
+
   const senderAvatar = isCurrentUser
     ? current?.avatar
     : chat?.type === "group"
       ? sender?.avatar || message.sender_avatar
       : chat?.avatar;
+
+  const isChatBlockedOrDeleted =
+    chat?.type === "private" &&
+    (chat?.is_blocked_by_me || chat?.is_blocked_by_other || chat?.other_user_is_deleted);
 
   const formattedTime = new Date(message.created_at).toLocaleTimeString([], {
     hour: "2-digit",
@@ -151,14 +179,20 @@ const MessageBubble = ({
         >
           {!isCurrentUser && chat?.type === "group" && (
             <Avatar
-              className="shrink-0 w-10 h-10 self-end cursor-pointer hover:opacity-80 transition-opacity"
+              className={cn(
+                "shrink-0 w-10 h-10 self-end transition-opacity",
+                isSenderDeleted ? "cursor-default opacity-80" : "cursor-pointer hover:opacity-80"
+              )}
               onClick={(e) => {
                 e.stopPropagation();
-                openProfileModal(message.sender_id);
+                if (!isSenderDeleted) openProfileModal(message.sender_id);
               }}
             >
-              <AvatarImage src={senderAvatar || undefined} className="object-cover w-full h-full" />
-              <AvatarFallback>{senderName.charAt(0).toUpperCase()}</AvatarFallback>
+              <AvatarImage
+                src={isSenderDeleted ? undefined : senderAvatar || undefined}
+                className="object-cover w-full h-full"
+              />
+              <AvatarFallback>{(finalSenderName || "?").charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
           )}
 
@@ -200,32 +234,35 @@ const MessageBubble = ({
                         activeMessageId === message.id && "opacity-100 visible"
                       )}
                     >
-                      {Date.now() - new Date(message.created_at).getTime() < 15 * 60 * 1000 && (
-                        <Button
-                          size={"icon"}
-                          disabled={isBusy}
-                          className="size-fit p-[6px] bg-foreground border rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEdit();
-                          }}
-                        >
-                          <SquarePen className="text-background size-4" />
-                        </Button>
-                      )}
+                      {!isChatBlockedOrDeleted &&
+                        Date.now() - new Date(message.created_at).getTime() < 15 * 60 * 1000 && (
+                          <Button
+                            size={"icon"}
+                            disabled={isBusy}
+                            className="size-fit p-[6px] bg-foreground border rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEdit();
+                            }}
+                          >
+                            <SquarePen className="text-background size-4" />
+                          </Button>
+                        )}
 
                       <div className="flex flex-col gap-1 items-center">
-                        <Button
-                          size={"icon"}
-                          disabled={isBusy}
-                          className="size-fit p-[6px] bg-foreground border rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleReply();
-                          }}
-                        >
-                          <Reply className="text-background size-4" />
-                        </Button>
+                        {!isChatBlockedOrDeleted && (
+                          <Button
+                            size={"icon"}
+                            disabled={isBusy}
+                            className="size-fit p-[6px] bg-foreground border rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleReply();
+                            }}
+                          >
+                            <Reply className="text-background size-4" />
+                          </Button>
+                        )}
                         <Button
                           size={"icon"}
                           disabled={isBusy}
@@ -254,13 +291,16 @@ const MessageBubble = ({
           >
             {!isCurrentUser && chat?.type === "group" && (
               <p
-                className="text-sm font-[500] line-clamp-1 cursor-pointer hover:opacity-80 transition-opacity text-foreground"
+                className={cn(
+                  "text-sm font-[500] line-clamp-1 transition-opacity text-foreground",
+                  isSenderDeleted ? "cursor-default" : "cursor-pointer hover:opacity-80"
+                )}
                 onClick={(e) => {
                   e.stopPropagation();
-                  openProfileModal(message.sender_id);
+                  if (!isSenderDeleted) openProfileModal(message.sender_id);
                 }}
               >
-                {senderName}
+                {finalSenderName}
               </p>
             )}
             {message.deleted_at ? (
@@ -346,25 +386,27 @@ const MessageBubble = ({
                 activeMessageId === message.id && "opacity-100 visible"
               )}
             >
-              <Button
-                size={"icon"}
-                disabled={isBusy}
-                className="size-fit p-[6px] bg-background border rounded-full transition-all duration-200 hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={() => {
-                  if (editMessage) {
-                    setEditMessage(null);
-                    setNewMessageText("");
-                    setAttachmentMode(false);
-                    if (textareaRef.current) {
-                      textareaRef.current.value = "";
+              {!isChatBlockedOrDeleted && (
+                <Button
+                  size={"icon"}
+                  disabled={isBusy}
+                  className="size-fit p-[6px] bg-background border rounded-full transition-all duration-200 hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => {
+                    if (editMessage) {
+                      setEditMessage(null);
+                      setNewMessageText("");
+                      setAttachmentMode(false);
+                      if (textareaRef.current) {
+                        textareaRef.current.value = "";
+                      }
                     }
-                  }
-                  setReplyTo(message);
-                  setTimeout(() => textareaRef.current?.focus(), 0);
-                }}
-              >
-                <Reply className="text-foreground size-4" />
-              </Button>
+                    setReplyTo(message);
+                    setTimeout(() => textareaRef.current?.focus(), 0);
+                  }}
+                >
+                  <Reply className="text-foreground size-4" />
+                </Button>
+              )}
 
               <Button
                 size={"icon"}

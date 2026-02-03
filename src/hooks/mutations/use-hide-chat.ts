@@ -1,8 +1,8 @@
+import { toast } from "@/lib/toast";
 import chatService from "@/services/chat.service";
 import { ApiError, ChatListItem, PaginatedResponse } from "@/types";
 import { InfiniteData, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
-import { toast } from "sonner";
 
 export const useHideChat = () => {
   const queryClient = useQueryClient();

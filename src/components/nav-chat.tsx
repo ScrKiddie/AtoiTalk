@@ -20,7 +20,6 @@ import { useDeleteGroup, useLeaveGroup } from "@/hooks/mutations/use-group";
 import { useHideChat } from "@/hooks/mutations/use-hide-chat";
 import { getInitials } from "@/lib/avatar-utils";
 import { formatChatPreviewDate } from "@/lib/date-utils";
-import { getSystemMessageText } from "@/lib/system-message-utils";
 import { cn } from "@/lib/utils";
 import { useAuthStore, useChatStore } from "@/store";
 import { ChatListItem } from "@/types";
@@ -29,7 +28,6 @@ import {
   Check,
   CheckCheck,
   EllipsisVertical,
-  File,
   Flag,
   Loader2,
   LogOut,
@@ -40,6 +38,7 @@ import {
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
+import { ChatPreviewText } from "@/components/chat/chat-preview-text";
 import { BlockUserDialog } from "@/components/modals/block-user-dialog";
 import { ReportDialog } from "@/components/modals/report-dialog";
 import { UnblockUserDialog } from "@/components/modals/unblock-user-dialog";
@@ -125,7 +124,9 @@ export function NavChat({
 
           {chats.map((chat, index) => {
             const menuId = `chat-${index}`;
-            const initials = getInitials(chat.name);
+            const isDeleted = chat.type === "private" && chat.other_user_is_deleted;
+            const displayName = isDeleted ? "Deleted Account" : chat.name;
+            const initials = getInitials(displayName);
 
             return (
               <SidebarMenuItem className="border-b border-sidebar-border group-data-[collapsible=icon]:border-none">
@@ -150,11 +151,14 @@ export function NavChat({
                   >
                     <div className="relative">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={chat.avatar || undefined} alt={chat.name} />
+                        <AvatarImage
+                          src={isDeleted ? undefined : chat.avatar || undefined}
+                          alt={displayName}
+                        />
                         <AvatarFallback>{initials}</AvatarFallback>
                       </Avatar>
 
-                      {chat.type === "private" && (
+                      {chat.type === "private" && !isDeleted && (
                         <span
                           className={`absolute bottom-0 right-0 z-20 h-2.5 w-2.5 rounded-full border-2 border-background ring-0 ${chat.is_online ? "bg-green-500" : "bg-gray-400"}`}
                         />
@@ -163,7 +167,7 @@ export function NavChat({
                     <div className="grid flex-1 text-left text-sm leading-tight ml-3 min-w-0 group-data-[collapsible=icon]:hidden">
                       <div className="flex justify-between items-center w-full min-w-0">
                         <span className="truncate font-medium flex-1 min-w-0 mr-2">
-                          {chat.name}
+                          {displayName}
                         </span>
                         <div className="flex items-center gap-1 pr-1 shrink-0">
                           {chat.type !== "group" &&
@@ -187,42 +191,7 @@ export function NavChat({
                             {chat.type === "group" ? "Someone is typing..." : "Typing..."}
                           </span>
                         ) : chat.last_message ? (
-                          <>
-                            {chat.type === "group" &&
-                              !chat.last_message.type.startsWith("system_") && (
-                                <>
-                                  <span className="text-foreground truncate max-w-[80px] shrink-0">
-                                    {chat.last_message.sender_id === currentUser?.id
-                                      ? "You"
-                                      : chat.last_message.sender_name}
-                                  </span>
-                                  <span className="text-foreground mr-0.5">: </span>
-                                </>
-                              )}
-                            {chat.last_message.type.startsWith("system_") ? (
-                              <span className="italic opacity-80 truncate">
-                                {getSystemMessageText(chat.last_message, currentUser?.id)}
-                              </span>
-                            ) : chat.last_message.deleted_at ? (
-                              <span className="italic opacity-70 flex items-center gap-1 min-w-0 truncate">
-                                <Ban className="size-3 shrink-0" />
-                                <span className="truncate">Pesan sudah dihapus</span>
-                              </span>
-                            ) : chat.last_message.content ? (
-                              <span className="truncate">{chat.last_message.content}</span>
-                            ) : chat.last_message.attachments &&
-                              chat.last_message.attachments.length > 0 ? (
-                              <span className="flex items-center gap-1 truncate">
-                                <File className="size-3 shrink-0" />
-                                <span className="truncate">File</span>
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-1 truncate">
-                                <File className="size-3 shrink-0" />
-                                <span className="truncate">File</span>
-                              </span>
-                            )}
-                          </>
+                          <ChatPreviewText chat={chat} currentUser={currentUser} />
                         ) : (
                           <span className="truncate">No messages</span>
                         )}
@@ -328,29 +297,30 @@ export function NavChat({
                             <span>Report User</span>
                           </DropdownMenuItem>
 
-                          {chat.is_blocked_by_me ? (
-                            <DropdownMenuItem
-                              onSelect={(e) => {
-                                e.preventDefault();
-                                setActiveMenu(null);
-                                setTimeout(() => setUserToUnblock(chat.other_user_id!), 100);
-                              }}
-                            >
-                              <Unlock className="text-muted-foreground mr-2 size-4" />
-                              <span>Unblock User</span>
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem
-                              onSelect={(e) => {
-                                e.preventDefault();
-                                setActiveMenu(null);
-                                setTimeout(() => setUserToBlock(chat.other_user_id!), 100);
-                              }}
-                            >
-                              <Ban className="text-muted-foreground mr-2 size-4" />
-                              <span>Block User</span>
-                            </DropdownMenuItem>
-                          )}
+                          {!chat.other_user_is_deleted &&
+                            (chat.is_blocked_by_me ? (
+                              <DropdownMenuItem
+                                onSelect={(e) => {
+                                  e.preventDefault();
+                                  setActiveMenu(null);
+                                  setTimeout(() => setUserToUnblock(chat.other_user_id!), 100);
+                                }}
+                              >
+                                <Unlock className="text-muted-foreground mr-2 size-4" />
+                                <span>Unblock User</span>
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem
+                                onSelect={(e) => {
+                                  e.preventDefault();
+                                  setActiveMenu(null);
+                                  setTimeout(() => setUserToBlock(chat.other_user_id!), 100);
+                                }}
+                              >
+                                <Ban className="text-muted-foreground mr-2 size-4" />
+                                <span>Block User</span>
+                              </DropdownMenuItem>
+                            ))}
                         </>
                       )}
                     </DropdownMenuContent>

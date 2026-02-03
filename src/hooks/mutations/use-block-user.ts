@@ -1,9 +1,8 @@
 import { toast } from "@/lib/toast";
 import { userService } from "@/services/user.service";
 import { useChatStore } from "@/store";
-import { ApiError, ChatListItem, PaginatedResponse, User } from "@/types";
+import { ChatListItem, PaginatedResponse, User } from "@/types";
 import { InfiniteData, useMutation, useQueryClient } from "@tanstack/react-query";
-import { AxiosError } from "axios";
 
 export const useBlockUser = () => {
   const queryClient = useQueryClient();
@@ -42,9 +41,8 @@ export const useBlockUser = () => {
       queryClient.invalidateQueries({ queryKey: ["users", "search"] });
       toast.success("User blocked successfully");
     },
-    onError: (error) => {
-      const axiosError = error as AxiosError<ApiError>;
-      toast.error(axiosError.response?.data?.error || "Failed to block user");
+    onError: () => {
+      toast.error("Failed to block user");
     },
   });
 };
@@ -108,9 +106,8 @@ export const useUnblockUser = () => {
       queryClient.invalidateQueries({ queryKey: ["users", "search"] });
       toast.success("User unblocked successfully");
     },
-    onError: (error) => {
-      const axiosError = error as AxiosError<ApiError>;
-      toast.error(axiosError.response?.data?.error || "Failed to unblock user");
+    onError: () => {
+      toast.error("Failed to unblock user");
     },
   });
 };

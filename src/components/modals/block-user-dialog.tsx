@@ -1,5 +1,6 @@
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useBlockUser } from "@/hooks/mutations/use-block-user";
+import { useState } from "react";
 
 interface BlockUserDialogProps {
   userId: string | null;
@@ -20,11 +21,18 @@ export function BlockUserDialog({
 }: BlockUserDialogProps) {
   const { mutate: blockUser, isPending } = useBlockUser();
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleConfirm = () => {
-    if (userId) {
+    if (userId && !isSubmitting) {
+      setIsSubmitting(true);
       blockUser(userId, {
         onSuccess: () => {
           onOpenChange(false);
+          setIsSubmitting(false);
+        },
+        onError: () => {
+          setIsSubmitting(false);
         },
       });
     }

@@ -2,6 +2,7 @@ import Logo from "@/components/logo";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { getInitials } from "@/lib/avatar-utils";
+import { toast } from "@/lib/toast";
 import { chatService } from "@/services";
 import { useAuthStore } from "@/store";
 import { ChatListItem } from "@/types";
@@ -9,7 +10,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Loader2, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { toast } from "sonner";
 
 export default function InvitePage() {
   const { code } = useParams<{ code: string }>();

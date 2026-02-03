@@ -4,6 +4,7 @@ import type {
   AuthResponse,
   ChangeEmailRequest,
   ChangePasswordRequest,
+  DeleteAccountRequest,
   GoogleLoginRequest,
   LoginRequest,
   RegisterUserRequest,
@@ -57,6 +58,13 @@ export const authService = {
    */
   async changePassword(data: ChangePasswordRequest): Promise<void> {
     await api.put("/api/account/password", data);
+  },
+
+  /**
+   * Delete user account
+   */
+  async deleteAccount(data: DeleteAccountRequest): Promise<void> {
+    await api.delete("/api/account", { data });
   },
 
   /**

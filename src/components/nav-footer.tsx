@@ -1,4 +1,5 @@
 import { InfiniteUserList } from "@/components/infinite-user-list";
+import { DeleteAccountDialog } from "@/components/modals/delete-account-dialog";
 import { UnblockUserDialog } from "@/components/modals/unblock-user-dialog";
 import { LoadingModal } from "@/components/ui/loading-modal";
 import {
@@ -33,6 +34,7 @@ import { ImageCropper } from "./image-cropper";
 
 import { GlobalLightbox } from "@/components/ui/lightbox";
 import {
+  AlertTriangle,
   Ban,
   Camera,
   ChevronsUpDown,
@@ -145,6 +147,7 @@ export function NavFooter({
   const [isLoadingBlockedUsers, setIsLoadingBlockedUsers] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isModalAvatarLoaded, setIsModalAvatarLoaded] = useState(false);
+  const [openDeleteAccount, setOpenDeleteAccount] = useState(false);
 
   const navigate = useNavigate();
   const setGlobalLoading = useUIStore((state) => state.setGlobalLoading);
@@ -678,6 +681,19 @@ export function NavFooter({
                 >
                   <Ban />
                   Blocked Users
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onSelect={() => {
+                    setActiveMenu(null);
+                    setOpenDeleteAccount(true);
+                  }}
+                >
+                  <AlertTriangle className="h-4 w-4" />
+                  Delete Account
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
@@ -1343,6 +1359,24 @@ export function NavFooter({
         }}
         userId={userToUnblock}
       />
+
+      <DeleteAccountDialog
+        isOpen={openDeleteAccount}
+        onClose={setOpenDeleteAccount}
+        hasPassword={activeUser.has_password}
+        onSuccess={() => {
+          toast.success("Account deleted successfully.");
+          setOpenDeleteAccount(false);
+          setGlobalLoading(true, "Goodbye...");
+          setTimeout(() => {
+            logout().then(() => {
+              navigate("/login");
+              setGlobalLoading(false);
+            });
+          }, 2000);
+        }}
+      />
+
       <GlobalLightbox
         open={isLightboxOpen}
         close={() => setIsLightboxOpen(false)}

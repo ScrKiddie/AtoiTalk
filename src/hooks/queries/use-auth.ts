@@ -5,6 +5,7 @@ import type {
   AuthResponse,
   ChangeEmailRequest,
   ChangePasswordRequest,
+  DeleteAccountRequest,
   GoogleLoginRequest,
   LoginRequest,
   RegisterUserRequest,
@@ -73,6 +74,12 @@ export function useChangePassword() {
       }
       return failureCount < 2;
     },
+  });
+}
+
+export function useDeleteAccount() {
+  return useMutation<void, AxiosError<ApiError, unknown>, DeleteAccountRequest>({
+    mutationFn: (data) => authService.deleteAccount(data),
   });
 }
 
