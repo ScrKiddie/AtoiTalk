@@ -97,6 +97,9 @@ const ChatRoom = () => {
     isLoading: isLoadingSingleChat,
     isError: isChatError,
     refetch: refetchChat,
+    isFetching: isFetchingSingleChat,
+    failureCount: chatFailureCount,
+    error: chatError,
   } = useChat(currentChatId);
 
   const chatFromList = chatsData?.pages.flatMap((p) => p.data).find((c) => c.id === currentChatId);
@@ -135,18 +138,37 @@ const ChatRoom = () => {
   useEffect(() => {
     if (anchorMessageId) return;
 
-    const isChatLoading = currentChatId ? isLoadingSingleChat : false;
+    const isFetchingChat = isLoadingSingleChat || isFetchingSingleChat;
 
-    if (!isChatLoading && !chat && !isVirtual) {
-      const timer = setTimeout(() => {
-        if (!chat) {
-          console.warn("[ChatRoom] Chat not found or deleted, redirecting to home.");
-          navigate("/", { replace: true });
-        }
-      }, 100);
-      return () => clearTimeout(timer);
+    if (!isFetchingChat && !chat && !isVirtual) {
+      const is404 = (chatError as AxiosError)?.response?.status === 404;
+
+      if (is404) {
+        console.warn("[ChatRoom] Chat 404 Not Found, redirecting.");
+        navigate("/", { replace: true });
+        return;
+      }
+
+      if (!isChatError) {
+        const timer = setTimeout(() => {
+          if (!chat) {
+            console.warn("[ChatRoom] Chat not found (unknown), redirecting.");
+            navigate("/", { replace: true });
+          }
+        }, 100);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [isLoadingSingleChat, chat, isVirtual, navigate, anchorMessageId, currentChatId, chatsData]);
+  }, [
+    isLoadingSingleChat,
+    isFetchingSingleChat,
+    chat,
+    isVirtual,
+    navigate,
+    anchorMessageId,
+    chatError,
+    isChatError,
+  ]);
 
   const derivedPartnerId =
     chat?.type === "private"
@@ -164,6 +186,9 @@ const ChatRoom = () => {
     isError: isProfileError,
     isLoading: isProfileLoading,
     refetch: refetchProfile,
+    isFetching: isFetchingProfile,
+    failureCount: profileFailureCount,
+    error: profileError,
   } = useUserById(partnerId || null);
 
   useEffect(() => {
@@ -197,6 +222,23 @@ const ChatRoom = () => {
   }
 
   const renderHeader = () => {
+    const isFetchingChat = isLoadingSingleChat || isFetchingSingleChat;
+    const isFetchingVirtualProfile = isVirtual && (isProfileLoading || isFetchingProfile);
+
+    const isChat404 = (chatError as AxiosError)?.response?.status === 404;
+    const chatFails = chatFailureCount ?? 0;
+    const isChatRetrying = chatFails > 0 && chatFails < 4 && !isChat404;
+
+    const isProfile404 = (profileError as AxiosError)?.response?.status === 404;
+    const profileFails = profileFailureCount ?? 0;
+    const isProfileRetrying = profileFails > 0 && profileFails < 4 && !isProfile404;
+
+    const isInRetryCycle = isChatRetrying || (!!partnerId && isProfileRetrying);
+
+    if (isFetchingChat || isFetchingVirtualProfile || isInRetryCycle) {
+      return <ChatHeaderSkeleton />;
+    }
+
     if (chat) {
       return (
         <ChatHeader
@@ -212,6 +254,7 @@ const ChatRoom = () => {
         />
       );
     }
+
     if (isChatError) {
       return <ChatHeaderSkeleton isError onRetry={() => refetchChat()} />;
     }

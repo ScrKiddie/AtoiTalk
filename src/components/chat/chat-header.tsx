@@ -1,6 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SidebarTrigger } from "@/components/ui/sidebar.tsx";
-import { useChat } from "@/hooks/queries";
 import { useAuthStore, useChatStore, useUIStore } from "@/store";
 import { ChatListItem, User } from "@/types";
 
@@ -39,8 +38,7 @@ const ChatHeader = ({
   const isTyping = typingUsers[chat.id]?.some((id) => id !== currentUser?.id);
   const openProfileModal = useUIStore((state) => state.openProfileModal);
 
-  const { data: latestChat } = useChat(chat.id);
-  const displayChat = latestChat || chat;
+  const displayChat = chat;
   const isDeleted = displayChat.type === "private" && displayChat.other_user_is_deleted;
   const displayName = isDeleted ? "Deleted Account" : displayChat.name;
 
