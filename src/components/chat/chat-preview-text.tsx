@@ -1,6 +1,6 @@
-import { useUserById } from "@/hooks/queries";
 import { getSystemMessageText } from "@/lib/system-message-utils";
 import { ChatListItem, User } from "@/types";
+import { useQueryClient } from "@tanstack/react-query";
 import { Ban, File } from "lucide-react";
 
 interface ChatPreviewTextProps {
@@ -21,12 +21,16 @@ export const ChatPreviewText = ({ chat, currentUser }: ChatPreviewTextProps) => 
   const actionData = lastMessage?.action_data as ActionData | undefined;
   const targetId = actionData?.target_id ?? null;
 
-  const { data: sender, isError, isLoading } = useUserById(senderId);
-  const {
-    data: targetUser,
-    isError: isTargetError,
-    isLoading: isTargetLoading,
-  } = useUserById(targetId);
+  const queryClient = useQueryClient();
+  const senderCache = senderId ? queryClient.getQueryData<User>(["user", senderId]) : null;
+  const targetCache = targetId ? queryClient.getQueryData<User>(["user", targetId]) : null;
+
+  const sender = senderCache;
+  const targetUser = targetCache;
+  const isLoading = false;
+  const isTargetLoading = false;
+  const isError = false;
+  const isTargetError = false;
 
   if (!lastMessage) return <span className="truncate">No messages</span>;
 

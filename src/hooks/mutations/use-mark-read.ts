@@ -23,6 +23,11 @@ export const useMarkAsRead = () => {
           };
         }
       );
+
+      queryClient.setQueryData<ChatListItem>(["chat", chatId], (oldChat) => {
+        if (!oldChat) return oldChat;
+        return { ...oldChat, unread_count: 0 };
+      });
     },
   });
 };

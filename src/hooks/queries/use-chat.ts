@@ -48,18 +48,28 @@ export function useChat(chatId: string | null) {
   const cachedData = useMemo(() => {
     if (!chatId) return undefined;
 
+    const exactChatCache = queryClient.getQueryState<ChatListItem>(["chat", chatId]);
+    if (exactChatCache?.data) {
+      return { data: exactChatCache.data, updatedAt: exactChatCache.dataUpdatedAt };
+    }
+
     const chatsCache = queryClient.getQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>({
       queryKey: ["chats"],
     });
 
-    for (const [, cache] of chatsCache) {
+    for (const [key, cache] of chatsCache) {
       if (cache?.pages) {
         for (const page of cache.pages) {
           const found = page.data.find((c) => c.id === chatId);
           if (found) {
-            if (found.type === "private") {
-              return found;
-            }
+            const queryState = queryClient.getQueryState(key);
+            const isSuspicious =
+              found.type === "group" && (!found.member_count || found.member_count === 0);
+            return {
+              data: found,
+              updatedAt: isSuspicious ? 0 : queryState?.dataUpdatedAt,
+              isSuspicious,
+            };
           }
         }
       }
@@ -70,14 +80,15 @@ export function useChat(chatId: string | null) {
 
   const query = useQuery({
     queryKey: ["chat", chatId],
-    queryFn: ({ signal }) => chatService.getChatById(chatId!, signal),
+    queryFn: ({ signal }) => {
+      return chatService.getChatById(chatId!, signal);
+    },
     enabled: !!chatId,
     retry: 3,
     retryDelay: 1000,
-    staleTime: 1000 * 60 * 5,
-    initialData: cachedData,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
+    staleTime: cachedData?.isSuspicious ? 0 : 1000 * 30,
+    initialData: cachedData?.data,
+    initialDataUpdatedAt: cachedData?.updatedAt,
   });
 
   return {
@@ -157,5 +168,25 @@ export function useMarkChatAsRead() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["chats"] });
     },
+  });
+}
+
+export function useSearchPublicGroups(query: string, options?: { enabled?: boolean }) {
+  return useInfiniteQuery({
+    queryKey: ["public-groups", query],
+    queryFn: ({ pageParam, signal }) =>
+      chatService.searchPublicGroups(
+        {
+          query,
+          cursor: pageParam as string | undefined,
+          limit: 20,
+        },
+        signal
+      ),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) =>
+      lastPage.meta.has_next ? lastPage.meta.next_cursor : undefined,
+    enabled: options?.enabled,
+    staleTime: 1000 * 60 * 5,
   });
 }

@@ -18,7 +18,9 @@ export function useUserById(id: string | null, options?: { enabled?: boolean }) 
     queryKey: ["user", id],
     queryFn: ({ signal }) => userService.getUserById(id!, signal),
     enabled: (options?.enabled ?? true) && !!id,
-    staleTime: 2 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 }
 

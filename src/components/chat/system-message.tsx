@@ -1,6 +1,7 @@
 import { useUserById } from "@/hooks/queries";
 import { useAuthStore, useUIStore } from "@/store";
-import { Message } from "@/types";
+import { Message, User } from "@/types";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface SystemMessageProps {
   message: Message;
@@ -16,10 +17,17 @@ const truncateString = (str: string, num: number) => {
 const SystemMessageUserLink = ({ userId, name }: { userId?: string; name: string }) => {
   const { user: currentUser } = useAuthStore();
   const openProfileModal = useUIStore((state) => state.openProfileModal);
-
-  const { data: user, isError, isLoading } = useUserById(userId || null);
+  const queryClient = useQueryClient();
 
   const isMe = currentUser?.id === userId;
+  const cachedUser = userId && !isMe ? queryClient.getQueryData<User>(["user", userId]) : null;
+
+  const {
+    data: fetchedUser,
+    isError,
+    isLoading,
+  } = useUserById(cachedUser || isMe ? null : userId || null);
+  const user = isMe ? currentUser : cachedUser || fetchedUser;
 
   const isProfileMissing = !isLoading && (!user || isError);
   const userNameFromProfile = user?.full_name;
@@ -38,20 +46,14 @@ const SystemMessageUserLink = ({ userId, name }: { userId?: string; name: string
 
   if (!userId || isDeleted) {
     return (
-      <span
-        className={
-          isDeleted
-            ? "italic text-muted-foreground/80 font-medium align-bottom"
-            : "font-medium align-bottom"
-        }
-      >
+      <span className={isDeleted ? "italic text-muted-foreground/80 align-bottom" : "align-bottom"}>
         {displayName}
       </span>
     );
   }
 
   if (isMe) {
-    return <span className="font-medium">You</span>;
+    return <span>You</span>;
   }
 
   return (
@@ -60,7 +62,7 @@ const SystemMessageUserLink = ({ userId, name }: { userId?: string; name: string
         e.stopPropagation();
         openProfileModal(userId);
       }}
-      className="cursor-pointer hover:no-underline hover:opacity-80 transition-opacity font-medium align-bottom"
+      className="cursor-pointer hover:no-underline hover:opacity-80 transition-opacity align-bottom hover:font-medium"
     >
       {displayName}
     </span>
@@ -83,7 +85,7 @@ export const SystemMessage = ({ message }: SystemMessageProps) => {
         return (
           <span>
             Group "
-            <span className="font-medium align-bottom">
+            <span className="font-medium">
               {truncateString(actionData.initial_name || "Group", 15)}
             </span>
             " created by <Actor />
@@ -93,10 +95,7 @@ export const SystemMessage = ({ message }: SystemMessageProps) => {
         return (
           <span>
             <Actor /> changed group name to "
-            <span className="font-medium align-bottom">
-              {truncateString(actionData.new_name, 15)}
-            </span>
-            "
+            <span className="font-medium">{truncateString(actionData.new_name, 15)}</span>"
           </span>
         );
       case "system_description":
@@ -174,8 +173,8 @@ export const SystemMessage = ({ message }: SystemMessageProps) => {
   };
 
   return (
-    <div className="flex justify-center text-center">
-      <div className="bg-background border text-foreground rounded-full px-3 py-1.5 text-xs font-normal text-center w-fit max-w-[85%] break-words">
+    <div className="flex justify-center my-1">
+      <div className="bg-background border text-foreground rounded-full px-3 py-1 text-xs font-normal text-center max-w-[90%]">
         {getSystemMessageNodes(message)}
       </div>
     </div>

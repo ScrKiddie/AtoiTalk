@@ -13,13 +13,13 @@ export function TypingBubble({ chatId }: TypingBubbleProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 10 }}
-      className="flex w-full justify-start mb-2"
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="flex w-full justify-start"
     >
       <div className="flex items-end gap-2 max-w-[80%]">
-        <div className="bg-muted p-3 py-4 rounded-2xl rounded-bl-sm flex gap-1 items-center h-10">
+        <div className="bg-background border p-[10px] pt-3 rounded-md flex gap-1 items-center h-auto min-h-[42px]">
           <span className="w-2 h-2 bg-foreground/50 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
           <span className="w-2 h-2 bg-foreground/50 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
           <span className="w-2 h-2 bg-foreground/50 rounded-full animate-bounce"></span>

@@ -1,4 +1,6 @@
 import { SidebarInset } from "@/components/ui/sidebar.tsx";
+import { PaginatedResponse } from "@/types";
+import { InfiniteData, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import Logo from "@/components/logo.tsx";
@@ -39,6 +41,7 @@ import { formatMessageDateLabel } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 
 const ChatRoom = () => {
+  const queryClient = useQueryClient();
   const { chatId, userId } = useParams();
   const navigate = useNavigate();
   const currentChatId = chatId || null;
@@ -46,7 +49,7 @@ const ChatRoom = () => {
   const isVirtual = !currentChatId && !!targetUserId;
 
   const { user: currentUser } = useAuthStore();
-  const { setActiveChatId } = useChatStore();
+  const { setActiveChatId, activeChatId } = useChatStore();
 
   const [anchorMessageId, setAnchorMessageId] = useState<string | null>(null);
 
@@ -63,24 +66,13 @@ const ChatRoom = () => {
 
   useEffect(() => {
     const handleKicked = (e: CustomEvent<{ chatId: string }>) => {
-      console.log("[ChatRoom] KICK EVENT RECEIVED!", {
-        eventChatId: e.detail.chatId,
-        currentChatId,
-        match: e.detail.chatId === currentChatId,
-      });
-
       if (e.detail.chatId === currentChatId) {
-        console.warn("[ChatRoom] MATCH! Redirecting to home...");
         navigate("/", { replace: true });
-      } else {
-        console.log("[ChatRoom] ID Mismatch, ignoring.");
       }
     };
 
-    console.log("[ChatRoom] Registering kick listener for:", currentChatId);
     window.addEventListener("kicked-from-chat", handleKicked as EventListener);
     return () => {
-      console.log("[ChatRoom] Unregistering kick listener for:", currentChatId);
       window.removeEventListener("kicked-from-chat", handleKicked as EventListener);
     };
   }, [currentChatId, navigate]);
@@ -118,7 +110,11 @@ const ChatRoom = () => {
     isRefetching,
     refetch,
     error: messagesError,
-  } = useMessages(currentChatId, { anchorId: anchorMessageId ?? undefined });
+  } = useMessages(
+    currentChatId,
+    { anchorId: anchorMessageId ?? undefined },
+    { enabled: !!currentChatId && activeChatId === currentChatId }
+  );
 
   useEffect(() => {
     if (isMessagesError && messagesError) {
@@ -181,6 +177,8 @@ const ChatRoom = () => {
 
   const partnerId = isVirtual ? targetUserId : derivedPartnerId;
 
+  const isPartnerDeleted = chat?.type === "private" && chat?.other_user_is_deleted;
+
   const {
     data: partnerProfile,
     isError: isProfileError,
@@ -189,7 +187,7 @@ const ChatRoom = () => {
     isFetching: isFetchingProfile,
     failureCount: profileFailureCount,
     error: profileError,
-  } = useUserById(partnerId || null);
+  } = useUserById(isPartnerDeleted ? null : partnerId || null);
 
   useEffect(() => {
     if (isCreatingChatRef.current) return;
@@ -235,7 +233,12 @@ const ChatRoom = () => {
 
     const isInRetryCycle = isChatRetrying || (!!partnerId && isProfileRetrying);
 
-    if (isFetchingChat || isFetchingVirtualProfile || isInRetryCycle) {
+    const showSkeleton =
+      (!chat && isFetchingChat) ||
+      (isVirtual && !partnerProfile && isFetchingVirtualProfile) ||
+      (!chat && isInRetryCycle);
+
+    if (showSkeleton) {
       return <ChatHeaderSkeleton />;
     }
 
@@ -248,7 +251,7 @@ const ChatRoom = () => {
           isProfileError={isProfileError}
           isProfileLoading={isProfileLoading}
           onRetryProfile={refetchProfile}
-          isChatLoading={isLoadingSingleChat}
+          isChatLoading={isLoadingSingleChat || (isFetchingSingleChat && !chat.member_count)}
           isChatError={isChatError}
           onRetryChat={refetchChat}
         />
@@ -312,14 +315,31 @@ const ChatRoom = () => {
   const isGlobalBusy = isSending || isEditing || isDeleteSubmitting || isUploading;
 
   useEffect(() => {
-    if (currentChatId && chat) {
-      if (chat.type === "group" && !chat.my_role) return;
+    if (!currentChatId) return;
 
-      if (chat.unread_count && chat.unread_count > 0) {
-        markAsRead(currentChatId);
+    queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
+      { queryKey: ["chats"] },
+      (oldData) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page) => ({
+            ...page,
+            data: page.data.map((c) => (c.id === currentChatId ? { ...c, unread_count: 0 } : c)),
+          })),
+        };
       }
+    );
+
+    queryClient.setQueryData<ChatListItem>(["chat", currentChatId], (old) =>
+      old ? { ...old, unread_count: 0 } : old
+    );
+
+    const unreadCount = chat?.unread_count || chatFromList?.unread_count || 0;
+    if (unreadCount > 0) {
+      markAsRead(currentChatId);
     }
-  }, [currentChatId, chat, markAsRead]);
+  }, [currentChatId, queryClient, markAsRead, chat?.unread_count, chatFromList?.unread_count]);
 
   const handleRemoteJump = useCallback((targetId: string) => {
     setAnchorMessageId(targetId);

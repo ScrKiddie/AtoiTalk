@@ -19,6 +19,7 @@ import { Spinner } from "@/components/ui/spinner.tsx";
 import { useUserById } from "@/hooks/queries";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/store";
+import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "motion/react";
 import * as React from "react";
 import { MessageAttachments } from "./message-attachments";
@@ -105,11 +106,17 @@ const MessageBubble = ({
     }
   };
 
+  const queryClient = useQueryClient();
+  const targetUserId = !isCurrentUser && chat?.type === "group" ? message.sender_id : null;
+  const cachedUser = targetUserId ? queryClient.getQueryData<User>(["user", targetUserId]) : null;
+
   const {
-    data: sender,
+    data: fetchedUser,
     isError: isSenderError,
     isLoading: isSenderLoading,
-  } = useUserById(!isCurrentUser && chat?.type === "group" ? message.sender_id : null);
+  } = useUserById(cachedUser ? null : targetUserId);
+
+  const sender = cachedUser || fetchedUser;
 
   const isProfileMissing = !isSenderLoading && (!sender || isSenderError);
 
@@ -284,7 +291,7 @@ const MessageBubble = ({
 
           <div
             className={cn(
-              "p-[10px] rounded-md border grid gap-1.5 min-w-0 w-full overflow-hidden transition-colors duration-200",
+              "p-[10px] rounded-md border grid gap-1.5 min-w-0 max-w-full overflow-hidden transition-colors duration-200",
               isCurrentUser ? "bg-foreground text-background" : "bg-background text-foreground",
               highlightedMessageId === message.id && "ring-2 ring-blue-500"
             )}
@@ -381,41 +388,57 @@ const MessageBubble = ({
           {!isCurrentUser && !message.deleted_at && (
             <div
               className={cn(
-                "absolute top-1/2 -translate-y-1/2 left-full pl-2 flex flex-col items-center gap-1 z-10 transition-all duration-200 ease-in-out",
+                "absolute top-1/2 -translate-y-1/2 left-full pl-2 flex items-center gap-1 z-10 transition-all duration-200 ease-in-out",
                 "opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:delay-0",
                 activeMessageId === message.id && "opacity-100 visible"
               )}
             >
-              {!isChatBlockedOrDeleted && (
+              <div className="flex flex-col gap-1 items-center">
+                <Button
+                  size={"icon"}
+                  disabled={isBusy}
+                  className="size-fit p-[6px] bg-background border rounded-full transition-all duration-200 hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => setIsReportOpen(true)}
+                >
+                  <Flag className="text-foreground size-4" />
+                </Button>
+
+                {!isChatBlockedOrDeleted && (
+                  <Button
+                    size={"icon"}
+                    disabled={isBusy}
+                    className="size-fit p-[6px] bg-background border rounded-full transition-all duration-200 hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => {
+                      if (editMessage) {
+                        setEditMessage(null);
+                        setNewMessageText("");
+                        setAttachmentMode(false);
+                        if (textareaRef.current) {
+                          textareaRef.current.value = "";
+                        }
+                      }
+                      setReplyTo(message);
+                      setTimeout(() => textareaRef.current?.focus(), 0);
+                    }}
+                  >
+                    <Reply className="text-foreground size-4" />
+                  </Button>
+                )}
+              </div>
+
+              {chat?.type === "group" && (chat.my_role === "admin" || chat.my_role === "owner") && (
                 <Button
                   size={"icon"}
                   disabled={isBusy}
                   className="size-fit p-[6px] bg-background border rounded-full transition-all duration-200 hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => {
-                    if (editMessage) {
-                      setEditMessage(null);
-                      setNewMessageText("");
-                      setAttachmentMode(false);
-                      if (textareaRef.current) {
-                        textareaRef.current.value = "";
-                      }
-                    }
-                    setReplyTo(message);
-                    setTimeout(() => textareaRef.current?.focus(), 0);
+                    setMessageToDelete(message.id);
+                    setShowDeleteModal(true);
                   }}
                 >
-                  <Reply className="text-foreground size-4" />
+                  <Trash2 className="text-foreground size-4" />
                 </Button>
               )}
-
-              <Button
-                size={"icon"}
-                disabled={isBusy}
-                className="size-fit p-[6px] bg-background border rounded-full transition-all duration-200 hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={() => setIsReportOpen(true)}
-              >
-                <Flag className="text-foreground size-4" />
-              </Button>
             </div>
           )}
         </div>

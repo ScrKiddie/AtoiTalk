@@ -72,3 +72,16 @@ export interface GetChatsParams {
   cursor?: string;
   limit?: number;
 }
+
+/**
+ * Public group DTO
+ */
+export interface PublicGroupDTO {
+  id: string;
+  name: string;
+  description: string;
+  avatar: string | null;
+  member_count?: number;
+  is_member: boolean;
+  chat_id: string;
+}

@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { useUserById } from "@/hooks/queries";
 import { cn } from "@/lib/utils";
 import { ChatListItem, Message, User } from "@/types";
+import { useQueryClient } from "@tanstack/react-query";
 import { Ban, File as FileIcon } from "lucide-react";
 
 interface MessageReplyPreviewProps {
@@ -20,12 +21,19 @@ export const MessageReplyPreview = ({
   jumpToMessage,
 }: MessageReplyPreviewProps) => {
   const replySenderId = message.reply_to?.sender_id ?? null;
+  const isSelfReply = message.reply_to && current && message.reply_to.sender_id === current.id;
+
+  const queryClient = useQueryClient();
+  const cachedUser =
+    replySenderId && !isSelfReply ? queryClient.getQueryData<User>(["user", replySenderId]) : null;
 
   const {
-    data: sender,
+    data: fetchedUser,
     isError: isSenderError,
     isLoading: isSenderLoading,
-  } = useUserById(replySenderId);
+  } = useUserById(isSelfReply || cachedUser ? null : replySenderId);
+
+  const sender = isSelfReply ? current : cachedUser || fetchedUser;
 
   if (!message.reply_to) return null;
 
@@ -43,8 +51,6 @@ export const MessageReplyPreview = ({
     isProfileMissing;
 
   const finalSenderName = isSenderDeleted ? "Deleted Account" : senderName;
-
-  const isSelfReply = message.reply_to && current && message.reply_to.sender_id === current.id;
 
   const replyDate = message.reply_to.created_at ? new Date(message.reply_to.created_at) : null;
   const hiddenDate = chat?.hidden_at ? new Date(chat.hidden_at) : null;

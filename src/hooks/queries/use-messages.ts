@@ -11,7 +11,8 @@ import { AxiosError } from "axios";
 
 export function useMessages(
   chatId: string | null,
-  params?: GetMessagesParams & { anchorId?: string }
+  params?: GetMessagesParams & { anchorId?: string },
+  options?: { enabled?: boolean }
 ) {
   return useInfiniteQuery({
     queryKey: ["messages", chatId, params?.anchorId],
@@ -42,7 +43,7 @@ export function useMessages(
 
     getPreviousPageParam: (firstPage) =>
       firstPage.meta.has_prev ? firstPage.meta.prev_cursor : undefined,
-    enabled: chatId !== null,
+    enabled: chatId !== null && (options?.enabled ?? true),
     retry: (failureCount, error) => {
       const axiosError = error as AxiosError;
       if (axiosError?.response?.status === 403) return false;

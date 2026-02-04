@@ -8,6 +8,7 @@ import type {
   GroupMember,
   Message,
   PaginatedResponse,
+  PublicGroupDTO,
 } from "@/types";
 
 /**
@@ -160,7 +161,7 @@ export const chatService = {
     >(`/api/chats/group/${groupId}/invite`, { signal });
     const data = response.data.data;
     return {
-      code: data.invite_code || data.code,
+      code: data.invite_code || data.code || "",
       expires_at: data.expires_at,
     };
   },
@@ -171,7 +172,7 @@ export const chatService = {
     >(`/api/chats/group/${groupId}/invite`);
     const data = response.data.data;
     return {
-      code: data.invite_code || data.code,
+      code: data.invite_code || data.code || "",
       expires_at: data.expires_at,
     };
   },
@@ -189,6 +190,31 @@ export const chatService = {
       invite_code: inviteCode,
     });
     return response.data.data;
+  },
+
+  async searchPublicGroups(
+    params: { query?: string; cursor?: string; limit?: number } = {},
+    signal?: AbortSignal
+  ): Promise<PaginatedResponse<PublicGroupDTO>> {
+    const response = await api.get<PaginatedResponse<PublicGroupDTO>>("/api/chats/group/public", {
+      params,
+      signal,
+    });
+    return response.data;
+  },
+
+  async joinGroup(groupId: string): Promise<ChatListItem | null> {
+    const response = await api.post<ApiResponse<ChatListItem>>(`/api/chats/group/${groupId}/join`);
+
+    if (response.data && "data" in response.data) {
+      return response.data.data;
+    }
+
+    if (response.data) {
+      return response.data as unknown as ChatListItem;
+    }
+
+    return null;
   },
 };
 

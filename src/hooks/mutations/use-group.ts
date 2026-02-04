@@ -1,5 +1,7 @@
 import { toast } from "@/lib/toast";
 import { chatService } from "@/services";
+import { useChatStore } from "@/store";
+
 import { ChatListItem, ChatResponse, GroupMember, Message, PaginatedResponse } from "@/types";
 import { InfiniteData, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -58,12 +60,15 @@ export const useUpdateGroup = () => {
   });
 };
 
-export const useLeaveGroup = () => {
+export const useLeaveGroup = (callback?: (groupId: string) => void) => {
   const queryClient = useQueryClient();
+  const setActiveChatId = useChatStore((state) => state.setActiveChatId);
 
   return useMutation({
     mutationFn: (groupId: string) => chatService.leaveGroup(groupId),
     onSuccess: (_data, groupId) => {
+      if (callback) callback(groupId);
+      setActiveChatId(null);
       queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
         { queryKey: ["chats"] },
         (oldData) => {
@@ -76,7 +81,6 @@ export const useLeaveGroup = () => {
         }
       );
       queryClient.removeQueries({ queryKey: ["messages", groupId] });
-      queryClient.invalidateQueries({ queryKey: ["chats"] });
       queryClient.invalidateQueries({ queryKey: ["users", "search"] });
       toast.success("Left group successfully");
     },
@@ -362,23 +366,6 @@ export const useResetInviteCode = () => {
     onError: (error) => {
       console.error("Failed to reset invite code:", error);
       toast.error("Failed to reset invite link");
-    },
-  });
-};
-
-export const useJoinGroup = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (inviteCode: string) => chatService.joinGroupByInvite(inviteCode),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["chats"] });
-      queryClient.setQueryData<ChatListItem>(["chat", data.id], data);
-      toast.success("Joined group successfully");
-    },
-    onError: (error) => {
-      console.error("Failed to join group:", error);
-      toast.error("Failed to join group");
     },
   });
 };

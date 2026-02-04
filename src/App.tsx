@@ -70,21 +70,21 @@ const AnimatedRoutes = () => {
   }, [navigate, location.pathname]);
 
   return (
-    <AnimatePresence mode="wait" initial={true}>
-      <Routes location={location} key={getPageKey(location.pathname)}>
-        <Route path="/invite/:code" element={<InvitePage />} />
+    <WebSocketProvider>
+      <AnimatePresence mode="wait" initial={true}>
+        <Routes location={location} key={getPageKey(location.pathname)}>
+          <Route path="/invite/:code" element={<InvitePage />} />
 
-        <Route element={<PublicRoute />}>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Verify />} />
-          <Route path="/forgot" element={<Verify />} />
-          <Route path="/verify" element={<Verify />} />
-        </Route>
-        <Route element={<ProtectedRoute />}>
-          <Route
-            path="/*"
-            element={
-              <WebSocketProvider>
+          <Route element={<PublicRoute />}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Verify />} />
+            <Route path="/forgot" element={<Verify />} />
+            <Route path="/verify" element={<Verify />} />
+          </Route>
+          <Route element={<ProtectedRoute />}>
+            <Route
+              path="/*"
+              element={
                 <SidebarProvider>
                   <AppSidebar />
                   <Routes>
@@ -94,12 +94,12 @@ const AnimatedRoutes = () => {
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </SidebarProvider>
-              </WebSocketProvider>
-            }
-          />
-        </Route>
-      </Routes>
-    </AnimatePresence>
+              }
+            />
+          </Route>
+        </Routes>
+      </AnimatePresence>
+    </WebSocketProvider>
   );
 };
 

@@ -1,3 +1,4 @@
+import { ModeToggle } from "@/components/mode-toggle.tsx";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SidebarTrigger } from "@/components/ui/sidebar.tsx";
 import { useAuthStore, useChatStore, useUIStore } from "@/store";
@@ -161,7 +162,9 @@ const ChatHeader = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2"></div>
+          <div className="flex items-center gap-2">
+            <ModeToggle />
+          </div>
         </div>
       </header>
 

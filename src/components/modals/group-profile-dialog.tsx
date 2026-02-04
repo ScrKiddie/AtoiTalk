@@ -219,8 +219,8 @@ export function GroupProfileDialog({
   onClose,
   chat: initialChat,
 }: GroupProfileDialogProps) {
-  const { data: latestChat } = useChat(isOpen ? initialChat.id : null);
-  const chat = latestChat || initialChat;
+  const { data: chatData } = useChat(isOpen ? initialChat.id : null);
+  const chat = chatData || initialChat;
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isAvatarLoaded, setIsAvatarLoaded] = useState(false);
   const [isLeaveConfirmOpen, setIsLeaveConfirmOpen] = useState(false);
@@ -241,7 +241,12 @@ export function GroupProfileDialog({
   const { user: currentUser } = useAuthStore();
   const navigate = useNavigate();
 
-  const { mutate: leaveGroup, isPending: isLeaving } = useLeaveGroup();
+  const { mutate: leaveGroup, isPending: isLeaving } = useLeaveGroup((groupId) => {
+    if (groupId === chat?.id) {
+      onClose(false);
+      navigate("/");
+    }
+  });
   const { mutate: deleteGroup, isPending: isDeleting } = useDeleteGroup();
   const { mutate: kickMember, isPending: isKicking } = useKickGroupMember();
   const { mutate: updateRole, isPending: isUpdatingRole } = useUpdateMemberRole();

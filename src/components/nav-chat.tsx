@@ -77,7 +77,11 @@ export function NavChat({
   const [deleteChatIndex, setDeleteChatIndex] = useState<number | null>(null);
 
   const { mutate: hideChat, isPending: isHidingChat } = useHideChat();
-  const { mutate: leaveGroup, isPending: isLeavingGroup } = useLeaveGroup();
+  const { mutate: leaveGroup, isPending: isLeavingGroup } = useLeaveGroup((groupId) => {
+    if (groupId === activeId) {
+      navigate("/");
+    }
+  });
   const { mutate: deleteGroup, isPending: isDeletingGroup } = useDeleteGroup();
 
   const [userToBlock, setUserToBlock] = useState<string | null>(null);

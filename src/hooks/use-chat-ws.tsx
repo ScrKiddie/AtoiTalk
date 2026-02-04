@@ -45,6 +45,11 @@ export const useChatWebSocket = (url: string) => {
 
   const connect = useCallback(() => {
     if (!token) return;
+    if (
+      wsRef.current?.readyState === WebSocket.OPEN ||
+      wsRef.current?.readyState === WebSocket.CONNECTING
+    )
+      return;
 
     const wsUrl = new URL(url);
     wsUrl.searchParams.append("token", token);
@@ -53,7 +58,6 @@ export const useChatWebSocket = (url: string) => {
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log("Details: WS Connected");
       setIsConnected(true);
 
       if (!isFirstConnectionRef.current) {
@@ -67,32 +71,8 @@ export const useChatWebSocket = (url: string) => {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log("Details: WS Event:", data.type, data);
 
         const currentUser = useAuthStore.getState().user;
-
-        if (data.type === "chat.delete") {
-          console.log("Explicit IF match for chat.delete!");
-        } else if (data.type.trim() === "chat.delete") {
-          console.warn("Match with TRIM only! Hidden characters present.");
-        }
-
-        if (data.type === "chat.delete") {
-          const payload = data.payload as { chat_id?: string; id?: string };
-          const chatId =
-            payload.chat_id ||
-            payload.id ||
-            ((data.payload as Record<string, unknown>)?.chat_id as string | undefined);
-
-          if (chatId) {
-            console.log("FORCE HANDLING chat.delete for:", chatId);
-            const activeChatId = useChatStore.getState().activeChatId;
-            const isActive = activeChatId === chatId;
-            console.log("Force handle active check:", isActive);
-
-            window.dispatchEvent(new CustomEvent("kicked-from-chat", { detail: { chatId } }));
-          }
-        }
 
         switch (data.type) {
           case "message.new": {
@@ -121,8 +101,8 @@ export const useChatWebSocket = (url: string) => {
               }
             );
 
-            if (payload.type.startsWith("system_") && payload.action_data) {
-              const actionData = payload.action_data as {
+            if (payload.type.startsWith("system_")) {
+              const actionData = (payload.action_data || {}) as {
                 target_id?: string;
                 new_role?: "owner" | "admin" | "member";
                 actor_id?: string;
@@ -248,35 +228,32 @@ export const useChatWebSocket = (url: string) => {
                     }
                   );
 
-                  queryClient.setQueryData<ChatListItem>(["chat", payload.chat_id], (oldChat) => {
-                    if (!oldChat) return oldChat;
-                    const newCount =
-                      typeof backendMemberCount === "number"
-                        ? backendMemberCount
-                        : Math.max(0, (oldChat.member_count || 0) - 1);
-                    return { ...oldChat, member_count: newCount };
-                  });
+                  if (typeof backendMemberCount === "number") {
+                    queryClient.setQueryData<ChatListItem>(["chat", payload.chat_id], (oldChat) => {
+                      if (!oldChat) return oldChat;
+                      return { ...oldChat, member_count: backendMemberCount };
+                    });
 
-                  queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
-                    { queryKey: ["chats"] },
-                    (oldData) => {
-                      if (!oldData) return oldData;
-                      const newPages = oldData.pages.map((page) => ({
-                        ...page,
-                        data: page.data.map((chat) => {
-                          if (chat.id === payload.chat_id) {
-                            const newCount =
-                              typeof backendMemberCount === "number"
-                                ? backendMemberCount
-                                : Math.max(0, (chat.member_count || 0) - 1);
-                            return { ...chat, member_count: newCount };
-                          }
-                          return chat;
-                        }),
-                      }));
-                      return { ...oldData, pages: newPages };
-                    }
-                  );
+                    queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
+                      { queryKey: ["chats"] },
+                      (oldData) => {
+                        if (!oldData) return oldData;
+                        const newPages = oldData.pages.map((page) => ({
+                          ...page,
+                          data: page.data.map((chat) => {
+                            if (chat.id === payload.chat_id) {
+                              return { ...chat, member_count: backendMemberCount };
+                            }
+                            return chat;
+                          }),
+                        }));
+                        return { ...oldData, pages: newPages };
+                      }
+                    );
+                  } else {
+                    queryClient.invalidateQueries({ queryKey: ["chat", payload.chat_id] });
+                    queryClient.invalidateQueries({ queryKey: ["chats"] });
+                  }
                 }
               }
 
@@ -349,14 +326,9 @@ export const useChatWebSocket = (url: string) => {
                 );
               }
 
-              if (payload.type === "system_description" || payload.type === "system_avatar") {
-                queryClient.invalidateQueries({ queryKey: ["chat", payload.chat_id] });
-                if (payload.type === "system_avatar") {
-                  queryClient.invalidateQueries({ queryKey: ["chats"] });
-                }
-              }
-
-              if (payload.type === "system_add") {
+              if (payload.type === "system_add" || payload.type === "system_join") {
+                const addedUserId = target_id || payload.sender_id;
+                const amIAdded = addedUserId === currentUser?.id;
                 const backendMemberCount = (payload as Message & { member_count?: number })
                   .member_count;
 
@@ -368,38 +340,40 @@ export const useChatWebSocket = (url: string) => {
                   queryClient.invalidateQueries({
                     queryKey: ["group-members", "infinite", payload.chat_id],
                   });
+                  queryClient.invalidateQueries({
+                    queryKey: ["group-members", payload.chat_id],
+                  });
                   delete memberInvalidationTimeoutsRef.current[payload.chat_id];
                 }, 1000);
 
-                queryClient.setQueryData<ChatListItem>(["chat", payload.chat_id], (oldChat) => {
-                  if (!oldChat) return oldChat;
-                  const newCount =
-                    typeof backendMemberCount === "number"
-                      ? backendMemberCount
-                      : (oldChat.member_count || 0) + 1;
-                  return { ...oldChat, member_count: newCount };
-                });
+                if (!amIAdded) {
+                  if (typeof backendMemberCount === "number") {
+                    queryClient.setQueryData<ChatListItem>(["chat", payload.chat_id], (oldChat) => {
+                      if (!oldChat) return oldChat;
+                      return { ...oldChat, member_count: backendMemberCount };
+                    });
 
-                queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
-                  { queryKey: ["chats"] },
-                  (oldData) => {
-                    if (!oldData) return oldData;
-                    const newPages = oldData.pages.map((page) => ({
-                      ...page,
-                      data: page.data.map((chat) => {
-                        if (chat.id === payload.chat_id) {
-                          const newCount =
-                            typeof backendMemberCount === "number"
-                              ? backendMemberCount
-                              : (chat.member_count || 0) + 1;
-                          return { ...chat, member_count: newCount };
-                        }
-                        return chat;
-                      }),
-                    }));
-                    return { ...oldData, pages: newPages };
+                    queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
+                      { queryKey: ["chats"] },
+                      (oldData) => {
+                        if (!oldData) return oldData;
+                        const newPages = oldData.pages.map((page) => ({
+                          ...page,
+                          data: page.data.map((chat) => {
+                            if (chat.id === payload.chat_id) {
+                              return { ...chat, member_count: backendMemberCount };
+                            }
+                            return chat;
+                          }),
+                        }));
+                        return { ...oldData, pages: newPages };
+                      }
+                    );
+                  } else {
+                    queryClient.invalidateQueries({ queryKey: ["chat", payload.chat_id] });
+                    queryClient.invalidateQueries({ queryKey: ["chats"] });
                   }
-                );
+                }
               }
             }
 
@@ -461,7 +435,9 @@ export const useChatWebSocket = (url: string) => {
                   ...targetChat,
                   last_message: payload,
                   unread_count:
-                    payload.sender_id !== currentUser?.id
+                    payload.sender_id !== currentUser?.id &&
+                    payload.chat_id !== useChatStore.getState().activeChatId &&
+                    !payload.type.startsWith("system_")
                       ? (targetChat.unread_count || 0) + 1
                       : targetChat.unread_count,
                 };
@@ -488,7 +464,9 @@ export const useChatWebSocket = (url: string) => {
                 ...oldChat,
                 last_message: payload,
                 unread_count:
-                  payload.sender_id !== currentUser?.id
+                  payload.sender_id !== currentUser?.id &&
+                  payload.chat_id !== useChatStore.getState().activeChatId &&
+                  !payload.type.startsWith("system_")
                     ? (oldChat.unread_count || 0) + 1
                     : oldChat.unread_count,
               };
@@ -717,6 +695,59 @@ export const useChatWebSocket = (url: string) => {
               }
             );
 
+            queryClient.setQueryData<ChatListItem>(["chat", payload.id], newChat);
+            break;
+          }
+
+          case "chat.update": {
+            const payload = data.payload as ChatListItem;
+
+            queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
+              { queryKey: ["chats"] },
+              (oldData) => {
+                if (!oldData) return oldData;
+                const newPages = oldData.pages.map((page) => ({
+                  ...page,
+                  data: page.data.map((chat) => {
+                    if (chat.id === payload.id) {
+                      return {
+                        ...chat,
+                        ...payload,
+                        name: payload.name || chat.name,
+                        avatar: payload.avatar !== undefined ? payload.avatar : chat.avatar,
+                        description:
+                          payload.description !== undefined
+                            ? payload.description
+                            : chat.description,
+                        invite_code:
+                          payload.invite_code !== undefined
+                            ? payload.invite_code
+                            : chat.invite_code,
+                        invite_expires_at:
+                          payload.invite_expires_at !== undefined
+                            ? payload.invite_expires_at
+                            : chat.invite_expires_at,
+                        member_count:
+                          payload.member_count !== undefined
+                            ? payload.member_count
+                            : chat.member_count,
+                        my_role: payload.my_role !== undefined ? payload.my_role : chat.my_role,
+                        is_public:
+                          payload.is_public !== undefined ? payload.is_public : chat.is_public,
+
+                        unread_count: chat.unread_count,
+                        last_read_at: chat.last_read_at,
+                        is_blocked_by_me: chat.is_blocked_by_me,
+                        other_last_read_at: chat.other_last_read_at,
+                      };
+                    }
+                    return chat;
+                  }),
+                }));
+                return { ...oldData, pages: newPages };
+              }
+            );
+
             queryClient.setQueryData<ChatListItem>(["chat", payload.id], (oldChat) => {
               if (oldChat) {
                 const merged = { ...oldChat };
@@ -730,10 +761,11 @@ export const useChatWebSocket = (url: string) => {
                 if (payload.description !== undefined) merged.description = payload.description;
                 if (payload.member_count !== undefined) merged.member_count = payload.member_count;
                 if (payload.my_role !== undefined) merged.my_role = payload.my_role;
+                if (payload.is_public !== undefined) merged.is_public = payload.is_public;
 
                 return merged;
               }
-              return newChat;
+              return oldChat;
             });
             break;
           }
@@ -1052,13 +1084,6 @@ export const useChatWebSocket = (url: string) => {
               role: "owner" | "admin" | "member";
             };
 
-            console.log("DEBUG: group.role_update RECEIVED", {
-              group_id,
-              user_id,
-              role,
-              currentUserId: currentUser?.id,
-            });
-
             queryClient.setQueriesData<InfiniteData<PaginatedResponse<GroupMember>>>(
               { queryKey: ["group-members", "infinite", group_id] },
               (oldData) => {
@@ -1103,42 +1128,24 @@ export const useChatWebSocket = (url: string) => {
           }
 
           case "chat.delete": {
-            console.log("chat.delete RAW event:", data);
-
             const payload = data.payload as { chat_id?: string; id?: string };
             const chatId =
               payload.chat_id ||
               payload.id ||
               ((data.payload as Record<string, unknown>)?.chat_id as string | undefined);
 
-            console.log("chat.delete event received:", { chatId, payload });
-
             if (!chatId) {
               console.error("chat.delete: No chat_id found in payload", data);
               break;
             }
-
-            import("sonner").then(({ toast }) => {
-              toast.error("You have been removed from the group", {
-                id: `chat-deleted-${chatId}`,
-              });
-            });
-
-            if (!chatId) {
-              console.error("chat.delete: No chat_id found in payload", data);
-              break;
-            }
-
-            console.log("chat.delete: Processing removal for:", chatId);
 
             const activeChatId = useChatStore.getState().activeChatId;
             const isActive = activeChatId === chatId;
-            console.log("chat.delete: Is active chat?", isActive, { activeChatId, chatId });
-
-            window.dispatchEvent(new CustomEvent("kicked-from-chat", { detail: { chatId } }));
+            if (isActive) {
+              window.dispatchEvent(new CustomEvent("kicked-from-chat", { detail: { chatId } }));
+            }
 
             import("sonner").then(({ toast }) => {
-              console.log("chat.delete: Showing toast");
               toast.error("You have been removed from the group", {
                 id: `chat-deleted-${chatId}`,
               });
@@ -1151,7 +1158,7 @@ export const useChatWebSocket = (url: string) => {
               { queryKey: ["chats"] },
               (oldData) => {
                 if (!oldData) return oldData;
-                console.log("chat.delete: Filtering chats, removing:", chatId);
+
                 const newPages = oldData.pages.map((page) => ({
                   ...page,
                   data: page.data.filter((chat) => chat.id !== chatId),
@@ -1221,6 +1228,7 @@ export const useChatWebSocket = (url: string) => {
       if (wsRef.current) {
         wsRef.current.close();
         wsRef.current = null;
+        setIsConnected(false);
       }
     };
   }, [token, connect]);
