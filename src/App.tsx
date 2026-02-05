@@ -1,5 +1,6 @@
 import { AppSidebar } from "@/components/app-sidebar.tsx";
 import Logo from "@/components/logo.tsx";
+import { ModeToggle } from "@/components/mode-toggle.tsx";
 import ProtectedRoute from "@/components/protected-route";
 import PublicRoute from "@/components/public-route";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -27,6 +28,9 @@ const EmptyChatState = () => {
         <div className="flex gap-2 px-4 w-full justify-between items-center">
           <div className="flex items-center justify-center gap-2">
             <SidebarTrigger className={`mr-1`} />
+          </div>
+          <div className="flex items-center gap-2">
+            <ModeToggle />
           </div>
         </div>
       </header>

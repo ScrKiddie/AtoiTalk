@@ -15,11 +15,18 @@ export const useCreateGroup = () => {
         { queryKey: ["chats"] },
         (oldData) => {
           if (!oldData) return oldData;
-          const newPages = [...oldData.pages];
-          newPages[0] = {
-            ...newPages[0],
-            data: [newGroup as ChatListItem, ...newPages[0].data],
-          };
+          const newPages = oldData.pages.map((page) => ({
+            ...page,
+            data: page.data.filter((c) => c.id !== newGroup.id),
+          }));
+
+          if (newPages.length > 0) {
+            newPages[0] = {
+              ...newPages[0],
+              data: [newGroup as ChatListItem, ...newPages[0].data],
+            };
+          }
+
           return { ...oldData, pages: newPages };
         }
       );
@@ -108,6 +115,9 @@ export const useDeleteGroup = () => {
 
   return useMutation({
     mutationFn: (groupId: string) => chatService.deleteGroup(groupId),
+    onMutate: (groupId) => {
+      useChatStore.getState().addDeletedChatId(groupId);
+    },
     onSuccess: (_data, groupId) => {
       queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
         { queryKey: ["chats"] },
@@ -124,7 +134,8 @@ export const useDeleteGroup = () => {
       queryClient.removeQueries({ queryKey: ["chat", groupId] });
       toast.success("Group deleted successfully");
     },
-    onError: (error) => {
+    onError: (error, groupId) => {
+      useChatStore.getState().removeDeletedChatId(groupId);
       console.error("Failed to delete group:", error);
       toast.error("Failed to delete group");
     },

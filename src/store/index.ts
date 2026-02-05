@@ -59,6 +59,10 @@ interface ChatState {
   setUserOnline: (userId: string, isOnline: boolean) => void;
   clearUserTypingGlobal: (userId: string) => void;
 
+  recentlyDeletedChatIds: Set<string>;
+  addDeletedChatId: (chatId: string) => void;
+  removeDeletedChatId: (chatId: string) => void;
+
   searchQuery: string;
   setSearchQuery: (query: string) => void;
 }
@@ -67,8 +71,23 @@ export const useChatStore = create<ChatState>()((set) => ({
   activeChatId: null,
   typingUsers: {},
   onlineUsers: new Set(),
+  recentlyDeletedChatIds: new Set(),
   searchQuery: "",
   setSearchQuery: (query) => set({ searchQuery: query }),
+
+  addDeletedChatId: (chatId) =>
+    set((state) => {
+      const newSet = new Set(state.recentlyDeletedChatIds);
+      newSet.add(chatId);
+      return { recentlyDeletedChatIds: newSet };
+    }),
+
+  removeDeletedChatId: (chatId) =>
+    set((state) => {
+      const newSet = new Set(state.recentlyDeletedChatIds);
+      newSet.delete(chatId);
+      return { recentlyDeletedChatIds: newSet };
+    }),
 
   setActiveChatId: (chatId) => {
     set({ activeChatId: chatId });

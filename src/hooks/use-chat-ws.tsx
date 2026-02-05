@@ -1145,11 +1145,16 @@ export const useChatWebSocket = (url: string) => {
               window.dispatchEvent(new CustomEvent("kicked-from-chat", { detail: { chatId } }));
             }
 
-            import("sonner").then(({ toast }) => {
-              toast.error("You have been removed from the group", {
-                id: `chat-deleted-${chatId}`,
+            const recentlyDeleted = useChatStore.getState().recentlyDeletedChatIds;
+            if (recentlyDeleted.has(chatId)) {
+              useChatStore.getState().removeDeletedChatId(chatId);
+            } else {
+              import("sonner").then(({ toast }) => {
+                toast.error("You have been removed from the group", {
+                  id: `chat-deleted-${chatId}`,
+                });
               });
-            });
+            }
 
             queryClient.cancelQueries({ queryKey: ["chat", chatId] });
             queryClient.cancelQueries({ queryKey: ["messages", chatId] });
