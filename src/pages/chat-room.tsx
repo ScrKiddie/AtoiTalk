@@ -40,11 +40,24 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { formatMessageDateLabel } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 
+const isValidUUID = (id: string) => {
+  const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return regex.test(id);
+};
+
 const ChatRoom = () => {
   const queryClient = useQueryClient();
   const { chatId, userId } = useParams();
   const navigate = useNavigate();
-  const currentChatId = chatId || null;
+
+  useEffect(() => {
+    if (chatId && !isValidUUID(chatId)) {
+      navigate("/", { replace: true });
+    }
+  }, [chatId, navigate]);
+
+  const isIdValid = chatId ? isValidUUID(chatId) : true;
+  const currentChatId = chatId && isIdValid ? chatId : null;
   const targetUserId = userId || null;
   const isVirtual = !currentChatId && !!targetUserId;
 
@@ -118,14 +131,20 @@ const ChatRoom = () => {
   } = useMessages(
     currentChatId,
     { anchorId: anchorMessageId ?? undefined },
-    { enabled: !!currentChatId && activeChatId === currentChatId }
+    { enabled: !!currentChatId && activeChatId === currentChatId && !!chat }
   );
 
   useEffect(() => {
     if (isMessagesError && messagesError) {
       const axiosError = messagesError as AxiosError;
-      if (axiosError?.response?.status === 403) {
-        toast.error("You are not a member of this group");
+      if (
+        axiosError?.response?.status === 403 ||
+        axiosError?.response?.status === 404 ||
+        axiosError?.response?.status === 400
+      ) {
+        if (axiosError?.response?.status === 403) {
+          toast.error("You are not a member of this group");
+        }
         navigate("/", { replace: true });
       }
     }
@@ -142,10 +161,10 @@ const ChatRoom = () => {
     const isFetchingChat = isLoadingSingleChat || isFetchingSingleChat;
 
     if (!isFetchingChat && !chat && !isVirtual) {
-      const is404 = (chatError as AxiosError)?.response?.status === 404;
+      const status = (chatError as AxiosError)?.response?.status;
+      const isNotFound = status === 404 || status === 400;
 
-      if (is404) {
-        console.warn("[ChatRoom] Chat 404 Not Found, redirecting.");
+      if (isNotFound) {
         navigate("/", { replace: true });
         return;
       }
@@ -153,7 +172,6 @@ const ChatRoom = () => {
       if (!isChatError) {
         const timer = setTimeout(() => {
           if (!chat) {
-            console.warn("[ChatRoom] Chat not found (unknown), redirecting.");
             navigate("/", { replace: true });
           }
         }, 100);
@@ -264,7 +282,7 @@ const ChatRoom = () => {
     }
 
     if (isChatError) {
-      return <ChatHeaderSkeleton isError onRetry={() => refetchChat()} />;
+      return <ChatHeaderSkeleton />;
     }
     return <ChatHeaderSkeleton />;
   };

@@ -85,7 +85,12 @@ export function useChat(chatId: string | null) {
       return chatService.getChatById(chatId!, signal);
     },
     enabled: !!chatId && activeChatId === chatId,
-    retry: 3,
+    retry: (failureCount, error) => {
+      const axiosError = error as { response?: { status: number } };
+      const status = axiosError?.response?.status;
+      if (status === 404 || status === 400 || status === 403) return false;
+      return failureCount < 3;
+    },
     retryDelay: 1000,
     staleTime: cachedData?.isSuspicious ? 0 : 1000 * 30,
     initialData: cachedData?.data,

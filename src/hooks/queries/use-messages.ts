@@ -46,7 +46,12 @@ export function useMessages(
     enabled: chatId !== null && (options?.enabled ?? true),
     retry: (failureCount, error) => {
       const axiosError = error as AxiosError;
-      if (axiosError?.response?.status === 403) return false;
+      if (
+        axiosError?.response?.status === 403 ||
+        axiosError?.response?.status === 404 ||
+        axiosError?.response?.status === 400
+      )
+        return false;
       return failureCount < 3;
     },
     refetchOnWindowFocus: false,
