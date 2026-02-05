@@ -1,18 +1,6 @@
 import { chatService } from "@/services";
 import { GroupMember, PaginatedResponse } from "@/types";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-
-export const useGroupMembers = (groupId: string, enabled = true) => {
-  return useQuery<GroupMember[], Error>({
-    queryKey: ["group-members", groupId],
-    queryFn: async () => {
-      const response = await chatService.getGroupMembers(groupId, { limit: 100 });
-      return response.data;
-    },
-    enabled: !!groupId && enabled,
-    staleTime: 1000 * 60 * 5,
-  });
-};
+import { useInfiniteQuery } from "@tanstack/react-query";
 
 export const useInfiniteGroupMembers = (
   groupId: string,

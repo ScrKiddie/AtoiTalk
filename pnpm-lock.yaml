@@ -19,9 +19,6 @@ importers:
       "@radix-ui/react-checkbox":
         specifier: ^1.3.3
         version: 1.3.3(@types/react-dom@19.2.3(@types/react@19.2.8))(@types/react@19.2.8)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      "@radix-ui/react-collapsible":
-        specifier: ^1.1.4
-        version: 1.1.12(@types/react-dom@19.2.3(@types/react@19.2.8))(@types/react@19.2.8)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       "@radix-ui/react-dialog":
         specifier: ^1.1.10
         version: 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.8))(@types/react@19.2.8)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -64,9 +61,6 @@ importers:
       "@tanstack/react-query":
         specifier: ^5.90.16
         version: 5.90.16(react@19.2.3)
-      "@tanstack/react-table":
-        specifier: ^8.21.3
-        version: 8.21.3(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       axios:
         specifier: ^1.13.2
         version: 1.13.2
@@ -88,9 +82,6 @@ importers:
       frimousse:
         specifier: ^0.3.0
         version: 0.3.0(react@19.2.3)(typescript@5.7.3)
-      input-otp:
-        specifier: ^1.4.2
-        version: 1.4.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       lucide-react:
         specifier: ^0.497.0
         version: 0.497.0(react@19.2.3)
@@ -112,18 +103,9 @@ importers:
       react-dom:
         specifier: ^19.0.0
         version: 19.2.3(react@19.2.3)
-      react-easy-crop:
-        specifier: ^5.5.6
-        version: 5.5.6(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react-hook-form:
         specifier: ^7.68.0
         version: 7.71.0(react@19.2.3)
-      react-intersection-observer:
-        specifier: ^10.0.0
-        version: 10.0.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      react-photo-view:
-        specifier: ^1.2.7
-        version: 1.2.7(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react-router-dom:
         specifier: ^7.5.1
         version: 7.12.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -179,9 +161,6 @@ importers:
       eslint-config-prettier:
         specifier: ^10.1.8
         version: 10.1.8(eslint@9.39.2(jiti@2.6.1))
-      eslint-plugin-prettier:
-        specifier: ^5.5.5
-        version: 5.5.5(eslint-config-prettier@10.1.8(eslint@9.39.2(jiti@2.6.1)))(eslint@9.39.2(jiti@2.6.1))(prettier@3.8.0)
       eslint-plugin-react-hooks:
         specifier: ^5.2.0
         version: 5.2.0(eslint@9.39.2(jiti@2.6.1))
@@ -854,13 +833,6 @@ packages:
     peerDependencies:
       react: ^17.0.2 || ^18.0.0 || ^19.0
       react-dom: ^17.0.2 || ^18.0.0 || ^19.0
-
-  "@pkgr/core@0.2.9":
-    resolution:
-      {
-        integrity: sha512-QNqXyfVS2wm9hweSYD2O7F0G06uurj9kZ96TRQE5Y9hU7+tgdZwIkbAKc5Ocy1HxEY2kuDQa6cQ1WRs/O5LFKA==,
-      }
-    engines: { node: ^12.20.0 || ^14.18.0 || >=16.0.0 }
 
   "@radix-ui/number@1.1.1":
     resolution:
@@ -2206,23 +2178,6 @@ packages:
     peerDependencies:
       react: ^18 || ^19
 
-  "@tanstack/react-table@8.21.3":
-    resolution:
-      {
-        integrity: sha512-5nNMTSETP4ykGegmVkhjcS8tTLW6Vl4axfEGQN3v0zdHYbK4UfoqfPChclTrJ4EoK9QynqAu9oUf8VEmrpZ5Ww==,
-      }
-    engines: { node: ">=12" }
-    peerDependencies:
-      react: ">=16.8"
-      react-dom: ">=16.8"
-
-  "@tanstack/table-core@8.21.3":
-    resolution:
-      {
-        integrity: sha512-ldZXEhOBb8Is7xLs01fR3YEc3DERiz5silj8tnGkFZytt1abEvl/GhUmCE0PMLaMPTa3Jk4HbKmRlHmu+gCftg==,
-      }
-    engines: { node: ">=12" }
-
   "@testing-library/dom@10.4.1":
     resolution:
       {
@@ -2913,23 +2868,6 @@ packages:
     peerDependencies:
       eslint: ">=7.0.0"
 
-  eslint-plugin-prettier@5.5.5:
-    resolution:
-      {
-        integrity: sha512-hscXkbqUZ2sPithAuLm5MXL+Wph+U7wHngPBv9OMWwlP8iaflyxpjTYZkmdgB4/vPIhemRlBEoLrH7UC1n7aUw==,
-      }
-    engines: { node: ^14.18.0 || >=16.0.0 }
-    peerDependencies:
-      "@types/eslint": ">=8.0.0"
-      eslint: ">=8.0.0"
-      eslint-config-prettier: ">= 7.0.0 <10.0.0 || >=10.1.0"
-      prettier: ">=3.0.0"
-    peerDependenciesMeta:
-      "@types/eslint":
-        optional: true
-      eslint-config-prettier:
-        optional: true
-
   eslint-plugin-react-hooks@5.2.0:
     resolution:
       {
@@ -3033,12 +2971,6 @@ packages:
     resolution:
       {
         integrity: sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==,
-      }
-
-  fast-diff@1.3.0:
-    resolution:
-      {
-        integrity: sha512-VxPP4NqbUjj6MaAOafWeUn2cXWLcCtljklUtZf0Ind4XQ+QPtmA0b18zZy0jIQx+ExRVCR/ZQpBmik5lXshNsw==,
       }
 
   fast-json-stable-stringify@2.1.0:
@@ -3299,15 +3231,6 @@ packages:
         integrity: sha512-EdDDZu4A2OyIK7Lr/2zG+w5jmbuk1DVBnEwREQvBzspBJkCEbRa8GxU1lghYcaGJCnRWibjDXlq779X1/y5xwg==,
       }
     engines: { node: ">=8" }
-
-  input-otp@1.4.2:
-    resolution:
-      {
-        integrity: sha512-l3jWwYNvrEa6NTCt7BECfCm48GvwuZzkoeG3gBL2w4CHeOXW3eKFmf9UNYkNfYc3mxMrthMnxjIE07MT0zLBQA==,
-      }
-    peerDependencies:
-      react: ^16.8 || ^17.0 || ^18.0 || ^19.0.0 || ^19.0.0-rc
-      react-dom: ^16.8 || ^17.0 || ^18.0 || ^19.0.0 || ^19.0.0-rc
 
   is-extglob@2.1.1:
     resolution:
@@ -3678,12 +3601,6 @@ packages:
         integrity: sha512-nmh3lCkYZ3grZvqcCH+fjmQ7X+H0OeZgP40OierEaAptX4XofMh5kwNbWh7lBduUzCcV/8kZ+NDLCwm2iorIlA==,
       }
 
-  normalize-wheel@1.0.1:
-    resolution:
-      {
-        integrity: sha512-1OnlAPZ3zgrk8B91HyRj+eVv+kS5u+Z0SCsak6Xil/kmgEia50ga7zfkumayonZrImffAxPU/5WcyGhzetHNPA==,
-      }
-
   obug@2.1.1:
     resolution:
       {
@@ -3771,13 +3688,6 @@ packages:
       }
     engines: { node: ">= 0.8.0" }
 
-  prettier-linter-helpers@1.0.1:
-    resolution:
-      {
-        integrity: sha512-SxToR7P8Y2lWmv/kTzVLC1t/GDI2WGjMwNhLLE9qtH8Q13C+aEmuRlzDst4Up4s0Wc8sF2M+J57iB3cMLqftfg==,
-      }
-    engines: { node: ">=6.0.0" }
-
   prettier-plugin-organize-imports@4.3.0:
     resolution:
       {
@@ -3851,15 +3761,6 @@ packages:
     peerDependencies:
       react: ^19.2.3
 
-  react-easy-crop@5.5.6:
-    resolution:
-      {
-        integrity: sha512-Jw3/ozs8uXj3NpL511Suc4AHY+mLRO23rUgipXvNYKqezcFSYHxe4QXibBymkOoY6oOtLVMPO2HNPRHYvMPyTw==,
-      }
-    peerDependencies:
-      react: ">=16.4.0"
-      react-dom: ">=16.4.0"
-
   react-hook-form@7.71.0:
     resolution:
       {
@@ -3869,32 +3770,11 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17 || ^18 || ^19
 
-  react-intersection-observer@10.0.0:
-    resolution:
-      {
-        integrity: sha512-JJRgcnFQoVXmbE5+GXr1OS1NDD1gHk0HyfpLcRf0575IbJz+io8yzs4mWVlfaqOQq1FiVjLvuYAdEEcrrCfveg==,
-      }
-    peerDependencies:
-      react: ^17.0.0 || ^18.0.0 || ^19.0.0
-      react-dom: ^17.0.0 || ^18.0.0 || ^19.0.0
-    peerDependenciesMeta:
-      react-dom:
-        optional: true
-
   react-is@17.0.2:
     resolution:
       {
         integrity: sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==,
       }
-
-  react-photo-view@1.2.7:
-    resolution:
-      {
-        integrity: sha512-MfOWVPxuibncRLaycZUNxqYU8D9IA+rbGDDaq6GM8RIoGJal592hEJoRAyRSI7ZxyyJNJTLMUWWL3UIXHJJOpw==,
-      }
-    peerDependencies:
-      react: ">=16.8.0"
-      react-dom: ">=16.8.0"
 
   react-refresh@0.17.0:
     resolution:
@@ -4109,13 +3989,6 @@ packages:
       {
         integrity: sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw==,
       }
-
-  synckit@0.11.12:
-    resolution:
-      {
-        integrity: sha512-Bh7QjT8/SuKUIfObSXNHNSK6WHo6J1tHCqJsuaFDP7gP0fkzSfTxI8y85JrppZ0h8l0maIgc2tfuZQ6/t3GtnQ==,
-      }
-    engines: { node: ^14.18.0 || >=16.0.0 }
 
   tailwind-merge@3.4.0:
     resolution:
@@ -4847,8 +4720,6 @@ snapshots:
     dependencies:
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
-
-  "@pkgr/core@0.2.9": {}
 
   "@radix-ui/number@1.1.1": {}
 
@@ -5818,14 +5689,6 @@ snapshots:
       "@tanstack/query-core": 5.90.16
       react: 19.2.3
 
-  "@tanstack/react-table@8.21.3(react-dom@19.2.3(react@19.2.3))(react@19.2.3)":
-    dependencies:
-      "@tanstack/table-core": 8.21.3
-      react: 19.2.3
-      react-dom: 19.2.3(react@19.2.3)
-
-  "@tanstack/table-core@8.21.3": {}
-
   "@testing-library/dom@10.4.1":
     dependencies:
       "@babel/code-frame": 7.27.1
@@ -6278,15 +6141,6 @@ snapshots:
     dependencies:
       eslint: 9.39.2(jiti@2.6.1)
 
-  eslint-plugin-prettier@5.5.5(eslint-config-prettier@10.1.8(eslint@9.39.2(jiti@2.6.1)))(eslint@9.39.2(jiti@2.6.1))(prettier@3.8.0):
-    dependencies:
-      eslint: 9.39.2(jiti@2.6.1)
-      prettier: 3.8.0
-      prettier-linter-helpers: 1.0.1
-      synckit: 0.11.12
-    optionalDependencies:
-      eslint-config-prettier: 10.1.8(eslint@9.39.2(jiti@2.6.1))
-
   eslint-plugin-react-hooks@5.2.0(eslint@9.39.2(jiti@2.6.1)):
     dependencies:
       eslint: 9.39.2(jiti@2.6.1)
@@ -6370,8 +6224,6 @@ snapshots:
   expect-type@1.3.0: {}
 
   fast-deep-equal@3.1.3: {}
-
-  fast-diff@1.3.0: {}
 
   fast-json-stable-stringify@2.1.0: {}
 
@@ -6505,11 +6357,6 @@ snapshots:
   imurmurhash@0.1.4: {}
 
   indent-string@4.0.0: {}
-
-  input-otp@1.4.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
-    dependencies:
-      react: 19.2.3
-      react-dom: 19.2.3(react@19.2.3)
 
   is-extglob@2.1.1: {}
 
@@ -6694,8 +6541,6 @@ snapshots:
 
   node-releases@2.0.27: {}
 
-  normalize-wheel@1.0.1: {}
-
   obug@2.1.1: {}
 
   optionator@0.9.4:
@@ -6740,10 +6585,6 @@ snapshots:
       source-map-js: 1.2.1
 
   prelude-ls@1.2.1: {}
-
-  prettier-linter-helpers@1.0.1:
-    dependencies:
-      fast-diff: 1.3.0
 
   prettier-plugin-organize-imports@4.3.0(prettier@3.8.0)(typescript@5.7.3):
     dependencies:
@@ -6835,29 +6676,11 @@ snapshots:
       react: 19.2.3
       scheduler: 0.27.0
 
-  react-easy-crop@5.5.6(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
-    dependencies:
-      normalize-wheel: 1.0.1
-      react: 19.2.3
-      react-dom: 19.2.3(react@19.2.3)
-      tslib: 2.8.1
-
   react-hook-form@7.71.0(react@19.2.3):
     dependencies:
       react: 19.2.3
 
-  react-intersection-observer@10.0.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
-    dependencies:
-      react: 19.2.3
-    optionalDependencies:
-      react-dom: 19.2.3(react@19.2.3)
-
   react-is@17.0.2: {}
-
-  react-photo-view@1.2.7(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
-    dependencies:
-      react: 19.2.3
-      react-dom: 19.2.3(react@19.2.3)
 
   react-refresh@0.17.0: {}
 
@@ -6986,10 +6809,6 @@ snapshots:
       has-flag: 4.0.0
 
   symbol-tree@3.2.4: {}
-
-  synckit@0.11.12:
-    dependencies:
-      "@pkgr/core": 0.2.9
 
   tailwind-merge@3.4.0: {}
 

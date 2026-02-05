@@ -113,6 +113,8 @@ export function PublicGroupSearchDialog({ isOpen, onClose }: PublicGroupSearchDi
     isAtEndRef.current = Math.abs(scrollWidth - clientWidth - scrollLeft) < 10;
   };
 
+  const hasMembers = selectedMembers.length > 0;
+
   useEffect(() => {
     const viewport = scrollRef.current;
     if (!viewport) return;
@@ -128,7 +130,7 @@ export function PublicGroupSearchDialog({ isOpen, onClose }: PublicGroupSearchDi
     return () => {
       viewport.removeEventListener("wheel", handleWheel);
     };
-  }, [selectedMembers.length > 0]);
+  }, [hasMembers]);
 
   useEffect(() => {
     if (isAtEndRef.current && scrollRef.current) {
@@ -278,9 +280,11 @@ export function PublicGroupSearchDialog({ isOpen, onClose }: PublicGroupSearchDi
 
     createGroup(formData, {
       onSuccess: (newGroup) => {
-        onClose(false);
-        resetGroupForm();
         navigate(`/chat/${newGroup.id}`);
+        requestAnimationFrame(() => {
+          onClose(false);
+          resetGroupForm();
+        });
       },
       onSettled: () => {
         setIsCreatingGroup(false);

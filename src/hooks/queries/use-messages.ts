@@ -95,8 +95,6 @@ export function useSendMessage() {
           return { ...oldData, pages: newPages };
         }
       );
-
-      queryClient.invalidateQueries({ queryKey: ["chats"] });
     },
   });
 }

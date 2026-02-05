@@ -47,7 +47,7 @@ type GroupErrors = {
 };
 
 export function EditGroupDialog({ isOpen, onClose, chat }: EditGroupDialogProps) {
-  const [groupName, setGroupName] = useState(chat.name);
+  const [groupName, setGroupName] = useState(chat.name || "");
   const [groupDescription, setGroupDescription] = useState(chat.description || "");
   const [groupAvatar, setGroupAvatar] = useState<File | null>(null);
   const [groupAvatarPreview, setGroupAvatarPreview] = useState<string | null>(chat.avatar);
@@ -63,7 +63,7 @@ export function EditGroupDialog({ isOpen, onClose, chat }: EditGroupDialogProps)
 
   useEffect(() => {
     if (isOpen) {
-      setGroupName(chat.name);
+      setGroupName(chat.name || "");
       setGroupDescription(chat.description || "");
       setGroupAvatarPreview(chat.avatar);
       setGroupAvatar(null);
@@ -74,7 +74,7 @@ export function EditGroupDialog({ isOpen, onClose, chat }: EditGroupDialogProps)
   }, [isOpen, chat]);
 
   const hasChanges =
-    groupName.trim() !== chat.name ||
+    (groupName || "").trim() !== (chat.name || "") ||
     groupDescription.trim() !== (chat.description || "") ||
     isPublic !== (chat.is_public || false) ||
     groupAvatar !== null ||
@@ -138,7 +138,7 @@ export function EditGroupDialog({ isOpen, onClose, chat }: EditGroupDialogProps)
 
   const handleSaveGroup = () => {
     const result = groupSchema.safeParse({
-      name: groupName.trim(),
+      name: (groupName || "").trim(),
       description: groupDescription.trim() || undefined,
     });
 
@@ -157,7 +157,7 @@ export function EditGroupDialog({ isOpen, onClose, chat }: EditGroupDialogProps)
     setGroupErrors({});
 
     const formData = new FormData();
-    formData.append("name", groupName.trim());
+    formData.append("name", (groupName || "").trim());
     formData.append("description", groupDescription.trim());
     formData.append("is_public", isPublic.toString());
 
@@ -315,7 +315,7 @@ export function EditGroupDialog({ isOpen, onClose, chat }: EditGroupDialogProps)
               onClick={handleSaveGroup}
               disabled={
                 isUpdating ||
-                !groupName.trim() ||
+                !(groupName || "").trim() ||
                 !hasChanges ||
                 !!groupErrors.name ||
                 !!groupErrors.description

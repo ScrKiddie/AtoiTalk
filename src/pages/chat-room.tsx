@@ -35,7 +35,7 @@ import { useChatScroll } from "@/hooks/use-chat-scroll";
 import { useJumpToMessage } from "@/hooks/use-jump-to-message";
 import { RefreshCcw } from "lucide-react";
 import { useCallback } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { formatMessageDateLabel } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
@@ -67,6 +67,7 @@ const ChatRoom = () => {
   useEffect(() => {
     const handleKicked = (e: CustomEvent<{ chatId: string }>) => {
       if (e.detail.chatId === currentChatId) {
+        setActiveChatId(null);
         navigate("/", { replace: true });
       }
     };
@@ -75,7 +76,11 @@ const ChatRoom = () => {
     return () => {
       window.removeEventListener("kicked-from-chat", handleKicked as EventListener);
     };
-  }, [currentChatId, navigate]);
+  }, [currentChatId, navigate, setActiveChatId]);
+
+  const location = useLocation();
+  const locationState = location.state as { messageDraft?: string } | null;
+  const isDraftSending = useRef(false);
 
   useLayoutEffect(() => {
     if ("scrollRestoration" in history) {
@@ -300,6 +305,28 @@ const ChatRoom = () => {
   const { mutateAsync: editMessageMutation, isPending: isEditing } = useEditMessage();
   const { mutate: markAsRead } = useMarkAsRead();
 
+  useEffect(() => {
+    if (locationState?.messageDraft && currentChatId && !isDraftSending.current) {
+      isDraftSending.current = true;
+      sendMessage(
+        { ...locationState.messageDraft, chat_id: currentChatId },
+        {
+          onSuccess: () => {
+            navigate(location.pathname, { replace: true, state: {} });
+            isDraftSending.current = false;
+          },
+          onError: (error: Error) => {
+            console.error("Failed to send draft message:", error);
+            if ((error as { code?: string })?.code !== "ERR_CANCELED") {
+              toast.error("Failed to send message");
+            }
+            isDraftSending.current = false;
+          },
+        }
+      );
+    }
+  }, [currentChatId, locationState, sendMessage, navigate, location.pathname]);
+
   const [uploadingFiles, setUploadingFiles] = useState<File[]>([]);
   const uploadingKeysRef = useRef<Set<string>>(new Set());
   const isCreatingChatRef = useRef(false);
@@ -315,7 +342,7 @@ const ChatRoom = () => {
   const isGlobalBusy = isSending || isEditing || isDeleteSubmitting || isUploading;
 
   useEffect(() => {
-    if (!currentChatId) return;
+    if (!currentChatId || activeChatId !== currentChatId) return;
 
     queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
       { queryKey: ["chats"] },
@@ -339,7 +366,14 @@ const ChatRoom = () => {
     if (unreadCount > 0) {
       markAsRead(currentChatId);
     }
-  }, [currentChatId, queryClient, markAsRead, chat?.unread_count, chatFromList?.unread_count]);
+  }, [
+    currentChatId,
+    activeChatId,
+    queryClient,
+    markAsRead,
+    chat?.unread_count,
+    chatFromList?.unread_count,
+  ]);
 
   const handleRemoteJump = useCallback((targetId: string) => {
     setAnchorMessageId(targetId);
@@ -620,25 +654,13 @@ const ChatRoom = () => {
         { target_user_id: targetUserId },
         {
           onSuccess: (newChat) => {
-            sendMessage(
-              { ...payload, chat_id: newChat.id },
-              {
-                onSuccess: () => {
-                  onSuccess();
-                  navigate(`/chat/${newChat.id}`, { replace: true });
-                  isCreatingChatRef.current = false;
-                },
-                onError: (error: Error) => {
-                  console.error("SendMessage Error:", error);
+            navigate(`/chat/${newChat.id}`, {
+              replace: true,
+              state: { messageDraft: payload },
+            });
+            isCreatingChatRef.current = false;
 
-                  if ((error as { code?: string })?.code !== "ERR_CANCELED") {
-                    toast.error("Failed to send message");
-                  }
-
-                  isCreatingChatRef.current = false;
-                },
-              }
-            );
+            onSuccess();
           },
           onError: () => {
             isCreatingChatRef.current = false;

@@ -69,6 +69,7 @@ export function NavChat({
   const location = useLocation();
   const currentUser = useAuthStore((state) => state.user);
   const typingUsers = useChatStore((state) => state.typingUsers);
+  const setActiveChatId = useChatStore((state) => state.setActiveChatId);
 
   const match = location.pathname.match(/\/chat\/([^/]+)/);
   const activeId = match ? match[1] : null;
@@ -384,6 +385,9 @@ export function NavChat({
 
             if (chat.type === "group") {
               if (chat.my_role === "owner") {
+                if (chat.id === activeId) {
+                  setActiveChatId(null);
+                }
                 deleteGroup(chat.id, {
                   onSuccess: () => {
                     setDeleteChatIndex(null);
@@ -391,6 +395,9 @@ export function NavChat({
                   },
                 });
               } else {
+                if (chat.id === activeId) {
+                  setActiveChatId(null);
+                }
                 leaveGroup(chat.id, {
                   onSuccess: () => {
                     setDeleteChatIndex(null);
@@ -399,12 +406,13 @@ export function NavChat({
                 });
               }
             } else {
+              if (chat.id === activeId) {
+                setActiveChatId(null);
+                navigate("/");
+              }
               hideChat(chat.id, {
-                onSuccess: () => {
+                onSettled: () => {
                   setDeleteChatIndex(null);
-                  if (chat.id === activeId) {
-                    navigate("/");
-                  }
                 },
               });
             }

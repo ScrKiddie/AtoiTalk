@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { GlobalLightbox } from "@/components/ui/lightbox";
 import { LoadingModal } from "@/components/ui/loading-modal";
-import { Spinner } from "@/components/ui/spinner";
-import { useChats, useCreatePrivateChat, useUserById } from "@/hooks/queries";
+import { useChats, useUserById } from "@/hooks/queries";
 import { toast } from "@/lib/toast";
 import { formatLastSeen } from "@/lib/utils";
 import { useAuthStore, useUIStore } from "@/store";
@@ -29,7 +28,7 @@ export function UserProfileDialog() {
 
   const { user: currentUser } = useAuthStore();
   const navigate = useNavigate();
-  const { mutate: createPrivateChat, isPending: isCreatingChat } = useCreatePrivateChat();
+
   const { data: chatsData } = useChats(undefined, { enabled: isOpen });
 
   const handleBlockUser = () => {
@@ -69,16 +68,8 @@ export function UserProfileDialog() {
       return;
     }
 
-    createPrivateChat(
-      { target_user_id: user.id },
-      {
-        onSuccess: (chat) => {
-          closeProfileModal();
-          navigate(`/chat/${chat.id}`);
-        },
-        onError: () => toast.error("Failed to start chat"),
-      }
-    );
+    closeProfileModal();
+    navigate(`/chat/u/${user.id}`);
   };
 
   const showDirectMessageButton = !config?.hideMessageButton;
@@ -151,13 +142,9 @@ export function UserProfileDialog() {
                       variant="outline"
                       className="flex-1 flex flex-col gap-1 h-auto py-3"
                       onClick={handleSendMessage}
-                      disabled={isCreatingChat || user.is_blocked_by_me || user.is_blocked_by_other}
+                      disabled={user.is_blocked_by_me || user.is_blocked_by_other}
                     >
-                      {isCreatingChat ? (
-                        <Spinner className="size-5" />
-                      ) : (
-                        <MessageCircle className="size-5" />
-                      )}
+                      <MessageCircle className="size-5" />
                       <span className="text-xs font-medium">Message</span>
                     </Button>
                   )}

@@ -44,6 +44,7 @@ export function useChats(params?: GetChatsParams, options?: { enabled?: boolean 
 
 export function useChat(chatId: string | null) {
   const queryClient = useQueryClient();
+  const activeChatId = useChatStore((state) => state.activeChatId);
 
   const cachedData = useMemo(() => {
     if (!chatId) return undefined;
@@ -83,7 +84,7 @@ export function useChat(chatId: string | null) {
     queryFn: ({ signal }) => {
       return chatService.getChatById(chatId!, signal);
     },
-    enabled: !!chatId,
+    enabled: !!chatId && activeChatId === chatId,
     retry: 3,
     retryDelay: 1000,
     staleTime: cachedData?.isSuspicious ? 0 : 1000 * 30,
@@ -134,39 +135,10 @@ export function useCreatePrivateChat() {
       }
 
       setActiveChatId(newChat.id);
-
-      try {
-        const fullChat = await chatService.getChatById(newChat.id);
-        queryClient.setQueryData<ChatListItem>(["chat", newChat.id], fullChat);
-      } catch (error) {
-        console.error("Failed to fetch full chat details on create:", error);
-      }
     },
     onError: (error) => {
       console.error("Failed to create private chat:", error);
       toast.error("Failed to start chat");
-    },
-  });
-}
-
-export function useHideChat() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (chatId: string) => chatService.hideChat(chatId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["chats"] });
-    },
-  });
-}
-
-export function useMarkChatAsRead() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (chatId: string) => chatService.markAsRead(chatId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["chats"] });
     },
   });
 }

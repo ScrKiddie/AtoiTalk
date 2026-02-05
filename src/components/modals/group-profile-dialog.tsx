@@ -28,7 +28,7 @@ import { toast } from "@/lib/toast";
 import { useChat } from "@/hooks/queries";
 import { useInfiniteGroupMembers } from "@/hooks/queries/use-group-members";
 import { getInitials } from "@/lib/avatar-utils";
-import { useAuthStore, useUIStore } from "@/store";
+import { useAuthStore, useChatStore, useUIStore } from "@/store";
 import { ChatListItem, GroupMember, PaginatedResponse } from "@/types";
 import { InfiniteData, useQueryClient } from "@tanstack/react-query";
 import {
@@ -240,6 +240,7 @@ export function GroupProfileDialog({
 
   const { user: currentUser } = useAuthStore();
   const navigate = useNavigate();
+  const setActiveChatId = useChatStore((state) => state.setActiveChatId);
 
   const { mutate: leaveGroup, isPending: isLeaving } = useLeaveGroup((groupId) => {
     if (groupId === chat?.id) {
@@ -292,6 +293,7 @@ export function GroupProfileDialog({
   }, [isOpen, chat]);
 
   const handleLeaveGroup = () => {
+    setActiveChatId(null);
     leaveGroup(chat.id, {
       onSuccess: () => {
         onClose(false);
@@ -301,6 +303,7 @@ export function GroupProfileDialog({
   };
 
   const handleDeleteGroup = () => {
+    setActiveChatId(null);
     deleteGroup(chat.id, {
       onSuccess: () => {
         onClose(false);

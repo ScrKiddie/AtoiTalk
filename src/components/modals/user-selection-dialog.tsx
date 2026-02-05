@@ -88,6 +88,8 @@ export function UserSelectionDialog({
     isAtEndRef.current = Math.abs(scrollWidth - clientWidth - scrollLeft) < 10;
   };
 
+  const hasSelectedUsers = selectedUsers.length > 0;
+
   useEffect(() => {
     const viewport = scrollRef.current;
     if (!viewport) return;
@@ -104,7 +106,7 @@ export function UserSelectionDialog({
     return () => {
       viewport.removeEventListener("wheel", handleWheel);
     };
-  }, [selectedUsers.length > 0]);
+  }, [hasSelectedUsers]);
 
   useEffect(() => {
     if (isAtEndRef.current && scrollRef.current) {

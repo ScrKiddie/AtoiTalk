@@ -11,7 +11,19 @@ export const useCreateGroup = () => {
   return useMutation({
     mutationFn: (data: FormData) => chatService.createGroup(data),
     onSuccess: (newGroup: ChatResponse) => {
-      queryClient.invalidateQueries({ queryKey: ["chats"] });
+      queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
+        { queryKey: ["chats"] },
+        (oldData) => {
+          if (!oldData) return oldData;
+          const newPages = [...oldData.pages];
+          newPages[0] = {
+            ...newPages[0],
+            data: [newGroup as ChatListItem, ...newPages[0].data],
+          };
+          return { ...oldData, pages: newPages };
+        }
+      );
+      queryClient.setQueryData<ChatListItem>(["chat", newGroup.id], newGroup as ChatListItem);
       toast.success("Group created successfully");
       return newGroup;
     },
@@ -109,7 +121,7 @@ export const useDeleteGroup = () => {
         }
       );
       queryClient.removeQueries({ queryKey: ["messages", groupId] });
-      queryClient.invalidateQueries({ queryKey: ["chats"] });
+      queryClient.removeQueries({ queryKey: ["chat", groupId] });
       toast.success("Group deleted successfully");
     },
     onError: (error) => {

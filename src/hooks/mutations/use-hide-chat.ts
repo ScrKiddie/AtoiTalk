@@ -9,6 +9,10 @@ export const useHideChat = () => {
 
   return useMutation({
     mutationFn: (chatId: string) => chatService.hideChat(chatId),
+    onMutate: async (chatId) => {
+      await queryClient.cancelQueries({ queryKey: ["messages", chatId] });
+      queryClient.removeQueries({ queryKey: ["messages", chatId] });
+    },
     onSuccess: (_data, chatId) => {
       queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
         { queryKey: ["chats"] },
@@ -21,10 +25,6 @@ export const useHideChat = () => {
           return { ...oldData, pages: newPages };
         }
       );
-
-      queryClient.removeQueries({ queryKey: ["messages", chatId] });
-
-      queryClient.invalidateQueries({ queryKey: ["chats"] });
 
       toast.success("Chat deleted successfully");
     },

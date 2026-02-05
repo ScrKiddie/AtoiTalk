@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
-import { useChats, useCreatePrivateChat, useSearchUsers } from "@/hooks/queries";
+import { useChats, useSearchUsers } from "@/hooks/queries";
 import { toast } from "@/lib/toast";
 import { User } from "@/types";
 import { Globe } from "lucide-react";
@@ -34,7 +34,6 @@ export function NavHeader() {
   const [userToBlock, setUserToBlock] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const { mutateAsync: createPrivateChat } = useCreatePrivateChat();
   const { data: chatsData } = useChats();
   const [creatingChatUserId, setCreatingChatUserId] = useState<string | null>(null);
 
@@ -72,10 +71,9 @@ export function NavHeader() {
         return;
       }
 
-      const newChat = await createPrivateChat({ target_user_id: user.id });
       setOpen(false);
       setSearch("");
-      navigate(`/chat/${newChat.id}`);
+      navigate(`/chat/u/${user.id}`);
     } catch {
       toast.error("Failed to start chat");
     } finally {

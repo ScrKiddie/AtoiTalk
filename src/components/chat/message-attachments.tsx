@@ -39,7 +39,7 @@ export const MessageAttachments = ({ message, isCurrentUser }: MessageAttachment
     }));
 
     return { images: imgs, nonImages: nonImgs, slides: slds };
-  }, [message.attachments]);
+  }, [message.attachments, message.id]);
 
   if (attachments.length === 0) return null;
 
