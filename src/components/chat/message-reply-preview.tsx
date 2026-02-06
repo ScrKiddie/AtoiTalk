@@ -29,27 +29,21 @@ export const MessageReplyPreview = ({
 
   const {
     data: fetchedUser,
-    isError: isSenderError,
-    isLoading: isSenderLoading,
+    isError,
+    isLoading,
   } = useUserById(isSelfReply || cachedUser ? null : replySenderId);
 
   const sender = isSelfReply ? current : cachedUser || fetchedUser;
 
   if (!message.reply_to) return null;
 
-  const isProfileMissing = !isSenderLoading && (!sender || isSenderError);
+  const hasSenderId = !!message.reply_to.sender_id;
+  const isProfileNotFound = hasSenderId && !isSelfReply && !isLoading && !sender && isError;
   const senderNameFromProfile = sender?.full_name;
-
-  const senderName = isProfileMissing
-    ? "Deleted Account"
-    : senderNameFromProfile || message.reply_to.sender_name || "Unknown User";
-
-  const isSenderDeleted =
-    senderName === "Deleted Account" ||
-    senderName === "Deleted User" ||
-    (!!sender && !senderNameFromProfile) ||
-    isProfileMissing;
-
+  const fallbackName = message.reply_to.sender_name || "Unknown User";
+  const senderName =
+    senderNameFromProfile || (isProfileNotFound ? "Deleted Account" : fallbackName);
+  const isSenderDeleted = (!hasSenderId && !message.reply_to.sender_name) || isProfileNotFound;
   const finalSenderName = isSenderDeleted ? "Deleted Account" : senderName;
 
   const replyDate = message.reply_to.created_at ? new Date(message.reply_to.created_at) : null;

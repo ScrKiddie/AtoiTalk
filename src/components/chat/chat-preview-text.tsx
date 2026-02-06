@@ -27,42 +27,20 @@ export const ChatPreviewText = ({ chat, currentUser }: ChatPreviewTextProps) => 
 
   const sender = senderCache;
   const targetUser = targetCache;
-  const isLoading = false;
-  const isTargetLoading = false;
-  const isError = false;
-  const isTargetError = false;
 
   if (!lastMessage) return <span className="truncate">No messages</span>;
 
-  const isProfileMissing = !isLoading && (!sender || isError);
   const senderNameFromProfile = sender?.full_name;
-
-  const effectiveSenderName = isProfileMissing
+  const isSenderDeleted = !senderId || (!sender && !lastMessage.sender_name);
+  const finalSenderName = isSenderDeleted
     ? "Deleted Account"
     : senderNameFromProfile || lastMessage.sender_name || "Unknown User";
 
-  const isSenderDeleted =
-    effectiveSenderName === "Deleted Account" ||
-    effectiveSenderName === "Deleted User" ||
-    (!!sender && !senderNameFromProfile) ||
-    isProfileMissing;
-
-  const finalSenderName = isSenderDeleted ? "Deleted Account" : effectiveSenderName;
-
-  const isTargetProfileMissing = !isTargetLoading && (!targetUser || isTargetError);
   const targetNameFromProfile = targetUser?.full_name;
-
-  const effectiveTargetName = isTargetProfileMissing
+  const isTargetDeleted = !targetId || (!targetUser && !actionData?.target_name);
+  const finalTargetName = isTargetDeleted
     ? "Deleted Account"
     : targetNameFromProfile || actionData?.target_name || "User";
-
-  const isTargetDeleted =
-    effectiveTargetName === "Deleted Account" ||
-    effectiveTargetName === "Deleted User" ||
-    (!!targetUser && !targetNameFromProfile) ||
-    isTargetProfileMissing;
-
-  const finalTargetName = isTargetDeleted ? "Deleted Account" : effectiveTargetName;
 
   if (lastMessage.type.startsWith("system_")) {
     const messageWithCorrectName = {

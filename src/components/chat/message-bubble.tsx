@@ -118,16 +118,11 @@ const MessageBubble = ({
 
   const sender = cachedUser || fetchedUser;
 
-  const isProfileMissing = !isSenderLoading && (!sender || isSenderError);
-
   const senderNameFromProfile = sender?.full_name;
-  const isProfileLoaded = !!sender;
-
-  const effectiveSenderName = isProfileLoaded
-    ? senderNameFromProfile || "Deleted Account"
-    : isProfileMissing
-      ? "Deleted Account"
-      : message.sender_name || "Unknown User";
+  const fallbackName = message.sender_name || "Unknown User";
+  const isProfileNotFound = targetUserId && !isSenderLoading && !sender && isSenderError;
+  const effectiveSenderName =
+    senderNameFromProfile || (isProfileNotFound ? "Deleted Account" : fallbackName);
 
   const senderName = isCurrentUser
     ? "You"
@@ -137,11 +132,9 @@ const MessageBubble = ({
 
   const isSenderDeleted =
     !isCurrentUser &&
-    (senderName === "Deleted Account" ||
-      senderName === "Deleted User" ||
-      (chat?.type === "private" && chat.other_user_is_deleted) ||
-      (isProfileLoaded && !senderNameFromProfile) ||
-      isProfileMissing);
+    ((chat?.type === "private" && chat.other_user_is_deleted) ||
+      (!message.sender_id && !message.sender_name) ||
+      isProfileNotFound);
 
   const finalSenderName = isSenderDeleted ? "Deleted Account" : senderName;
 

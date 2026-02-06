@@ -29,20 +29,12 @@ const SystemMessageUserLink = ({ userId, name }: { userId?: string; name: string
   } = useUserById(cachedUser || isMe ? null : userId || null);
   const user = isMe ? currentUser : cachedUser || fetchedUser;
 
-  const isProfileMissing = !isLoading && (!user || isError);
   const userNameFromProfile = user?.full_name;
-
-  const effectiveName = isProfileMissing
-    ? "Deleted Account"
-    : userNameFromProfile || name || "Unknown User";
-
-  const isDeleted =
-    effectiveName === "Deleted Account" ||
-    effectiveName === "Deleted User" ||
-    (!!user && !userNameFromProfile) ||
-    isProfileMissing;
-
-  const displayName = truncateString(isDeleted ? "Deleted Account" : effectiveName, 15);
+  const fallbackName = name || "Unknown User";
+  const isProfileNotFound = userId && !isLoading && !user && isError;
+  const isDeleted = !userId || isProfileNotFound;
+  const effectiveName = userNameFromProfile || (isDeleted ? "Deleted Account" : fallbackName);
+  const displayName = truncateString(effectiveName, 15);
 
   if (!userId || isDeleted) {
     return (
