@@ -142,9 +142,6 @@ const ChatRoom = () => {
         axiosError?.response?.status === 404 ||
         axiosError?.response?.status === 400
       ) {
-        if (axiosError?.response?.status === 403) {
-          toast.error("You are not a member of this group");
-        }
         navigate("/", { replace: true });
       }
     }

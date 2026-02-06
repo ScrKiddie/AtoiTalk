@@ -180,7 +180,7 @@ const MessageBubble = ({
           className={cn(
             "group relative flex items-end max-w-[calc(100%-100px)] sm:max-w-[calc(100%-120px)] md:max-w-[60%] lg:max-w-[550px] min-w-0",
             !isCurrentUser && chat?.type === "group" && "gap-2",
-            hasImages && "w-full"
+            hasImages && "w-[calc(100%-100px)] sm:w-[calc(100%-120px)] md:w-[60%] lg:w-[550px]"
           )}
           onClick={() => handleClick(message.id)}
         >
@@ -293,7 +293,8 @@ const MessageBubble = ({
             className={cn(
               "p-[10px] rounded-md border grid gap-1.5 min-w-0 max-w-full overflow-hidden transition-colors duration-200",
               isCurrentUser ? "bg-foreground text-background" : "bg-background text-foreground",
-              highlightedMessageId === message.id && "ring-2 ring-blue-500"
+              highlightedMessageId === message.id && "ring-2 ring-blue-500",
+              hasImages && "flex-1"
             )}
           >
             {!isCurrentUser && chat?.type === "group" && (

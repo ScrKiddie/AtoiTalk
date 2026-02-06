@@ -173,7 +173,7 @@ export const SystemMessage = ({ message }: SystemMessageProps) => {
   };
 
   return (
-    <div className="flex justify-center my-1">
+    <div className="flex justify-center">
       <div className="bg-background border text-foreground rounded-full px-3 py-1 text-xs font-normal text-center max-w-[90%]">
         {getSystemMessageNodes(message)}
       </div>
