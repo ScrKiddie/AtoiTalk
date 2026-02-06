@@ -56,6 +56,7 @@ export interface Message {
   sender_name: string;
   sender_username?: string;
   sender_avatar?: string;
+  sender_role?: "owner" | "admin" | "member";
 
   content: string | null;
   type: string;

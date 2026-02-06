@@ -9,6 +9,7 @@ import {
   Flag,
   RefreshCcw,
   Reply,
+  Shield,
   SquarePen,
   Trash2,
   X,
@@ -291,18 +292,30 @@ const MessageBubble = ({
             )}
           >
             {!isCurrentUser && chat?.type === "group" && (
-              <p
-                className={cn(
-                  "text-sm font-[500] line-clamp-1 transition-opacity text-foreground",
-                  isSenderDeleted ? "cursor-default" : "cursor-pointer hover:opacity-80"
+              <div className="flex items-center gap-1.5">
+                <p
+                  className={cn(
+                    "text-sm font-[500] line-clamp-1 transition-opacity text-foreground",
+                    isSenderDeleted ? "cursor-default" : "cursor-pointer hover:opacity-80"
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!isSenderDeleted) openProfileModal(message.sender_id);
+                  }}
+                >
+                  {finalSenderName}
+                </p>
+                {message.sender_role && message.sender_role !== "member" && (
+                  <Shield
+                    className={cn(
+                      "size-3.5 shrink-0",
+                      message.sender_role === "owner"
+                        ? "text-yellow-500 fill-yellow-500"
+                        : "text-blue-500 fill-blue-500"
+                    )}
+                  />
                 )}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (!isSenderDeleted) openProfileModal(message.sender_id);
-                }}
-              >
-                {finalSenderName}
-              </p>
+              </div>
             )}
             {message.deleted_at ? (
               <p
