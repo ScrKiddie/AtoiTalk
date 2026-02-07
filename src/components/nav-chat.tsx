@@ -34,6 +34,7 @@ import {
   RefreshCcw,
   Trash2,
   Unlock,
+  Users,
 } from "lucide-react";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -75,14 +76,10 @@ export function NavChat({
   const activeId = match ? match[1] : null;
 
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [deleteChatIndex, setDeleteChatIndex] = useState<number | null>(null);
+  const [chatToDelete, setChatToDelete] = useState<ChatListItem | null>(null);
 
   const { mutate: hideChat, isPending: isHidingChat } = useHideChat();
-  const { mutate: leaveGroup, isPending: isLeavingGroup } = useLeaveGroup((groupId) => {
-    if (groupId === activeId) {
-      navigate("/");
-    }
-  });
+  const { mutate: leaveGroup, isPending: isLeavingGroup } = useLeaveGroup();
   const { mutate: deleteGroup, isPending: isDeletingGroup } = useDeleteGroup();
 
   const [userToBlock, setUserToBlock] = useState<string | null>(null);
@@ -160,7 +157,13 @@ export function NavChat({
                           src={isDeleted ? undefined : chat.avatar || undefined}
                           alt={displayName}
                         />
-                        <AvatarFallback>{initials}</AvatarFallback>
+                        <AvatarFallback>
+                          {chat.type === "group" ? (
+                            <Users className="size-4 text-white" />
+                          ) : (
+                            initials
+                          )}
+                        </AvatarFallback>
                       </Avatar>
 
                       {chat.type === "private" && !isDeleted && (
@@ -237,7 +240,7 @@ export function NavChat({
                         onSelect={(e) => {
                           e.preventDefault();
                           setActiveMenu(null);
-                          setTimeout(() => setDeleteChatIndex(index), 100);
+                          setTimeout(() => setChatToDelete(chat), 100);
                         }}
                         className={cn(
                           chat.type === "group" && chat.my_role === "owner"
@@ -348,30 +351,30 @@ export function NavChat({
       <DropdownMenu></DropdownMenu>
 
       <ConfirmationDialog
-        open={deleteChatIndex !== null}
-        onOpenChange={(open) => !open && setDeleteChatIndex(null)}
+        open={!!chatToDelete}
+        onOpenChange={(open) => !open && setChatToDelete(null)}
         title={
-          deleteChatIndex !== null
-            ? chats[deleteChatIndex].type === "group"
-              ? chats[deleteChatIndex].my_role === "owner"
+          chatToDelete
+            ? chatToDelete.type === "group"
+              ? chatToDelete.my_role === "owner"
                 ? "Delete Group?"
                 : "Leave Group?"
               : "Delete Chat"
             : ""
         }
         description={
-          deleteChatIndex !== null
-            ? chats[deleteChatIndex].type === "group"
-              ? chats[deleteChatIndex].my_role === "owner"
-                ? `Are you sure you want to delete "${chats[deleteChatIndex].name}"? This action cannot be undone.`
-                : `Are you sure you want to leave "${chats[deleteChatIndex].name}"?`
+          chatToDelete
+            ? chatToDelete.type === "group"
+              ? chatToDelete.my_role === "owner"
+                ? `Are you sure you want to delete "${chatToDelete.name}"? This action cannot be undone.`
+                : `Are you sure you want to leave "${chatToDelete.name}"?`
               : "Are you sure you want to delete this chat? It will be hidden until a new message is sent."
             : ""
         }
         confirmText={
-          deleteChatIndex !== null
-            ? chats[deleteChatIndex].type === "group"
-              ? chats[deleteChatIndex].my_role === "owner"
+          chatToDelete
+            ? chatToDelete.type === "group"
+              ? chatToDelete.my_role === "owner"
                 ? "Delete Group"
                 : "Leave"
               : "Delete"
@@ -380,8 +383,8 @@ export function NavChat({
         cancelText="Cancel"
         variant="destructive"
         onConfirm={() => {
-          if (deleteChatIndex !== null) {
-            const chat = chats[deleteChatIndex];
+          if (chatToDelete) {
+            const chat = chatToDelete;
 
             if (chat.type === "group") {
               if (chat.my_role === "owner") {
@@ -390,8 +393,12 @@ export function NavChat({
                 }
                 deleteGroup(chat.id, {
                   onSuccess: () => {
-                    setDeleteChatIndex(null);
-                    if (chat.id === activeId) navigate("/");
+                    setChatToDelete(null);
+                    if (chat.id === activeId) {
+                      setTimeout(() => {
+                        navigate("/");
+                      }, 300);
+                    }
                   },
                 });
               } else {
@@ -400,8 +407,12 @@ export function NavChat({
                 }
                 leaveGroup(chat.id, {
                   onSuccess: () => {
-                    setDeleteChatIndex(null);
-                    if (chat.id === activeId) navigate("/");
+                    setChatToDelete(null);
+                    if (chat.id === activeId) {
+                      setTimeout(() => {
+                        navigate("/");
+                      }, 300);
+                    }
                   },
                 });
               }
@@ -412,7 +423,7 @@ export function NavChat({
               }
               hideChat(chat.id, {
                 onSettled: () => {
-                  setDeleteChatIndex(null);
+                  setChatToDelete(null);
                 },
               });
             }

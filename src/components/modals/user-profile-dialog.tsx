@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { GlobalLightbox } from "@/components/ui/lightbox";
 import { LoadingModal } from "@/components/ui/loading-modal";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useChats, useUserById } from "@/hooks/queries";
 import { toast } from "@/lib/toast";
 import { formatLastSeen } from "@/lib/utils";
@@ -85,19 +86,19 @@ export function UserProfileDialog() {
         modal={true}
       >
         <DialogContent
-          className="max-w-[85%] sm:max-w-[380px] z-[71]"
-          overlayClassName="z-[70]"
+          size="sm"
+          className="max-h-[85vh] flex flex-col"
           onInteractOutside={(e) => (isLightboxOpen || isBlockConfirmOpen) && e.preventDefault()}
         >
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">User Profile</DialogTitle>
+            <DialogTitle>User Profile</DialogTitle>
           </DialogHeader>
 
           {user ? (
-            <div className="grid gap-6 pt-4">
-              <div className="flex flex-col items-center gap-1 mb-2 w-full px-4 overflow-hidden">
+            <ScrollArea className="flex-1 min-h-0">
+              <div className="flex flex-col items-center gap-1 mb-4 w-full shrink-0 relative pt-4">
                 <Avatar
-                  className={`h-24 w-24 ${user.avatar && isAvatarLoaded ? "cursor-pointer hover:opacity-90 transition-opacity" : ""}`}
+                  className={`h-20 w-20 ${user.avatar && isAvatarLoaded ? "cursor-pointer hover:opacity-90 transition-opacity" : ""}`}
                   onClick={() => user.avatar && isAvatarLoaded && setIsLightboxOpen(true)}
                 >
                   <AvatarImage
@@ -108,9 +109,9 @@ export function UserProfileDialog() {
                   <AvatarFallback className="text-4xl">{initials}</AvatarFallback>
                 </Avatar>
 
-                <h3 className="font-semibold text-xl truncate w-full text-center">
-                  {user.full_name}
-                </h3>
+                <div className="flex justify-center mt-1 w-full px-6">
+                  <h3 className="font-semibold text-lg truncate">{user.full_name}</h3>
+                </div>
 
                 <div className="flex items-center gap-2">
                   {user.is_blocked_by_me || user.is_blocked_by_other ? (
@@ -135,7 +136,7 @@ export function UserProfileDialog() {
 
               {currentUser?.id !== user.id && (
                 <div
-                  className={`grid gap-4 w-full px-4 mb-2 ${showDirectMessageButton && !isDirectMessageDisabled ? "grid-cols-3" : "grid-cols-2"}`}
+                  className={`grid gap-4 w-full px-4 mb-4 ${showDirectMessageButton && !isDirectMessageDisabled ? "grid-cols-3" : "grid-cols-2"}`}
                 >
                   {showDirectMessageButton && !isDirectMessageDisabled && (
                     <Button
@@ -186,42 +187,44 @@ export function UserProfileDialog() {
                 </div>
               )}
 
-              <div className="grid gap-4">
-                <div className="grid gap-1.5">
+              <div className="flex flex-col min-h-0 mb-4 px-4">
+                <div className="flex items-center justify-between mb-1 shrink-0">
                   <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Username
                   </div>
-                  <div className="flex items-stretch gap-2 min-w-0">
-                    <div className="text-sm bg-muted/50 p-2.5 rounded-md border text-foreground flex-1 flex items-center min-w-0">
-                      <span className="truncate">@{user.username}</span>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-auto w-10 shrink-0 aspect-square"
-                      onClick={() => {
-                        navigator.clipboard.writeText(user.username);
-                        toast.success("Username copied to clipboard");
-                      }}
-                    >
-                      <Copy className="h-4 w-4" />
-                      <span className="sr-only">Copy Username</span>
-                    </Button>
-                  </div>
                 </div>
+                <div className="flex items-stretch gap-2 min-w-0">
+                  <div className="text-sm bg-muted/50 p-2.5 rounded-md border text-foreground flex-1 flex items-center min-w-0">
+                    <span className="truncate">@{user.username}</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-auto w-10 shrink-0 aspect-square"
+                    onClick={() => {
+                      navigator.clipboard.writeText(user.username);
+                      toast.success("Username copied to clipboard");
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                    <span className="sr-only">Copy Username</span>
+                  </Button>
+                </div>
+              </div>
 
-                <div className="grid gap-1.5">
+              <div className="flex flex-col min-h-0 mb-4 px-4">
+                <div className="flex items-center justify-between mb-1 shrink-0">
                   <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Bio
                   </div>
-                  <div className="text-sm bg-muted/50 p-2.5 rounded-md border text-foreground max-h-[120px] overflow-y-auto whitespace-pre-wrap break-words">
-                    {user.bio || (
-                      <span className="text-muted-foreground/60 italic">No bio available</span>
-                    )}
-                  </div>
+                </div>
+                <div className="min-h-[120px] text-sm bg-muted/50 p-2.5 rounded-md border text-foreground whitespace-pre-wrap break-words">
+                  {user.bio || (
+                    <span className="text-muted-foreground/60 italic">No bio available</span>
+                  )}
                 </div>
               </div>
-            </div>
+            </ScrollArea>
           ) : (
             <div className="text-center py-8 text-muted-foreground">User not found.</div>
           )}

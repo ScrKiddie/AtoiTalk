@@ -3,7 +3,6 @@ import { PaginatedResponse } from "@/types";
 import { InfiniteData, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
-import Logo from "@/components/logo.tsx";
 import { useEditMessage } from "@/hooks/mutations/use-edit-message";
 import { useMarkAsRead } from "@/hooks/mutations/use-mark-read";
 import { useUploadMedia } from "@/hooks/mutations/use-upload-media";
@@ -12,6 +11,7 @@ import {
   useChats,
   useCreatePrivateChat,
   useDeleteMessage,
+  useJumpToMessage as useJumpToMessageState,
   useMessages,
   useSendMessage,
   useUserById,
@@ -25,20 +25,24 @@ import ChatFooter from "@/components/chat/chat-footer";
 import ChatHeader from "@/components/chat/chat-header";
 import { ChatHeaderSkeleton } from "@/components/chat/chat-header-skeleton";
 import MessageBubble from "@/components/chat/message-bubble";
-import { SystemMessage } from "@/components/chat/system-message";
-import { TypingBubble } from "@/components/chat/typing-bubble";
+import { SystemMessage, SystemMessageBadge } from "@/components/chat/system-message";
 import DeleteMessageDialog from "@/components/modals/delete-message-dialog.tsx";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Spinner } from "@/components/ui/spinner";
-import { useChatScroll } from "@/hooks/use-chat-scroll";
-import { useJumpToMessage } from "@/hooks/use-jump-to-message";
-import { RefreshCcw } from "lucide-react";
-import { useCallback } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
 
+import { Spinner } from "@/components/ui/spinner";
+import { useVirtuaChat } from "@/hooks/use-virtua-chat";
+import { VList } from "virtua";
+
+import { ChatLoading } from "@/components/chat/chat-loading";
+import { ChatRetry } from "@/components/chat/chat-retry";
+import { useJumpToMessage } from "@/hooks/use-jump-to-message";
+
+import { useCallback } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+
+import { Button } from "@/components/ui/button";
 import { formatMessageDateLabel } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
+import { RefreshCcw } from "lucide-react";
 
 const isValidUUID = (id: string) => {
   const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -64,13 +68,13 @@ const ChatRoom = () => {
   const { user: currentUser } = useAuthStore();
   const { setActiveChatId, activeChatId } = useChatStore();
 
-  const [anchorMessageId, setAnchorMessageId] = useState<string | null>(null);
-
   const [prevChatId, setPrevChatId] = useState<string | null>(currentChatId);
-  if (currentChatId !== prevChatId) {
+  const prevChatIdChanged = currentChatId !== prevChatId;
+  if (prevChatIdChanged) {
     setPrevChatId(currentChatId);
-    setAnchorMessageId(null);
   }
+
+  const [jumpError, setJumpError] = useState(false);
 
   useEffect(() => {
     setActiveChatId(currentChatId);
@@ -91,10 +95,6 @@ const ChatRoom = () => {
     };
   }, [currentChatId, navigate, setActiveChatId]);
 
-  const location = useLocation();
-  const locationState = location.state as { messageDraft?: string } | null;
-  const isDraftSending = useRef(false);
-
   useLayoutEffect(() => {
     if ("scrollRestoration" in history) {
       history.scrollRestoration = "manual";
@@ -113,7 +113,7 @@ const ChatRoom = () => {
   } = useChat(currentChatId);
 
   const chatFromList = chatsData?.pages.flatMap((p) => p.data).find((c) => c.id === currentChatId);
-  let chat = chatFromList?.type === "group" && singleChat ? singleChat : chatFromList || singleChat;
+  let chat = singleChat || chatFromList;
 
   const {
     data: messagesData,
@@ -128,11 +128,18 @@ const ChatRoom = () => {
     isRefetching,
     refetch,
     error: messagesError,
-  } = useMessages(
-    currentChatId,
-    { anchorId: anchorMessageId ?? undefined },
-    { enabled: !!currentChatId && activeChatId === currentChatId && !!chat }
-  );
+  } = useMessages(currentChatId, {
+    enabled: !!currentChatId && activeChatId === currentChatId && !!chat,
+  });
+
+  const {
+    jumpToMessage: jumpToMessageMutation,
+    returnToLatest,
+    clearJumpState,
+    isJumped,
+    jumpTargetId,
+    jumpTimestamp,
+  } = useJumpToMessageState(currentChatId);
 
   useEffect(() => {
     if (isMessagesError && messagesError) {
@@ -152,8 +159,24 @@ const ChatRoom = () => {
     [messagesData]
   );
 
+  const initialCheckDoneRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (anchorMessageId) return;
+    if (
+      currentChatId &&
+      activeChatId === currentChatId &&
+      currentChatId !== initialCheckDoneRef.current
+    ) {
+      if (hasPreviousPage) {
+        console.log("[ChatRoom] Force returning to latest messages on entry");
+        returnToLatest();
+      }
+      initialCheckDoneRef.current = currentChatId;
+    }
+  }, [currentChatId, activeChatId, hasPreviousPage, returnToLatest]);
+
+  useEffect(() => {
+    if (isJumped) return;
 
     const isFetchingChat = isLoadingSingleChat || isFetchingSingleChat;
 
@@ -181,7 +204,7 @@ const ChatRoom = () => {
     chat,
     isVirtual,
     navigate,
-    anchorMessageId,
+    isJumped,
     chatError,
     isChatError,
   ]);
@@ -210,8 +233,7 @@ const ChatRoom = () => {
   } = useUserById(isPartnerDeleted ? null : partnerId || null);
 
   useEffect(() => {
-    if (isCreatingChatRef.current) return;
-    if (isVirtual && targetUserId && chatsData) {
+    if (chatsData && isVirtual && targetUserId) {
       const existingChat = chatsData.pages
         .flatMap((p) => p.data)
         .find((c) => c.type === "private" && c.other_user_id === targetUserId);
@@ -271,7 +293,7 @@ const ChatRoom = () => {
           isProfileError={isProfileError}
           isProfileLoading={isProfileLoading}
           onRetryProfile={refetchProfile}
-          isChatLoading={isLoadingSingleChat || (isFetchingSingleChat && !chat.member_count)}
+          isChatLoading={isLoadingSingleChat || isFetchingSingleChat}
           isChatError={isChatError}
           onRetryChat={refetchChat}
         />
@@ -303,15 +325,32 @@ const ChatRoom = () => {
   );
 
   useEffect(() => {
-    if (anchorMessageId && !isMessagesLoading && !isMessagesError && groupedMessages.length === 0) {
-      toast.error("Message not found or deleted");
-      setAnchorMessageId(null);
+    if (
+      jumpTargetId &&
+      !isMessagesLoading &&
+      !isRefetching &&
+      !isMessagesError &&
+      !jumpError &&
+      !jumpError &&
+      groupedMessages.length === 0
+    ) {
+      setJumpError(true);
     }
-  }, [anchorMessageId, isMessagesLoading, isMessagesError, groupedMessages.length]);
+  }, [
+    jumpTargetId,
+    isMessagesLoading,
+    isRefetching,
+    isMessagesError,
+    jumpError,
+    groupedMessages.length,
+    clearJumpState,
+  ]);
 
   const [attachments, setAttachments] = useState<Media[]>([]);
   const [returnToMessageId, setReturnToMessageId] = useState<string | null>(null);
   const [attachmentMode, setAttachmentMode] = useState(false);
+
+  const [createdChatId, setCreatedChatId] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const { mutate: sendMessage, isPending: isSending } = useSendMessage();
@@ -320,31 +359,9 @@ const ChatRoom = () => {
   const { mutateAsync: editMessageMutation, isPending: isEditing } = useEditMessage();
   const { mutate: markAsRead } = useMarkAsRead();
 
-  useEffect(() => {
-    if (locationState?.messageDraft && currentChatId && !isDraftSending.current) {
-      isDraftSending.current = true;
-      sendMessage(
-        { ...locationState.messageDraft, chat_id: currentChatId },
-        {
-          onSuccess: () => {
-            navigate(location.pathname, { replace: true, state: {} });
-            isDraftSending.current = false;
-          },
-          onError: (error: Error) => {
-            console.error("Failed to send draft message:", error);
-            if ((error as { code?: string })?.code !== "ERR_CANCELED") {
-              toast.error("Failed to send message");
-            }
-            isDraftSending.current = false;
-          },
-        }
-      );
-    }
-  }, [currentChatId, locationState, sendMessage, navigate, location.pathname]);
-
   const [uploadingFiles, setUploadingFiles] = useState<File[]>([]);
   const uploadingKeysRef = useRef<Set<string>>(new Set());
-  const isCreatingChatRef = useRef(false);
+
   const { mutateAsync: uploadMediaMutation, isPending: isUploadingState } = useUploadMedia();
   const uploadMedia = useCallback(
     (variables: { file: File; signal?: AbortSignal }) => uploadMediaMutation(variables),
@@ -355,6 +372,8 @@ const ChatRoom = () => {
   const [isDeleteSubmitting, setIsDeleteSubmitting] = useState(false);
 
   const isGlobalBusy = isSending || isEditing || isDeleteSubmitting || isUploading;
+
+  const lastMarkedReadMessageIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!currentChatId || activeChatId !== currentChatId) return;
@@ -390,150 +409,226 @@ const ChatRoom = () => {
     chatFromList?.unread_count,
   ]);
 
-  const handleRemoteJump = useCallback((targetId: string) => {
-    setAnchorMessageId(targetId);
-  }, []);
+  const lastMessage = displayMessages[displayMessages.length - 1];
+  const lastMessageId = lastMessage?.id;
+  const lastMessageSenderId = lastMessage?.sender_id;
 
-  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!currentChatId || activeChatId !== currentChatId || !lastMessageId) return;
+
+    const isMyMessage = lastMessageSenderId === currentUser?.id;
+    const isAlreadyMarked = lastMarkedReadMessageIdRef.current === lastMessageId;
+
+    if (!isMyMessage && !isAlreadyMarked) {
+      const unreadCount = chat?.unread_count || chatFromList?.unread_count || 0;
+
+      if (unreadCount === 0) {
+        markAsRead(currentChatId);
+      }
+
+      lastMarkedReadMessageIdRef.current = lastMessageId;
+    }
+  }, [
+    currentChatId,
+    activeChatId,
+    lastMessageId,
+    lastMessageSenderId,
+    currentUser?.id,
+    markAsRead,
+    chat?.unread_count,
+    chatFromList?.unread_count,
+  ]);
+
+  const [isRemoteJumping, setIsRemoteJumping] = useState(false);
+
+  const [isErrorNextPage, setIsErrorNextPage] = useState(false);
+  const [isErrorPreviousPage, setIsErrorPreviousPage] = useState(false);
+
+  const handleFetchNextPage = useCallback(async () => {
+    setIsErrorNextPage(false);
+    try {
+      const result = await fetchNextPage();
+      if (result.isError) {
+        setIsErrorNextPage(true);
+      }
+    } catch {
+      setIsErrorNextPage(true);
+    }
+  }, [fetchNextPage]);
+
+  const handleFetchPreviousPage = useCallback(async () => {
+    setIsErrorPreviousPage(false);
+    try {
+      const result = await fetchPreviousPage();
+      if (result.isError) {
+        setIsErrorPreviousPage(true);
+      }
+    } catch {
+      setIsErrorPreviousPage(true);
+    }
+  }, [fetchPreviousPage]);
+
+  const {
+    virtualizerRef,
+    items,
+    scrollToBottom,
+    activeStickyDate,
+    handleScroll,
+    showScrollButton,
+    shifting,
+  } = useVirtuaChat({
+    messages,
+    hasNextPage,
+    hasPreviousPage,
+    isFetchingNextPage,
+    isFetchingPreviousPage,
+    isErrorNextPage,
+    isErrorPreviousPage,
+    fetchNextPage: handleFetchNextPage,
+    fetchPreviousPage: handleFetchPreviousPage,
+    currentChatId,
+  });
+
+  const [displayedStickyDate, setDisplayedStickyDate] = useState<string | null>(null);
+  const [isStickyDateVisible, setIsStickyDateVisible] = useState(false);
+
+  useEffect(() => {
+    if (activeStickyDate && activeStickyDate !== "Today") {
+      setDisplayedStickyDate(activeStickyDate);
+      setIsStickyDateVisible(true);
+    } else {
+      setIsStickyDateVisible(false);
+    }
+  }, [activeStickyDate]);
+
+  useEffect(() => {
+    setDisplayedStickyDate(null);
+    setIsStickyDateVisible(false);
+  }, [currentChatId]);
+
+  const lastErrorTimeRef = useRef(0);
+
+  useEffect(() => {
+    if (isMessagesError) {
+      lastErrorTimeRef.current = Date.now();
+    }
+  }, [isMessagesError]);
+
+  const [failedJumpTargetId, setFailedJumpTargetId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isJumped && !hasPreviousPage && !isFetchingPreviousPage && !isMessagesLoading) {
+      if (!showScrollButton) {
+        clearJumpState();
+      }
+    }
+  }, [
+    isJumped,
+    hasPreviousPage,
+    isFetchingPreviousPage,
+    isMessagesLoading,
+    clearJumpState,
+    showScrollButton,
+  ]);
+
+  const handleRemoteJump = useCallback(
+    async (targetId: string) => {
+      setJumpError(false);
+      setFailedJumpTargetId(null);
+      setIsRemoteJumping(true);
+
+      const success = await jumpToMessageMutation(targetId);
+
+      if (!success) {
+        setIsRemoteJumping(false);
+        setJumpError(true);
+        setFailedJumpTargetId(targetId);
+      }
+    },
+    [jumpToMessageMutation]
+  );
 
   const { jumpToMessage: internalJumpToMessage, highlightedMessageId } = useJumpToMessage({
     onRemoteJump: handleRemoteJump,
-    scrollRef: containerRef,
+    virtualizerRef,
+    items,
   });
 
   const handleJumpToMessage = useCallback(
     (targetId: string, fromMessageId?: string) => {
       if (fromMessageId) {
         setReturnToMessageId(fromMessageId);
-      } else {
-        setAnchorMessageId(null);
       }
-      isJumpingRef.current = true;
-
       requestAnimationFrame(() => {
         internalJumpToMessage(targetId);
-        setTimeout(() => {
-          isJumpingRef.current = false;
-        }, 1000);
       });
     },
     [internalJumpToMessage]
   );
 
-  const hasJumpedRef = useRef<string | null>(null);
+  const handleScrollToBottom = useCallback(() => {
+    console.log(
+      "[ChatRoom] handleScrollToBottom called. isJumped:",
+      isJumped,
+      "hasPreviousPage:",
+      hasPreviousPage
+    );
+    setJumpError(false);
+    setFailedJumpTargetId(null);
 
-  const isJumpingRef = useRef(false);
-
-  const typingUsers = useChatStore((state) => state.typingUsers);
-  const isPartnerTyping = (typingUsers[chat?.id || ""] || []).length > 0;
-
-  const { scrollRef, showScrollButton, handleScroll, scrollToBottom, isScrollReady } =
-    useChatScroll({
-      currentChatId,
-      messages,
-      isMessagesLoading,
-      hasNextPage,
-      hasPreviousPage,
-      isFetchingNextPage,
-      isFetchingPreviousPage,
-      fetchNextPage,
-      fetchPreviousPage,
-      anchorMessageId,
-      setAnchorMessageId,
-      returnToMessageId,
-      setReturnToMessageId,
-      isPartnerTyping,
-      isJumpingRef,
-      scrollRef: containerRef,
-    });
+    if (isJumped && !hasPreviousPage) {
+      scrollToBottom();
+    } else if (isJumped || hasPreviousPage) {
+      returnToLatest();
+    } else {
+      scrollToBottom();
+    }
+  }, [isJumped, hasPreviousPage, returnToLatest, scrollToBottom]);
 
   const prevIsFetchingNextPage = useRef(isFetchingNextPage);
   useEffect(() => {
-    if (prevIsFetchingNextPage.current && !isFetchingNextPage) {
-      if (isMessagesError && scrollRef.current) {
-        const { scrollTop } = scrollRef.current;
-        if (scrollTop < 35) {
-          scrollRef.current.scrollBy({ top: 40, behavior: "smooth" });
-        }
-      }
-    }
     prevIsFetchingNextPage.current = isFetchingNextPage;
-  }, [isFetchingNextPage, scrollRef, isMessagesError]);
+  }, [isFetchingNextPage]);
 
-  const prevIsFetchingPreviousPage = useRef(isFetchingPreviousPage);
+  const lastProcessedJumpTimestampRef = useRef<number | null>(null);
+
   useEffect(() => {
-    if (prevIsFetchingPreviousPage.current && !isFetchingPreviousPage && anchorMessageId) {
-      if (isMessagesError && scrollRef.current) {
-        const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-        const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-        if (distanceFromBottom < 35) {
-          scrollRef.current.scrollBy({ top: -40, behavior: "smooth" });
-        }
+    if (!jumpTargetId || !jumpTimestamp || isMessagesLoading) return;
+
+    if (lastProcessedJumpTimestampRef.current === jumpTimestamp) return;
+
+    const targetIndex = items.findIndex(
+      (item) => item.type === "message" && item.message.id === jumpTargetId
+    );
+
+    if (targetIndex !== -1 && virtualizerRef.current) {
+      lastProcessedJumpTimestampRef.current = jumpTimestamp;
+
+      const isNearBottom = items.length - 1 - targetIndex < 5;
+      const align = isNearBottom ? "end" : "center";
+
+      virtualizerRef.current.scrollToIndex(targetIndex, { align });
+
+      setTimeout(() => {
+        setIsRemoteJumping(false);
+
+        internalJumpToMessage(jumpTargetId);
+      }, 500);
+    } else {
+      if (!isMessagesLoading && jumpTargetId) {
+        console.warn("[Jump] Target fetched but not found in items. Resetting jump state.");
+        setIsRemoteJumping(false);
+        lastProcessedJumpTimestampRef.current = jumpTimestamp;
       }
     }
-    prevIsFetchingPreviousPage.current = isFetchingPreviousPage;
-  }, [isFetchingPreviousPage, anchorMessageId, scrollRef, isMessagesError]);
-
-  useEffect(() => {
-    if (!anchorMessageId || isMessagesLoading) return;
-    if (hasJumpedRef.current === anchorMessageId) return;
-
-    const targetId = `message-${anchorMessageId}`;
-
-    const existingElement = document.getElementById(targetId);
-    if (existingElement) {
-      hasJumpedRef.current = anchorMessageId;
-      isJumpingRef.current = true;
-      requestAnimationFrame(() => {
-        internalJumpToMessage(anchorMessageId);
-
-        setTimeout(() => {
-          isJumpingRef.current = false;
-        }, 500);
-      });
-      return;
-    }
-
-    const observer = new MutationObserver((_, obs) => {
-      const element = document.getElementById(targetId);
-      if (element) {
-        hasJumpedRef.current = anchorMessageId;
-        isJumpingRef.current = true;
-        obs.disconnect();
-        requestAnimationFrame(() => {
-          internalJumpToMessage(anchorMessageId);
-
-          setTimeout(() => {
-            isJumpingRef.current = false;
-          }, 500);
-        });
-      }
-    });
-
-    if (scrollRef.current) {
-      observer.observe(scrollRef.current, {
-        childList: true,
-        subtree: true,
-      });
-    }
-
-    const timeout = setTimeout(() => {
-      observer.disconnect();
-    }, 5000);
-
-    return () => {
-      observer.disconnect();
-      clearTimeout(timeout);
-    };
-  }, [anchorMessageId, isMessagesLoading, internalJumpToMessage, scrollRef]);
-
-  const prevAnchorRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (anchorMessageId !== prevAnchorRef.current) {
-      hasJumpedRef.current = null;
-      prevAnchorRef.current = anchorMessageId;
-    }
-  }, [anchorMessageId]);
+  }, [
+    jumpTargetId,
+    jumpTimestamp,
+    isMessagesLoading,
+    internalJumpToMessage,
+    items,
+    virtualizerRef,
+  ]);
 
   const [newMessageText, setNewMessageText] = useState("");
   const [editMessage, setEditMessage] = useState<Message | null>(null);
@@ -573,7 +668,10 @@ const ChatRoom = () => {
     setActiveMessageId(null);
     setShowDeleteModal(false);
     messageRefs.current = {};
-  }, [currentChatId]);
+    clearJumpState();
+    setJumpError(false);
+    setFailedJumpTargetId(null);
+  }, [currentChatId, clearJumpState]);
 
   useEffect(() => {
     if (!editMessage) return;
@@ -603,22 +701,21 @@ const ChatRoom = () => {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (showDeleteModal) return;
-      if (activeMessageId !== null) {
-        const ref = messageRefs.current[activeMessageId];
-        if (ref && !ref.contains(event.target as Node)) {
-          setActiveMessageId(null);
-        }
-      }
+
+      const target = event.target as HTMLElement;
+      if (target.closest('[id^="message-"]')) return;
+
+      setActiveMessageId(null);
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [activeMessageId, showDeleteModal]);
+  }, [showDeleteModal]);
 
   const handleClick = (messageId: string) => {
-    setActiveMessageId(messageId);
+    setActiveMessageId((prev) => (prev === messageId ? null : messageId));
   };
 
   const handleSendMessage = async (text: string, currentAttachments: Media[]) => {
@@ -652,42 +749,52 @@ const ChatRoom = () => {
       setAttachments([]);
       setAttachmentMode(false);
 
-      if (anchorMessageId) {
-        setAnchorMessageId(null);
+      if (isJumped && hasPreviousPage) {
+        returnToLatest();
       }
 
-      setTimeout(() => {
-        if (scrollRef.current) {
-          scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-        }
-      }, 100);
+      scrollToBottom();
     };
 
-    if (isVirtual && targetUserId) {
-      isCreatingChatRef.current = true;
+    const targetChatId = createdChatId || currentChatId;
+
+    if (isVirtual && !targetChatId && targetUserId) {
       createPrivateChat(
         { target_user_id: targetUserId },
         {
           onSuccess: (newChat) => {
-            navigate(`/chat/${newChat.id}`, {
-              replace: true,
-              state: { messageDraft: payload },
-            });
-            isCreatingChatRef.current = false;
+            setCreatedChatId(newChat.id);
 
-            onSuccess();
+            sendMessage(
+              { ...payload, chat_id: newChat.id },
+              {
+                onSuccess: () => {
+                  setCreatedChatId(null);
+                  onSuccess();
+                  navigate(`/chat/${newChat.id}`, { replace: true });
+                },
+                onError: () => {
+                  toast.error("Failed to send message");
+                },
+              }
+            );
           },
           onError: () => {
-            isCreatingChatRef.current = false;
             toast.error("Failed to create chat");
           },
         }
       );
-    } else if (currentChatId) {
+    } else if (targetChatId) {
       sendMessage(
-        { ...payload, chat_id: currentChatId },
+        { ...payload, chat_id: targetChatId },
         {
-          onSuccess,
+          onSuccess: () => {
+            if (createdChatId) {
+              setCreatedChatId(null);
+              navigate(`/chat/${targetChatId}`, { replace: true });
+            }
+            onSuccess();
+          },
           onError: () => toast.error("Failed to send message"),
         }
       );
@@ -704,8 +811,7 @@ const ChatRoom = () => {
           toast.success("Message deleted");
           setShowDeleteModal(false);
           setMessageToDelete(null);
-          setActiveMessageId(null);
-          setTimeout(() => setIsDeleteSubmitting(false), 300);
+          setIsDeleteSubmitting(false);
         },
         onError: () => {
           toast.error("Failed to delete message");
@@ -715,16 +821,44 @@ const ChatRoom = () => {
     );
   };
 
-  const handleEditMessage = async (params: {
-    messageId: string;
-    chatId: string;
-    data: EditMessageRequest;
-    optimisticAttachments?: Media[];
-  }) => {
-    return editMessageMutation({
-      ...params,
-      optimisticAttachments: params.optimisticAttachments ?? [],
-    });
+  const handleEditMessage = async (text: string, currentAttachments: Media[]) => {
+    if (!editMessage || !currentChatId) return;
+
+    if (!text.trim() && currentAttachments.length === 0) {
+      return;
+    }
+
+    const payload: EditMessageRequest = {
+      content: text.trim(),
+      attachment_ids: currentAttachments.map((a) => a.id),
+    };
+
+    if (
+      editMessage.content === payload.content &&
+      JSON.stringify(editMessage.attachments?.map((a) => a.id)) ===
+        JSON.stringify(payload.attachment_ids)
+    ) {
+      setEditMessage(null);
+      setNewMessageText("");
+      setAttachments([]);
+      return;
+    }
+
+    try {
+      await editMessageMutation({
+        messageId: editMessage.id,
+        chatId: currentChatId,
+        data: payload,
+        optimisticAttachments: [],
+      });
+
+      setEditMessage(null);
+      setNewMessageText("");
+      setAttachments([]);
+      setAttachmentMode(false);
+    } catch {
+      toast.error("Failed to edit message");
+    }
   };
 
   const handleReturnJump = useCallback(() => {
@@ -735,194 +869,191 @@ const ChatRoom = () => {
   }, [returnToMessageId, handleJumpToMessage]);
 
   return (
-    <>
-      <SidebarInset key={currentChatId ?? "empty"} className={"break-w overflow-hidden"}>
-        <div className="h-[100dvh] w-full overflow-hidden flex flex-col relative">
-          {renderHeader()}
+    <SidebarInset className="flex flex-col h-[100vh] relative overflow-hidden bg-sidebar">
+      {renderHeader()}
 
-          <ScrollArea
-            viewportRef={scrollRef}
-            onScroll={handleScroll}
-            className="flex-1 px-2 overflow-hidden chat-messages-scroll [&>[data-radix-scroll-area-viewport]]:!flex [&>[data-radix-scroll-area-viewport]]:!flex-col [&>[data-radix-scroll-area-viewport]]:!h-full"
-          >
-            <div className="!flex flex-col flex-1 bg-none min-h-full relative">
-              {!isMessagesError &&
-              (isMessagesLoading || (anchorMessageId && groupedMessages.length === 0)) ? (
-                <div className="flex-1" />
-              ) : isMessagesError && groupedMessages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center flex-1 h-full gap-3 p-4">
-                  <div className="text-center space-y-1">
-                    <h3 className="font-semibold text-lg">Failed to load messages</h3>
-                    <p className="text-sm text-muted-foreground">
-                      We couldn't retrieve your chat history
-                    </p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      refetch();
-                      if (!chat) refetchChat();
-                    }}
-                    disabled={isRefetching}
-                    className="gap-2"
-                  >
-                    {isRefetching ? (
-                      <Spinner className="size-4" />
-                    ) : (
-                      <RefreshCcw className="size-4" />
-                    )}
-                    {isRefetching ? "Retrying..." : "Retry"}
-                  </Button>
-                </div>
-              ) : groupedMessages.length === 0 ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
-                  <div className="flex items-center justify-center mb-1 text-primary">
-                    <Logo width={80} height={80} />
-                  </div>
-                  <h2 className="text-2xl font-semibold mb-2">No Messages Yet</h2>
-                  <p className="text-muted-foreground">Select a chat and start messaging</p>
-                </div>
-              ) : (
-                <div
-                  className="flex-1 py-3 px-2 flex flex-col w-full justify-end relative"
-                  id="chat-container"
-                >
-                  <div
-                    className={cn(
-                      "flex flex-col gap-3 w-full transition-opacity",
-                      !isScrollReady && !anchorMessageId
-                        ? "opacity-0 duration-0"
-                        : "opacity-100 duration-500"
-                    )}
-                  >
-                    {hasNextPage && (
-                      <div className="flex justify-center p-2 h-8 items-center">
-                        {isFetchingNextPage ? <Spinner className="size-4" /> : null}
-                      </div>
-                    )}
-
-                    {groupedMessages.map((group) => (
-                      <div key={group.date} className="relative flex flex-col gap-3">
-                        <div
-                          className={cn(
-                            "flex justify-center z-30 pointer-events-none",
-                            group.date !== "Today" && "sticky top-2"
-                          )}
-                        >
-                          <span className="bg-background border text-foreground rounded-full px-3 py-1 text-xs font-normal">
-                            {group.date}
-                          </span>
-                        </div>
-                        {group.messages.map((message) =>
-                          message.type.startsWith("system_") ? (
-                            <SystemMessage key={message.id} message={message} />
-                          ) : (
-                            <MessageBubble
-                              key={message.id}
-                              message={message}
-                              current={currentUser}
-                              chat={chat!}
-                              activeMessageId={activeMessageId}
-                              editMessage={editMessage}
-                              messageRefs={messageRefs}
-                              isLoadingMessage={false}
-                              isError={false}
-                              handleClick={handleClick}
-                              setEditMessage={setEditMessage}
-                              setNewMessageText={setNewMessageText}
-                              setAttachmentMode={setAttachmentMode}
-                              isBusy={isGlobalBusy}
-                              textareaRef={textareaRef}
-                              setReplyTo={setReplyTo}
-                              setMessageToDelete={setMessageToDelete}
-                              setShowDeleteModal={setShowDeleteModal}
-                              setAttachments={setAttachments}
-                              jumpToMessage={handleJumpToMessage}
-                              highlightedMessageId={highlightedMessageId}
-                            />
-                          )
-                        )}
-                      </div>
-                    ))}
-
-                    {chat && chat.type === "private" && <TypingBubble chatId={chat.id} />}
-
-                    {hasPreviousPage && (
-                      <div className="flex justify-center p-2 h-8 items-center">
-                        {isFetchingPreviousPage ? <Spinner className="size-4" /> : null}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-
-          <div className="shrink-0 bg-background z-20">
-            <ChatFooter
-              replyTo={replyTo}
-              editMessage={editMessage}
-              attachmentMode={attachmentMode}
-              attachments={attachments}
-              current={currentUser}
-              chat={chat!}
-              newMessageText={newMessageText}
-              textareaRef={textareaRef}
-              setReplyTo={setReplyTo}
-              setEditMessage={setEditMessage}
-              setAttachmentMode={setAttachmentMode}
-              setAttachments={setAttachments}
-              setNewMessageText={setNewMessageText}
-              onSendMessage={handleSendMessage}
-              isSending={isSending}
-              showScrollButton={
-                showScrollButton && !(isMessagesError && groupedMessages.length === 0)
-              }
-              scrollToBottom={scrollToBottom}
-              partnerProfile={partnerProfile}
-              showReturnButton={
-                !!returnToMessageId &&
-                !isMessagesLoading &&
-                !(isMessagesError && groupedMessages.length === 0)
-              }
-              onReturnJump={handleReturnJump}
-              onEditMessage={handleEditMessage}
-              isEditing={isEditing}
-              uploadingFiles={uploadingFiles}
-              setUploadingFiles={setUploadingFiles}
-              uploadingKeysRef={uploadingKeysRef}
-              uploadMedia={uploadMedia}
-              isUploading={isUploading}
-            />
-          </div>
-
-          <DeleteMessageDialog
-            showDeleteModal={showDeleteModal}
-            setShowDeleteModal={setShowDeleteModal}
-            messageToDelete={messageToDelete}
-            editMessage={editMessage}
-            replyTo={replyTo}
-            setEditMessage={setEditMessage}
-            setAttachmentMode={setAttachmentMode}
-            textareaRef={textareaRef}
-            setReplyTo={setReplyTo}
-            setMessageToDelete={setMessageToDelete}
-            onConfirmDelete={() => messageToDelete && handleDeleteMessage(messageToDelete)}
-            isLoading={isDeleteSubmitting}
-          />
+      {isStickyDateVisible && displayedStickyDate && (
+        <div className="absolute top-[63px] left-0 right-0 z-20 pointer-events-none flex justify-center py-2 sm:pr-2">
+          <SystemMessageBadge>{displayedStickyDate}</SystemMessageBadge>
         </div>
+      )}
 
-        {((!isMessagesError &&
-          !isVirtual &&
-          (isMessagesLoading || (!!anchorMessageId && groupedMessages.length === 0))) ||
-          (!isScrollReady && !anchorMessageId && groupedMessages.length > 0)) && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none">
-            <Spinner className="size-10" />
-          </div>
+      <div className="flex-1 min-h-0 w-full relative flex flex-col">
+        {chat || isVirtual ? (
+          <>
+            {(isMessagesLoading && items.length === 0) || isRemoteJumping ? <ChatLoading /> : null}
+
+            {((isMessagesError && items.length === 0) || jumpError) && (
+              <ChatRetry
+                title={jumpError && !isMessagesError ? "Message not found" : undefined}
+                description={
+                  jumpError && !isMessagesError
+                    ? "The message you are looking for may have been deleted or is no longer available."
+                    : undefined
+                }
+                onRetry={() => {
+                  if (jumpError && failedJumpTargetId) {
+                    setJumpError(false);
+                    handleRemoteJump(failedJumpTargetId);
+                  } else if (jumpError && jumpTargetId) {
+                    setJumpError(false);
+                    handleRemoteJump(jumpTargetId);
+                  } else {
+                    refetch();
+                  }
+                }}
+              />
+            )}
+
+            <VList
+              ref={virtualizerRef}
+              className="h-full w-full chat-message-list py-1"
+              style={{ height: "100%" }}
+              shift={shifting}
+              onScroll={handleScroll}
+            >
+              {items.map((item) => (
+                <div
+                  key={item.id}
+                  ref={(el) => {
+                    if (el && item.type === "message") {
+                      messageRefs.current[item.message.id] = el;
+                    }
+                  }}
+                  className={cn(
+                    "px-2 py-1",
+                    item.type === "date-separator" && "py-1 flex justify-center sticky-date-trigger"
+                  )}
+                >
+                  {item.type === "message" ? (
+                    item.message.type?.startsWith("system_") ? (
+                      <SystemMessage message={item.message} />
+                    ) : (
+                      <MessageBubble
+                        key={item.message.id}
+                        message={item.message}
+                        current={currentUser}
+                        chat={chat ?? undefined}
+                        setReplyTo={setReplyTo}
+                        setEditMessage={setEditMessage}
+                        setNewMessageText={setNewMessageText}
+                        setAttachmentMode={setAttachmentMode}
+                        textareaRef={textareaRef}
+                        setMessageToDelete={setMessageToDelete}
+                        setShowDeleteModal={setShowDeleteModal}
+                        setAttachments={setAttachments}
+                        highlightedMessageId={highlightedMessageId}
+                        jumpToMessage={(id) => handleJumpToMessage(id, item.message.id)}
+                        messageRefs={messageRefs}
+                        activeMessageId={activeMessageId}
+                        editMessage={editMessage}
+                        isLoadingMessage={false}
+                        isError={false}
+                        handleClick={handleClick}
+                        isBusy={isGlobalBusy}
+                        partnerProfile={partnerProfile}
+                      />
+                    )
+                  ) : item.type === "date-separator" ? (
+                    <SystemMessageBadge>{item.date}</SystemMessageBadge>
+                  ) : item.type === "loader" ? (
+                    <div
+                      className={cn(
+                        "flex justify-center w-full",
+                        item.id === "loader-top" ? "pb-1 pt-2" : "pt-1 pb-2"
+                      )}
+                    >
+                      <div className="h-8 w-8 flex items-center justify-center rounded-full bg-transparent">
+                        <Spinner className="h-4 w-4" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      className={cn(
+                        "flex justify-center w-full",
+                        item.direction === "up" ? "pb-1 pt-2" : "pt-1 pb-2"
+                      )}
+                    >
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="rounded-full bg-background border text-foreground hover:bg-muted h-8 w-8"
+                        onClick={() =>
+                          item.direction === "up"
+                            ? handleFetchNextPage()
+                            : handleFetchPreviousPage()
+                        }
+                      >
+                        <RefreshCcw className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </VList>
+          </>
+        ) : (
+          <ChatLoading />
         )}
-      </SidebarInset>
-    </>
+      </div>
+
+      <ChatFooter
+        onSendMessage={handleSendMessage}
+        onEditMessage={(params) =>
+          handleEditMessage(params.data.content || "", params.optimisticAttachments || [])
+        }
+        replyTo={replyTo}
+        setReplyTo={setReplyTo}
+        editMessage={editMessage}
+        setEditMessage={setEditMessage}
+        textareaRef={textareaRef}
+        newMessageText={newMessageText}
+        setNewMessageText={setNewMessageText}
+        attachments={attachments}
+        setAttachments={setAttachments}
+        attachmentMode={attachmentMode}
+        setAttachmentMode={setAttachmentMode}
+        uploadingFiles={uploadingFiles}
+        setUploadingFiles={setUploadingFiles}
+        uploadingKeysRef={uploadingKeysRef}
+        isUploading={isUploading}
+        isSending={isSending}
+        uploadMedia={uploadMedia}
+        partnerProfile={partnerProfile}
+        chat={chat || undefined}
+        scrollToBottom={handleScrollToBottom}
+        showScrollButton={
+          (showScrollButton || isJumped) &&
+          !((isMessagesLoading || isRefetching || isRemoteJumping) && items.length === 0) &&
+          !((isMessagesError || jumpError) && items.length === 0) &&
+          !isRemoteJumping
+        }
+        showReturnButton={
+          !!returnToMessageId &&
+          !((isMessagesLoading || isRefetching || isRemoteJumping) && items.length === 0) &&
+          !((isMessagesError || jumpError) && items.length === 0) &&
+          !isRemoteJumping
+        }
+        onReturnJump={handleReturnJump}
+        current={currentUser}
+        isEditing={isEditing}
+      />
+
+      <DeleteMessageDialog
+        showDeleteModal={showDeleteModal}
+        setShowDeleteModal={setShowDeleteModal}
+        messageToDelete={messageToDelete}
+        editMessage={editMessage}
+        replyTo={replyTo}
+        setEditMessage={setEditMessage}
+        setAttachmentMode={setAttachmentMode}
+        textareaRef={textareaRef}
+        setReplyTo={setReplyTo}
+        onConfirmDelete={() => messageToDelete && handleDeleteMessage(messageToDelete)}
+        setMessageToDelete={setMessageToDelete}
+        isLoading={isDeleteSubmitting}
+      />
+    </SidebarInset>
   );
 };
 

@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SidebarTrigger } from "@/components/ui/sidebar.tsx";
 import { useAuthStore, useChatStore, useUIStore } from "@/store";
 import { ChatListItem, User } from "@/types";
+import { Users } from "lucide-react";
 
 import { GroupProfileDialog } from "@/components/modals/group-profile-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -116,7 +117,7 @@ const ChatHeader = ({
 
   return (
     <>
-      <header className="outline-1 dark:outline-[#212224] outline-[#e4e4e7] z-50 bg-background flex h-[63px] shrink-0 items-center gap-2">
+      <header className="border-b dark:border-[#212224] border-[#e4e4e7] z-50 bg-background flex h-[63px] shrink-0 items-center gap-2">
         <div className="flex gap-2 px-4 w-full justify-between items-center">
           <div className="flex items-center justify-center gap-2">
             <SidebarTrigger className={`mr-1`} />
@@ -145,7 +146,13 @@ const ChatHeader = ({
                       src={isDeleted ? undefined : displayChat.avatar || undefined}
                       className="object-cover"
                     />
-                    <AvatarFallback>{initials}</AvatarFallback>
+                    <AvatarFallback>
+                      {displayChat.type === "group" ? (
+                        <Users className="size-4 text-white" />
+                      ) : (
+                        initials
+                      )}
+                    </AvatarFallback>
                   </>
                 )}
               </Avatar>

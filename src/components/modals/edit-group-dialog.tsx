@@ -186,8 +186,7 @@ export function EditGroupDialog({ isOpen, onClose, chat }: EditGroupDialogProps)
     <>
       <Dialog open={isOpen} onOpenChange={(val) => !isUpdating && onClose(val)}>
         <DialogContent
-          className="sm:max-w-[360px] w-[85%] z-[66]"
-          overlayClassName="z-[65]"
+          size="default"
           onInteractOutside={(e) => cropModalOpen && e.preventDefault()}
           onEscapeKeyDown={(e) => cropModalOpen && e.preventDefault()}
         >

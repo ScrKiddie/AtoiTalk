@@ -1,5 +1,4 @@
 import { AppSidebar } from "@/components/app-sidebar.tsx";
-import Logo from "@/components/logo.tsx";
 import { ModeToggle } from "@/components/mode-toggle.tsx";
 import ProtectedRoute from "@/components/protected-route";
 import PublicRoute from "@/components/public-route";
@@ -23,7 +22,7 @@ import {
 
 const EmptyChatState = () => {
   return (
-    <SidebarInset className="h-screen overflow-hidden flex flex-col relative">
+    <SidebarInset className="h-screen overflow-hidden flex flex-col relative bg-sidebar">
       <header className="absolute top-0 left-0 w-full outline-1 dark:outline-[#212224] outline-[#e4e4e7] z-50 bg-background flex h-[63px] shrink-0 items-center gap-2">
         <div className="flex gap-2 px-4 w-full justify-between items-center">
           <div className="flex items-center justify-center gap-2">
@@ -34,12 +33,12 @@ const EmptyChatState = () => {
           </div>
         </div>
       </header>
-      <div className="flex flex-col items-center justify-center h-full text-center p-4">
-        <div className="flex items-center justify-center mb-1 text-primary">
-          <Logo width={80} height={80} />
+      <div className="flex flex-col items-center justify-center h-full p-4">
+        <div className="flex justify-center w-full">
+          <div className="inline-flex items-center justify-center bg-background border text-foreground rounded-full px-3 py-1 text-xs font-normal">
+            Select a chat and start messaging
+          </div>
         </div>
-        <h2 className="text-2xl font-semibold mb-2">Welcome to AtoiTalk</h2>
-        <p className="text-muted-foreground">Select a chat and start messaging</p>
       </div>
     </SidebarInset>
   );

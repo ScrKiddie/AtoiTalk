@@ -27,7 +27,7 @@ interface ChatFooterProps {
   attachmentMode: boolean;
   attachments: Media[];
   current: User | null;
-  chat: ChatListItem;
+  chat?: ChatListItem;
   newMessageText: string;
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
   setReplyTo: (replyTo: Message | null) => void;
@@ -54,6 +54,7 @@ interface ChatFooterProps {
   uploadingKeysRef: React.MutableRefObject<Set<string>>;
   uploadMedia: (variables: { file: File; signal?: AbortSignal }) => Promise<Media>;
   isUploading: boolean;
+  isLoading?: boolean;
 }
 
 const ChatFooter = ({
@@ -85,6 +86,7 @@ const ChatFooter = ({
   uploadingKeysRef,
   uploadMedia,
   isUploading,
+  isLoading = false,
 }: ChatFooterProps) => {
   const [isEmojiOpen, setIsEmojiOpen] = React.useState(false);
   const fileListRef = React.useRef<HTMLDivElement>(null);
@@ -182,7 +184,7 @@ const ChatFooter = ({
 
   if (isDeleted) {
     return (
-      <footer className="relative mx-auto p-2 gap-2 w-full flex flex-col items-start bg-background">
+      <footer className="relative mx-auto p-2 gap-2 w-full flex flex-col items-start bg-background border-t">
         <FloatingChatButtons
           showReturnButton={showReturnButton}
           onReturnJump={onReturnJump}
@@ -205,7 +207,7 @@ const ChatFooter = ({
 
   if (isBlockedByMe) {
     return (
-      <footer className="relative mx-auto p-2 gap-2 w-full flex flex-col items-start bg-background">
+      <footer className="relative mx-auto p-2 gap-2 w-full flex flex-col items-start bg-background border-t">
         <FloatingChatButtons
           showReturnButton={showReturnButton}
           onReturnJump={onReturnJump}
@@ -227,7 +229,7 @@ const ChatFooter = ({
 
   if (isBlockedByOther) {
     return (
-      <footer className="relative mx-auto p-2 gap-2 w-full flex flex-col items-start bg-background">
+      <footer className="relative mx-auto p-2 gap-2 w-full flex flex-col items-start bg-background border-t">
         <FloatingChatButtons
           showReturnButton={showReturnButton}
           onReturnJump={onReturnJump}
@@ -373,6 +375,8 @@ const ChatFooter = ({
 
   const handleSendMessage = async () => {
     if (editMessage) {
+      if (!chat) return;
+
       const keptAttachments = editMessage.attachments?.filter((item) => !item.delete) || [];
       const finalAttachments = [...keptAttachments, ...attachments];
       const attachmentIds = finalAttachments.map((a) => a.id);
@@ -425,7 +429,7 @@ const ChatFooter = ({
   };
 
   return (
-    <footer className="relative mx-auto p-2 gap-2 w-full flex flex-col items-start bg-background">
+    <footer className="relative mx-auto p-2 gap-2 w-full flex flex-col items-start bg-background border-t">
       <FloatingChatButtons
         showReturnButton={showReturnButton}
         onReturnJump={onReturnJump}
@@ -457,7 +461,7 @@ const ChatFooter = ({
                   <Button
                     size="icon"
                     variant="ghost"
-                    disabled={isUploading || isSending || isEditing}
+                    disabled={isUploading || isSending || isEditing || isLoading}
                     className="size-6 hover:bg-background/50 rounded-full"
                     onClick={() => {
                       if (replyTo) {
@@ -531,12 +535,17 @@ const ChatFooter = ({
                     <div className="flex items-center justify-center rounded-full border">
                       <FileUpload.Trigger
                         asChild
-                        disabled={isUploading || isSending || isEditing || isCancelling}
+                        asChild
+                        disabled={
+                          isUploading || isSending || isEditing || isCancelling || isLoading
+                        }
                       >
                         <Button
                           variant="ghost"
                           size="icon"
-                          disabled={isUploading || isSending || isEditing || isCancelling}
+                          disabled={
+                            isUploading || isSending || isEditing || isCancelling || isLoading
+                          }
                         >
                           {isUploading || isCancelling ? (
                             <Loader2 className="size-6 text-muted-foreground animate-spin" />
@@ -663,7 +672,7 @@ const ChatFooter = ({
             <Button
               size="icon"
               variant="ghost"
-              disabled={isUploading || isSending || isEditing}
+              disabled={isUploading || isSending || isEditing || isLoading}
               className={`size-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted ${attachmentMode ? "bg-muted text-foreground" : ""}`}
               onClick={() => {
                 setAttachmentMode(!attachmentMode);
@@ -694,7 +703,7 @@ const ChatFooter = ({
                 <Button
                   size="icon"
                   variant="ghost"
-                  disabled={isUploading || isSending || isEditing}
+                  disabled={isUploading || isSending || isEditing || isLoading}
                   className={`size-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted ${isEmojiOpen ? "bg-muted text-foreground" : ""}`}
                 >
                   <Smile className="size-5" />
@@ -731,16 +740,20 @@ const ChatFooter = ({
           </div>
 
           <Textarea
-            disabled={isUploading || isSending || isEditing || uploadingFiles.length > 0}
+            disabled={
+              isUploading || isSending || isEditing || uploadingFiles.length > 0 || isLoading
+            }
             className="min-h-[40px] max-h-[120px] pb-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2 shadow-none flex-1"
             placeholder={
-              isUploading || uploadingFiles.length > 0
-                ? "Uploading files..."
-                : isSending
-                  ? "Sending..."
-                  : isEditing
-                    ? "Editing..."
-                    : "Type a message..."
+              isLoading
+                ? "Loading chat..."
+                : isUploading || uploadingFiles.length > 0
+                  ? "Uploading files..."
+                  : isSending
+                    ? "Sending..."
+                    : isEditing
+                      ? "Editing..."
+                      : "Type a message..."
             }
             value={newMessageText}
             ref={textareaRef}
@@ -767,7 +780,8 @@ const ChatFooter = ({
                 (attachments.length === 0 &&
                   !(editMessage?.attachments?.some((a) => !a.delete) ?? false) &&
                   newMessageText.trim() === "") ||
-                uploadingFiles.length > 0
+                uploadingFiles.length > 0 ||
+                isLoading
               }
               className="size-9 rounded-full shrink-0"
               onClick={(e) => {

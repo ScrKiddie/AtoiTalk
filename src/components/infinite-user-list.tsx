@@ -1,4 +1,6 @@
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { useChatListScroll } from "@/hooks/use-chat-list-scroll";
@@ -21,6 +23,7 @@ interface InfiniteUserListProps<T> {
   skeletonCount?: number;
   resetKey?: unknown;
   selectionMode?: boolean;
+  className?: string;
 }
 
 export function InfiniteUserList<T>({
@@ -39,6 +42,7 @@ export function InfiniteUserList<T>({
   skeletonCount = 5,
   resetKey,
   selectionMode = false,
+  className,
 }: InfiniteUserListProps<T>) {
   const { scrollRef, handleScroll, handleWheel } = useChatListScroll({
     hasNextPage,
@@ -80,13 +84,8 @@ export function InfiniteUserList<T>({
   }
 
   return (
-    <div
-      ref={scrollRef}
-      onScroll={handleScroll}
-      onWheel={handleWheel}
-      className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent"
-    >
-      <div className="flex flex-col gap-2 min-w-0 overflow-hidden">
+    <ScrollArea viewportRef={scrollRef} onScroll={handleScroll} className={cn("h-full", className)}>
+      <div className="flex flex-col gap-2 min-w-0 overflow-hidden" onWheel={handleWheel}>
         {isLoading &&
           Array.from({ length: skeletonCount }).map((_, i) => (
             <div key={i} className="flex items-center justify-between p-2 gap-2 rounded-md">
@@ -116,6 +115,6 @@ export function InfiniteUserList<T>({
           </div>
         )}
       </div>
-    </div>
+    </ScrollArea>
   );
 }

@@ -7,18 +7,18 @@ import {
   Check,
   CheckCheck,
   Flag,
-  RefreshCcw,
   Reply,
   Shield,
   SquarePen,
   Trash2,
-  X,
 } from "lucide-react";
 
 import { ReportDialog } from "@/components/modals/report-dialog";
 import { Spinner } from "@/components/ui/spinner.tsx";
-import { useUserById } from "@/hooks/queries";
+
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import { userService } from "@/services";
 import { useUIStore } from "@/store";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "motion/react";
@@ -47,6 +47,8 @@ interface MessageBubbleProps {
   jumpToMessage: (id: string, originId?: string) => void;
   highlightedMessageId: string | null;
   isBusy: boolean;
+  isNewMessage?: boolean;
+  partnerProfile?: User | null;
 }
 
 const MessageBubble = ({
@@ -70,6 +72,8 @@ const MessageBubble = ({
   jumpToMessage,
   highlightedMessageId,
   isBusy,
+  isNewMessage = false,
+  partnerProfile,
 }: MessageBubbleProps) => {
   const isCurrentUser = message.sender_id === current?.id;
   const [isReportOpen, setIsReportOpen] = React.useState(false);
@@ -108,22 +112,34 @@ const MessageBubble = ({
   };
 
   const queryClient = useQueryClient();
-  const targetUserId = !isCurrentUser && chat?.type === "group" ? message.sender_id : null;
-  const cachedUser = targetUserId ? queryClient.getQueryData<User>(["user", targetUserId]) : null;
+  const setLoadingProfile = useUIStore((state) => state.setLoadingProfile);
+  const openProfileModal = useUIStore((state) => state.openProfileModal);
 
-  const {
-    data: fetchedUser,
-    isError: isSenderError,
-    isLoading: isSenderLoading,
-  } = useUserById(cachedUser ? null : targetUserId);
+  const handleOpenProfile = async (userId: string) => {
+    if (!userId) return;
 
-  const sender = cachedUser || fetchedUser;
+    setLoadingProfile(true);
+    try {
+      await queryClient.fetchQuery({
+        queryKey: ["user", userId],
+        queryFn: () => userService.getUserById(userId),
+        staleTime: 0,
+      });
+      openProfileModal(userId);
+    } catch {
+      toast.error("Failed to load user profile");
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
 
-  const senderNameFromProfile = sender?.full_name;
-  const fallbackName = message.sender_name || "Unknown User";
-  const isProfileNotFound = targetUserId && !isSenderLoading && !sender && isSenderError;
-  const effectiveSenderName =
-    senderNameFromProfile || (isProfileNotFound ? "Deleted Account" : fallbackName);
+  const cachedUser =
+    !isCurrentUser && chat?.type === "group"
+      ? queryClient.getQueryData<User>(["user", message.sender_id])
+      : null;
+
+  const effectiveSenderName = cachedUser?.full_name || message.sender_name || "Unknown User";
+  const effectiveAvatar = cachedUser?.avatar || message.sender_avatar;
 
   const senderName = isCurrentUser
     ? "You"
@@ -134,15 +150,14 @@ const MessageBubble = ({
   const isSenderDeleted =
     !isCurrentUser &&
     ((chat?.type === "private" && chat.other_user_is_deleted) ||
-      (!message.sender_id && !message.sender_name) ||
-      isProfileNotFound);
+      (!message.sender_id && !message.sender_name));
 
   const finalSenderName = isSenderDeleted ? "Deleted Account" : senderName;
 
   const senderAvatar = isCurrentUser
     ? current?.avatar
     : chat?.type === "group"
-      ? sender?.avatar || message.sender_avatar
+      ? effectiveAvatar
       : chat?.avatar;
 
   const isChatBlockedOrDeleted =
@@ -156,14 +171,12 @@ const MessageBubble = ({
 
   const hasImages = message.attachments?.some((att) => att.mime_type.startsWith("image/"));
 
-  const openProfileModal = useUIStore((state) => state.openProfileModal);
-
   return (
     <>
       <motion.div
-        initial={{ opacity: 0, x: isCurrentUser ? 20 : -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.3 }}
+        initial={isNewMessage ? { opacity: 0, x: isCurrentUser ? 20 : -20 } : false}
+        animate={isNewMessage ? { opacity: 1, x: 0 } : undefined}
+        transition={isNewMessage ? { duration: 0.3 } : undefined}
         className={`flex ${isCurrentUser ? "justify-end" : "justify-start"} w-full`}
       >
         <div
@@ -186,7 +199,7 @@ const MessageBubble = ({
               )}
               onClick={(e) => {
                 e.stopPropagation();
-                if (!isSenderDeleted) openProfileModal(message.sender_id);
+                if (!isSenderDeleted) handleOpenProfile(message.sender_id);
               }}
             >
               <AvatarImage
@@ -200,85 +213,58 @@ const MessageBubble = ({
           {isCurrentUser && (
             <div className="self-stretch shrink-0 h-12 flex h-full items-center justify-center cursor-pointer">
               <div className="flex items-center justify-center min-h-[63.200px]">
-                {!isLoadingMessage &&
-                  !message.deleted_at &&
-                  (isError ? (
-                    <div className="flex flex-col gap-1">
-                      <Button
-                        size={"icon"}
-                        className={cn(
-                          "size-fit p-[6px] bg-foreground border rounded-full transition-all duration-200",
-                          "opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto",
-                          activeMessageId === message.id && "opacity-100 pointer-events-auto"
-                        )}
-                        onClick={() => {}}
-                      >
-                        <RefreshCcw className="text-background size-4" />
-                      </Button>
-                      <Button
-                        size={"icon"}
-                        className={cn(
-                          "size-fit p-[6px] bg-foreground border rounded-full transition-all duration-200",
-                          "opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto",
-                          activeMessageId === message.id && "opacity-100 pointer-events-auto"
-                        )}
-                        onClick={() => {}}
-                      >
-                        <X className="text-background size-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div
-                      className={cn(
-                        "absolute top-1/2 -translate-y-1/2 right-full pr-2 flex items-center z-10 transition-all duration-200 ease-in-out",
-                        "opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:delay-0",
-                        activeMessageId === message.id && "opacity-100 visible"
-                      )}
-                    >
-                      {!isChatBlockedOrDeleted &&
-                        Date.now() - new Date(message.created_at).getTime() < 15 * 60 * 1000 && (
-                          <Button
-                            size={"icon"}
-                            disabled={isBusy}
-                            className="size-fit p-[6px] bg-foreground border rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEdit();
-                            }}
-                          >
-                            <SquarePen className="text-background size-4" />
-                          </Button>
-                        )}
-
-                      <div className="flex flex-col gap-1 items-center">
-                        {!isChatBlockedOrDeleted && (
-                          <Button
-                            size={"icon"}
-                            disabled={isBusy}
-                            className="size-fit p-[6px] bg-foreground border rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleReply();
-                            }}
-                          >
-                            <Reply className="text-background size-4" />
-                          </Button>
-                        )}
+                {!isLoadingMessage && !message.deleted_at && (
+                  <div
+                    className={cn(
+                      "absolute top-1/2 -translate-y-1/2 right-full pr-2 flex items-center z-10 transition-all duration-200 ease-in-out",
+                      "opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:delay-0",
+                      activeMessageId === message.id && "opacity-100 visible"
+                    )}
+                  >
+                    {!isChatBlockedOrDeleted &&
+                      Date.now() - new Date(message.created_at).getTime() < 15 * 60 * 1000 && (
                         <Button
                           size={"icon"}
                           disabled={isBusy}
                           className="size-fit p-[6px] bg-foreground border rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setMessageToDelete(message.id);
-                            setShowDeleteModal(true);
+                            handleEdit();
                           }}
                         >
-                          <Trash2 className="text-background size-4" />
+                          <SquarePen className="text-background size-4" />
                         </Button>
-                      </div>
+                      )}
+
+                    <div className="flex flex-col gap-1 items-center">
+                      {!isChatBlockedOrDeleted && (
+                        <Button
+                          size={"icon"}
+                          disabled={isBusy}
+                          className="size-fit p-[6px] bg-foreground border rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleReply();
+                          }}
+                        >
+                          <Reply className="text-background size-4" />
+                        </Button>
+                      )}
+                      <Button
+                        size={"icon"}
+                        disabled={isBusy}
+                        className="size-fit p-[6px] bg-foreground border rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMessageToDelete(message.id);
+                          setShowDeleteModal(true);
+                        }}
+                      >
+                        <Trash2 className="text-background size-4" />
+                      </Button>
                     </div>
-                  ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -300,7 +286,7 @@ const MessageBubble = ({
                   )}
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (!isSenderDeleted) openProfileModal(message.sender_id);
+                    if (!isSenderDeleted) handleOpenProfile(message.sender_id);
                   }}
                 >
                   {finalSenderName}
@@ -384,6 +370,11 @@ const MessageBubble = ({
                 message.created_at &&
                 new Date(chat.other_last_read_at) >= new Date(message.created_at) ? (
                   <CheckCheck className="size-3 text-blue-500" />
+                ) : partnerProfile?.is_online ||
+                  (partnerProfile?.last_seen_at &&
+                    message.created_at &&
+                    new Date(partnerProfile.last_seen_at) > new Date(message.created_at)) ? (
+                  <CheckCheck className="size-3 text-muted-foreground" />
                 ) : (
                   <Check
                     className={`size-3 ${isCurrentUser ? "text-background/70" : "text-muted-foreground"}`}

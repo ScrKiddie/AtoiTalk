@@ -1,7 +1,6 @@
 import Logo from "@/components/logo";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { getInitials } from "@/lib/avatar-utils";
 import { toast } from "@/lib/toast";
 import { chatService } from "@/services";
 import { useAuthStore } from "@/store";
@@ -99,8 +98,6 @@ export default function InvitePage() {
     );
   }
 
-  const initials = getInitials(group.name);
-
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center px-4 sm:px-0 bg-background gap-6">
       <div className="flex justify-center items-center ">
@@ -126,8 +123,8 @@ export default function InvitePage() {
               <div className="relative">
                 <Avatar className="h-24 w-24 border-4 border-background shadow-sm">
                   <AvatarImage src={group.avatar || undefined} className="object-cover" />
-                  <AvatarFallback className="text-3xl bg-primary/10 text-primary">
-                    {initials}
+                  <AvatarFallback>
+                    <Users className="size-12 text-white" />
                   </AvatarFallback>
                 </Avatar>
               </div>

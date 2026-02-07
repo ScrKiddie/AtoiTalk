@@ -84,7 +84,7 @@ export const chatService = {
    */
   async leaveGroup(groupId: string): Promise<Message> {
     const response = await api.post<ApiResponse<Message>>(`/api/chats/group/${groupId}/leave`);
-    return response.data.data;
+    return response.data?.data;
   },
 
   /**
@@ -104,7 +104,7 @@ export const chatService = {
     const response = await api.post<ApiResponse<Message>>(
       `/api/chats/group/${groupId}/members/${userId}/kick`
     );
-    return response.data.data;
+    return response.data?.data;
   },
 
   /**
@@ -124,7 +124,7 @@ export const chatService = {
         role,
       }
     );
-    return response.data.data;
+    return response.data?.data;
   },
 
   /**
@@ -134,7 +134,7 @@ export const chatService = {
     const response = await api.post<ApiResponse<Message>>(`/api/chats/group/${groupId}/transfer`, {
       new_owner_id: newOwnerId,
     });
-    return response.data.data;
+    return response.data?.data;
   },
 
   /**

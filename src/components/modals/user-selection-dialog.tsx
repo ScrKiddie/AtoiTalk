@@ -126,8 +126,8 @@ export function UserSelectionDialog({
   return (
     <Dialog open={isOpen} onOpenChange={(val) => !isSubmitting && onClose(val)} modal={true}>
       <DialogContent
-        className="max-w-[85%] sm:max-w-[380px] h-[530px] flex flex-col overflow-hidden z-[66]"
-        overlayClassName="z-[65]"
+        size="default"
+        className="h-[530px] max-h-[85vh] flex flex-col overflow-hidden"
         onInteractOutside={(e) => {
           e.stopPropagation();
           if (isSubmitting) e.preventDefault();

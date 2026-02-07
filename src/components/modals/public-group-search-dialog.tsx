@@ -105,6 +105,10 @@ export function PublicGroupSearchDialog({ isOpen, onClose }: PublicGroupSearchDi
       setDebouncedSearch("");
       setActiveTab("find");
       resetGroupForm();
+      const timer = setTimeout(() => {
+        setJoiningGroupId(null);
+      }, 300);
+      return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
@@ -140,18 +144,22 @@ export function PublicGroupSearchDialog({ isOpen, onClose }: PublicGroupSearchDi
 
   const handleJoin = (group: PublicGroupDTO) => {
     if (group.is_member) {
-      navigate(`/chat/${group.chat_id}`);
       onClose(false);
+      setTimeout(() => {
+        navigate(`/chat/${group.chat_id}`);
+      }, 300);
       return;
     }
 
     setJoiningGroupId(group.id);
-    joinGroup(group.id, {
+    joinGroup(group.chat_id, {
       onSuccess: () => {
-        navigate(`/chat/${group.chat_id}`);
         onClose(false);
+        setTimeout(() => {
+          navigate(`/chat/${group.chat_id}`);
+        }, 300);
       },
-      onSettled: () => {
+      onError: () => {
         setJoiningGroupId(null);
       },
     });
@@ -281,10 +289,8 @@ export function PublicGroupSearchDialog({ isOpen, onClose }: PublicGroupSearchDi
     createGroup(formData, {
       onSuccess: (newGroup) => {
         navigate(`/chat/${newGroup.id}`);
-        requestAnimationFrame(() => {
-          onClose(false);
-          resetGroupForm();
-        });
+        onClose(false);
+        resetGroupForm();
       },
       onSettled: () => {
         setIsCreatingGroup(false);
@@ -298,10 +304,10 @@ export function PublicGroupSearchDialog({ isOpen, onClose }: PublicGroupSearchDi
     <>
       <Dialog open={isOpen} onOpenChange={onClose} modal={true}>
         <DialogContent
-          className={`max-w-[85%] sm:max-w-[425px] h-[600px] flex flex-col overflow-hidden z-[66] ${
+          size="default"
+          className={`h-[600px] flex flex-col overflow-hidden ${
             isGroupFormBusy ? "[&>button]:pointer-events-none [&>button]:opacity-50" : ""
           }`}
-          overlayClassName="z-[65]"
           onPointerDownOutside={(e) => {
             if (isGroupFormBusy) e.preventDefault();
           }}

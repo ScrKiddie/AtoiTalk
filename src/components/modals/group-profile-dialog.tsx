@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { GlobalLightbox } from "@/components/ui/lightbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   useDeleteGroup,
@@ -27,7 +28,7 @@ import { toast } from "@/lib/toast";
 
 import { useChat } from "@/hooks/queries";
 import { useInfiniteGroupMembers } from "@/hooks/queries/use-group-members";
-import { getInitials } from "@/lib/avatar-utils";
+
 import { useAuthStore, useChatStore, useUIStore } from "@/store";
 import { ChatListItem, GroupMember, PaginatedResponse } from "@/types";
 import { InfiniteData, useQueryClient } from "@tanstack/react-query";
@@ -49,9 +50,9 @@ import {
   Trash2,
   User,
   UserMinus,
+  Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { ReportDialog } from "./report-dialog";
 
@@ -96,99 +97,59 @@ const InviteLinkSection = ({
   }
 
   return (
-    <div className="flex flex-col gap-2 mb-4">
+    <div className="flex flex-col gap-1.5 mb-4">
       <div className="flex items-center justify-between">
         <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
           Invite Link
         </div>
-        {!isPublic && (
+        {!isPublic && inviteExpiresAt && (
           <div className="flex flex-col items-end gap-0.5">
-            <span className="text-[10px] text-green-600 font-medium bg-green-500/10 px-2 py-0.5 rounded-full border border-green-500/20">
-              Active
+            <span className="text-xs text-muted-foreground/80">
+              Expires{" "}
+              {new Date(inviteExpiresAt).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
             </span>
-            {inviteExpiresAt && (
-              <span className="text-[9px] text-muted-foreground">
-                Expires{" "}
-                {new Date(inviteExpiresAt).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </span>
-            )}
           </div>
-        )}
-        {isPublic && (
-          <span className="text-[10px] text-blue-600 font-medium bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">
-            Permanent
-          </span>
         )}
       </div>
 
-      <div
-        className={`p-3 border rounded-md ${isExpired ? "bg-red-500/5 border-red-200 dark:border-red-900/50" : "bg-muted/30"}`}
-      >
-        <div className="flex items-center gap-2 mb-3">
-          <Input
-            readOnly
-            value={isExpired ? "Invite link has expired" : inviteLink}
-            className={`flex-1 h-9 font-mono text-xs ${isExpired ? "text-muted-foreground line-through opacity-70" : ""}`}
-            onClick={(e) => !isExpired && (e.target as HTMLInputElement).select()}
-          />
+      <div className="flex items-stretch gap-2 min-w-0">
+        <div
+          className={`text-sm bg-muted/50 p-2.5 rounded-md border text-foreground flex-1 flex items-center min-w-0 ${isExpired ? "opacity-60" : ""}`}
+        >
+          <span className={`truncate ${isExpired ? "line-through" : ""}`}>
+            {isExpired ? "Invite link has expired" : inviteLink}
+          </span>
+        </div>
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-auto w-10 shrink-0 aspect-square"
+          onClick={handleCopy}
+          disabled={!inviteCode || isExpired}
+          title="Copy Link"
+        >
+          <Copy className="h-4 w-4" />
+        </Button>
+        {isAdminOrOwner && (
           <Button
-            size="icon"
             variant="outline"
-            className="h-9 w-9 shrink-0"
-            onClick={handleCopy}
-            disabled={!inviteCode || isExpired}
-            title="Copy Link"
+            size="icon"
+            className="h-auto w-10 shrink-0 aspect-square text-destructive hover:text-destructive hover:bg-destructive/10 hover:border-destructive/50"
+            onClick={() => (isExpired ? handleReset() : setIsResetConfirmOpen(true))}
+            disabled={isResetting}
+            title="Reset Link"
           >
-            <Copy className="h-4 w-4" />
+            {isResetting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
           </Button>
-        </div>
-
-        <div className="flex items-center justify-between gap-3">
-          {isAdminOrOwner ? (
-            <>
-              <span className="text-[10px] text-muted-foreground leading-tight">
-                {isExpired
-                  ? "Generate a new link to allow users to join."
-                  : "Resetting will invalidate the current link immediately."}
-              </span>
-
-              {isExpired ? (
-                <Button
-                  size="sm"
-                  onClick={handleReset}
-                  disabled={isResetting}
-                  className="h-7 text-xs"
-                >
-                  {isResetting ? (
-                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                  ) : (
-                    <RefreshCw className="h-3 w-3 mr-1" />
-                  )}
-                  Generate New Link
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                  onClick={() => setIsResetConfirmOpen(true)}
-                  disabled={isResetting}
-                >
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  Reset Link
-                </Button>
-              )}
-            </>
-          ) : (
-            <span className="text-[10px] text-muted-foreground leading-tight">
-              Share this link to invite others to the group.
-            </span>
-          )}
-        </div>
+        )}
       </div>
 
       <ConfirmationDialog
@@ -201,8 +162,6 @@ const InviteLinkSection = ({
         variant="destructive"
         onConfirm={handleReset}
         isLoading={isResetting}
-        className="z-[75]"
-        overlayClassName="z-[70]"
       />
     </div>
   );
@@ -242,12 +201,7 @@ export function GroupProfileDialog({
   const navigate = useNavigate();
   const setActiveChatId = useChatStore((state) => state.setActiveChatId);
 
-  const { mutate: leaveGroup, isPending: isLeaving } = useLeaveGroup((groupId) => {
-    if (groupId === chat?.id) {
-      onClose(false);
-      navigate("/");
-    }
-  });
+  const { mutate: leaveGroup, isPending: isLeaving } = useLeaveGroup();
   const { mutate: deleteGroup, isPending: isDeleting } = useDeleteGroup();
   const { mutate: kickMember, isPending: isKicking } = useKickGroupMember();
   const { mutate: updateRole, isPending: isUpdatingRole } = useUpdateMemberRole();
@@ -297,7 +251,9 @@ export function GroupProfileDialog({
     leaveGroup(chat.id, {
       onSuccess: () => {
         onClose(false);
-        navigate("/");
+        setTimeout(() => {
+          navigate("/");
+        }, 300);
       },
     });
   };
@@ -307,7 +263,9 @@ export function GroupProfileDialog({
     deleteGroup(chat.id, {
       onSuccess: () => {
         onClose(false);
-        navigate("/");
+        setTimeout(() => {
+          navigate("/");
+        }, 300);
       },
     });
   };
@@ -389,22 +347,12 @@ export function GroupProfileDialog({
     );
   };
 
-  const initials = getInitials(chat.name);
-
   return (
     <>
-      {isOpen &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[60] bg-black/50 animate-in fade-in-0"
-            aria-hidden="true"
-          />,
-          document.body
-        )}
-
       <Dialog open={isOpen} onOpenChange={(val) => !isLeaving && onClose(val)}>
         <DialogContent
-          className="sm:max-w-[425px] max-h-[85vh] flex flex-col z-[61]"
+          size="default"
+          className="max-h-[85vh] flex flex-col"
           onInteractOutside={(e) =>
             (isLightboxOpen ||
               isLeaveConfirmOpen ||
@@ -436,13 +384,13 @@ export function GroupProfileDialog({
               <TabsTrigger value="members">Members</TabsTrigger>
             </TabsList>
 
-            <div className="mt-4 flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar">
-              <TabsContent
-                value="overview"
-                className="flex flex-col"
-                forceMount={activeTab === "overview" ? true : undefined}
-              >
-                <div className="flex flex-col items-center gap-1 mb-4 w-full shrink-0 relative group/avatar">
+            <TabsContent
+              value="overview"
+              className="flex-1 flex flex-col min-h-0"
+              forceMount={activeTab === "overview" ? true : undefined}
+            >
+              <ScrollArea className="flex-1 min-h-0">
+                <div className="flex flex-col items-center gap-1 mb-4 w-full shrink-0 relative group/avatar pt-4">
                   <Avatar
                     className={`h-20 w-20 ${chat.avatar && isAvatarLoaded ? "cursor-pointer hover:opacity-90 transition-opacity" : ""}`}
                     onClick={() => chat.avatar && isAvatarLoaded && setIsLightboxOpen(true)}
@@ -452,7 +400,9 @@ export function GroupProfileDialog({
                       className="object-cover"
                       onLoadingStatusChange={(status) => setIsAvatarLoaded(status === "loaded")}
                     />
-                    <AvatarFallback className="text-3xl">{initials}</AvatarFallback>
+                    <AvatarFallback>
+                      <Users className="size-10 text-white" />
+                    </AvatarFallback>
                   </Avatar>
 
                   <div className="flex justify-center mt-1 w-full px-6">
@@ -529,7 +479,7 @@ export function GroupProfileDialog({
                   )}
                 </div>
 
-                <div className="flex flex-col min-h-0 mb-4">
+                <div className="flex flex-col min-h-0 mb-4 px-4">
                   <div className="flex items-center justify-between mb-1 shrink-0">
                     <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Description
@@ -545,180 +495,175 @@ export function GroupProfileDialog({
 
                 {(chat.is_public || chat.my_role === "owner" || chat.my_role === "admin") &&
                   chat.invite_code && (
-                    <InviteLinkSection
-                      chatId={chat.id}
-                      inviteCode={chat.invite_code}
-                      isPublic={!!chat.is_public}
-                      isAdminOrOwner={chat.my_role === "owner" || chat.my_role === "admin"}
-                      inviteExpiresAt={chat.invite_expires_at}
-                    />
-                  )}
-              </TabsContent>
-
-              <TabsContent
-                value="members"
-                className="h-[400px] flex flex-col"
-                forceMount={activeTab === "members" ? true : undefined}
-              >
-                <div className="pb-4 shrink-0">
-                  <div className="flex items-center gap-2">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search members..."
-                        className="pl-8"
-                        value={memberSearch}
-                        onChange={(e) => setMemberSearch(e.target.value)}
+                    <div className="px-4">
+                      <InviteLinkSection
+                        chatId={chat.id}
+                        inviteCode={chat.invite_code}
+                        isPublic={!!chat.is_public}
+                        isAdminOrOwner={chat.my_role === "owner" || chat.my_role === "admin"}
+                        inviteExpiresAt={chat.invite_expires_at}
                       />
                     </div>
-                    {(chat.my_role === "owner" || chat.my_role === "admin") && (
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        onClick={() => setIsAddMemberOpen(true)}
-                        title="Add Members"
-                      >
-                        <Plus className="size-4" />
-                      </Button>
-                    )}
+                  )}
+              </ScrollArea>
+            </TabsContent>
+            <TabsContent
+              value="members"
+              className="h-[420px] flex flex-col flex-none"
+              forceMount={activeTab === "members" ? true : undefined}
+            >
+              <div className="py-4 shrink-0">
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search members..."
+                      className="pl-8"
+                      value={memberSearch}
+                      onChange={(e) => setMemberSearch(e.target.value)}
+                    />
                   </div>
+                  {(chat.my_role === "owner" || chat.my_role === "admin") && (
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={() => setIsAddMemberOpen(true)}
+                      title="Add Members"
+                    >
+                      <Plus className="size-4" />
+                    </Button>
+                  )}
                 </div>
+              </div>
 
-                <div className="flex-1 min-h-0 -mr-4 pr-3">
-                  <InfiniteUserList
-                    users={membersList}
-                    isLoading={isLoadingMembers}
-                    isError={isMembersError}
-                    hasNextPage={!!hasNextPage}
-                    isFetchingNextPage={!!isFetchingNextPage}
-                    fetchNextPage={fetchNextPage}
-                    refetch={refetchMembers}
-                    skeletonButtonCount={2}
-                    renderActions={(member) => (
-                      <div
-                        key={member.id}
-                        className="flex items-center justify-between p-2 hover:bg-muted rounded-md transition-colors group gap-2"
-                      >
-                        <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden">
-                          <Avatar>
-                            <AvatarImage
-                              src={
-                                !member.full_name || member.full_name === "Deleted Account"
-                                  ? undefined
-                                  : member.avatar || undefined
-                              }
-                            />
-                            <AvatarFallback>
-                              {!member.full_name || member.full_name === "Deleted Account"
-                                ? "?"
-                                : member.full_name[0]}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex flex-col text-left min-w-0 w-full">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-sm font-medium truncate">
-                                {member.user_id === currentUser?.id
-                                  ? "You"
-                                  : !member.full_name || member.full_name === "Deleted Account"
-                                    ? "Deleted Account"
-                                    : member.full_name}
-                              </span>
-                              {member.role === "owner" && (
-                                <Shield className="size-3 text-yellow-500 fill-yellow-500 shrink-0" />
-                              )}
-                              {member.role === "admin" && (
-                                <Shield className="size-3 text-blue-500 fill-blue-500 shrink-0" />
-                              )}
-                            </div>
-                            <span className="text-xs text-muted-foreground truncate">
-                              @{member.username}
-                              {member.role !== "member" && ` • ${member.role}`}
+              <div className="flex-1 min-h-0 -mr-4 pr-3">
+                <InfiniteUserList
+                  users={membersList}
+                  isLoading={isLoadingMembers}
+                  isError={isMembersError}
+                  hasNextPage={!!hasNextPage}
+                  isFetchingNextPage={!!isFetchingNextPage}
+                  fetchNextPage={fetchNextPage}
+                  refetch={refetchMembers}
+                  skeletonButtonCount={2}
+                  renderActions={(member) => (
+                    <div
+                      key={member.id}
+                      className="flex items-center justify-between p-2 hover:bg-muted rounded-md transition-colors group gap-2"
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden">
+                        <Avatar>
+                          <AvatarImage
+                            src={
+                              !member.full_name || member.full_name === "Deleted Account"
+                                ? undefined
+                                : member.avatar || undefined
+                            }
+                          />
+                          <AvatarFallback>
+                            {!member.full_name || member.full_name === "Deleted Account"
+                              ? "?"
+                              : member.full_name[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col text-left min-w-0 w-full">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm font-medium truncate">
+                              {member.user_id === currentUser?.id
+                                ? "You"
+                                : !member.full_name || member.full_name === "Deleted Account"
+                                  ? "Deleted Account"
+                                  : member.full_name}
                             </span>
+                            {member.role === "owner" && (
+                              <Shield className="size-3 text-yellow-500 fill-yellow-500 shrink-0" />
+                            )}
+                            {member.role === "admin" && (
+                              <Shield className="size-3 text-blue-500 fill-blue-500 shrink-0" />
+                            )}
                           </div>
+                          <span className="text-xs text-muted-foreground truncate">
+                            @{member.username}
+                            {member.role !== "member" && ` • ${member.role}`}
+                          </span>
                         </div>
+                      </div>
 
-                        {member.user_id !== currentUser?.id &&
-                          member.full_name &&
-                          member.full_name !== "Deleted Account" && (
-                            <div className="flex items-center gap-2">
-                              <Button
-                                size="icon"
-                                variant="outline"
-                                className="size-8"
-                                onClick={() => handleViewMemberProfile(member)}
-                                title="View Profile"
-                              >
-                                <Info className="size-4" />
-                              </Button>
+                      {member.user_id !== currentUser?.id &&
+                        member.full_name &&
+                        member.full_name !== "Deleted Account" && (
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              className="size-8"
+                              onClick={() => handleViewMemberProfile(member)}
+                              title="View Profile"
+                            >
+                              <Info className="size-4" />
+                            </Button>
 
-                              {chat.my_role === "owner" ? (
-                                <DropdownMenu modal={false}>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button
-                                      size="icon"
-                                      variant="outline"
-                                      className="size-8"
-                                      title="Member Settings"
-                                    >
-                                      <Settings className="size-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end" className="w-48 z-[65]">
-                                    {member.role === "member" && (
-                                      <DropdownMenuItem
-                                        onClick={() => handlePromoteToAdmin(member)}
-                                      >
-                                        <Shield className="mr-2 h-4 w-4 text-blue-500" />
-                                        <span>Promote to Admin</span>
-                                      </DropdownMenuItem>
-                                    )}
-                                    {member.role === "admin" && (
-                                      <DropdownMenuItem
-                                        onClick={() => handleDemoteToMember(member)}
-                                      >
-                                        <User className="mr-2 h-4 w-4" />
-                                        <span>Demote to Member</span>
-                                      </DropdownMenuItem>
-                                    )}
-                                    <DropdownMenuItem
-                                      onClick={() => handleTransferOwnership(member)}
-                                    >
-                                      <Crown className="mr-2 h-4 w-4 text-yellow-500" />
-                                      <span>Transfer Ownership</span>
-                                    </DropdownMenuItem>
-
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                      className="text-destructive focus:text-destructive"
-                                      onClick={() => setKickCandidate(member)}
-                                    >
-                                      <UserMinus className="mr-2 h-4 w-4" />
-                                      <span>Remove Member</span>
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              ) : (
-                                chat.my_role === "admin" &&
-                                member.role === "member" && (
+                            {chat.my_role === "owner" ? (
+                              <DropdownMenu modal={false}>
+                                <DropdownMenuTrigger asChild>
                                   <Button
                                     size="icon"
                                     variant="outline"
-                                    className="size-8 text-destructive hover:text-destructive"
-                                    onClick={() => setKickCandidate(member)}
-                                    title="Remove Member"
+                                    className="size-8"
+                                    title="Member Settings"
                                   >
-                                    <UserMinus className="size-4" />
+                                    <Settings className="size-4" />
                                   </Button>
-                                )
-                              )}
-                            </div>
-                          )}
-                      </div>
-                    )}
-                  />
-                </div>
-              </TabsContent>
-            </div>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48 z-[65]">
+                                  {member.role === "member" && (
+                                    <DropdownMenuItem onClick={() => handlePromoteToAdmin(member)}>
+                                      <Shield className="mr-2 h-4 w-4 text-blue-500" />
+                                      <span>Promote to Admin</span>
+                                    </DropdownMenuItem>
+                                  )}
+                                  {member.role === "admin" && (
+                                    <DropdownMenuItem onClick={() => handleDemoteToMember(member)}>
+                                      <User className="mr-2 h-4 w-4" />
+                                      <span>Demote to Member</span>
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuItem onClick={() => handleTransferOwnership(member)}>
+                                    <Crown className="mr-2 h-4 w-4 text-yellow-500" />
+                                    <span>Transfer Ownership</span>
+                                  </DropdownMenuItem>
+
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive"
+                                    onClick={() => setKickCandidate(member)}
+                                  >
+                                    <UserMinus className="mr-2 h-4 w-4" />
+                                    <span>Remove Member</span>
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            ) : (
+                              chat.my_role === "admin" &&
+                              member.role === "member" && (
+                                <Button
+                                  size="icon"
+                                  variant="outline"
+                                  className="size-8 text-destructive hover:text-destructive"
+                                  onClick={() => setKickCandidate(member)}
+                                  title="Remove Member"
+                                >
+                                  <UserMinus className="size-4" />
+                                </Button>
+                              )
+                            )}
+                          </div>
+                        )}
+                    </div>
+                  )}
+                />
+              </div>
+            </TabsContent>
           </Tabs>
         </DialogContent>
       </Dialog>
@@ -743,8 +688,6 @@ export function GroupProfileDialog({
         variant="destructive"
         onConfirm={chat.my_role === "owner" ? handleDeleteGroup : handleLeaveGroup}
         isLoading={chat.my_role === "owner" ? isDeleting : isLeaving}
-        className="z-[66]"
-        overlayClassName="z-[65]"
       />
 
       <ConfirmationDialog
@@ -757,8 +700,6 @@ export function GroupProfileDialog({
         variant="destructive"
         onConfirm={handleKickMember}
         isLoading={isKicking}
-        className="z-[66]"
-        overlayClassName="z-[65]"
       />
 
       <ConfirmationDialog
@@ -798,8 +739,6 @@ export function GroupProfileDialog({
         variant="destructive"
         onConfirm={confirmTransfer}
         isLoading={isTransferring}
-        className="z-[66]"
-        overlayClassName="z-[65]"
       />
 
       <AddMembersDialog

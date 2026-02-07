@@ -1,4 +1,4 @@
-import { Loader2, MailPlus, MessageSquare, Search } from "lucide-react";
+import { MailPlus, MessageSquare, Search } from "lucide-react";
 
 import { InfiniteUserList } from "@/components/infinite-user-list";
 import Logo from "@/components/logo.tsx";
@@ -18,7 +18,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
 import { useChats, useSearchUsers } from "@/hooks/queries";
-import { toast } from "@/lib/toast";
 import { User } from "@/types";
 import { Globe } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -35,7 +34,6 @@ export function NavHeader() {
   const navigate = useNavigate();
 
   const { data: chatsData } = useChats();
-  const [creatingChatUserId, setCreatingChatUserId] = useState<string | null>(null);
 
   const trimmedSearch = debouncedSearch.trim();
   const {
@@ -57,27 +55,18 @@ export function NavHeader() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  const handleSendMessage = async (user: User) => {
-    setCreatingChatUserId(user.id);
-    try {
-      const existingChat = chatsData?.pages
-        .flatMap((page) => page.data)
-        .find((chat) => chat.type === "private" && chat.other_user_id === user.id);
+  const handleSendMessage = (user: User) => {
+    const existingChat = chatsData?.pages
+      .flatMap((page) => page.data)
+      .find((chat) => chat.type === "private" && chat.other_user_id === user.id);
 
-      if (existingChat) {
-        setOpen(false);
-        setSearch("");
-        navigate(`/chat/${existingChat.id}`);
-        return;
-      }
+    setOpen(false);
+    setSearch("");
 
-      setOpen(false);
-      setSearch("");
+    if (existingChat) {
+      navigate(`/chat/${existingChat.id}`);
+    } else {
       navigate(`/chat/u/${user.id}`);
-    } catch {
-      toast.error("Failed to start chat");
-    } finally {
-      setCreatingChatUserId(null);
     }
   };
 
@@ -115,7 +104,7 @@ export function NavHeader() {
                   <MailPlus className="size-4" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px] h-[600px] flex flex-col">
+              <DialogContent size="default" className="h-[600px] flex flex-col">
                 <DialogHeader>
                   <DialogTitle>New Message</DialogTitle>
                 </DialogHeader>
@@ -169,13 +158,8 @@ export function NavHeader() {
                               className="size-8"
                               onClick={() => handleSendMessage(user)}
                               title="Send Message"
-                              disabled={creatingChatUserId === user.id}
                             >
-                              {creatingChatUserId === user.id ? (
-                                <Loader2 className="size-4 animate-spin" />
-                              ) : (
-                                <MessageSquare className="size-4" />
-                              )}
+                              <MessageSquare className="size-4" />
                             </Button>
                           </div>
                         </div>

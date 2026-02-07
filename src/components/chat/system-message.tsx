@@ -1,7 +1,10 @@
-import { useUserById } from "@/hooks/queries";
+import { toast } from "@/lib/toast";
+import { cn } from "@/lib/utils";
+import { userService } from "@/services";
 import { useAuthStore, useUIStore } from "@/store";
 import { Message, User } from "@/types";
 import { useQueryClient } from "@tanstack/react-query";
+import React from "react";
 
 interface SystemMessageProps {
   message: Message;
@@ -17,22 +20,36 @@ const truncateString = (str: string, num: number) => {
 const SystemMessageUserLink = ({ userId, name }: { userId?: string; name: string }) => {
   const { user: currentUser } = useAuthStore();
   const openProfileModal = useUIStore((state) => state.openProfileModal);
+  const setLoadingProfile = useUIStore((state) => state.setLoadingProfile);
   const queryClient = useQueryClient();
 
   const isMe = currentUser?.id === userId;
   const cachedUser = userId && !isMe ? queryClient.getQueryData<User>(["user", userId]) : null;
 
-  const {
-    data: fetchedUser,
-    isError,
-    isLoading,
-  } = useUserById(cachedUser || isMe ? null : userId || null);
-  const user = isMe ? currentUser : cachedUser || fetchedUser;
+  const handleProfileClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!userId) return;
+
+    setLoadingProfile(true);
+    try {
+      await queryClient.fetchQuery({
+        queryKey: ["user", userId],
+        queryFn: () => userService.getUserById(userId),
+        staleTime: 0,
+      });
+      openProfileModal(userId);
+    } catch {
+      toast.error("Failed to load user profile");
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
+  const user = isMe ? currentUser : cachedUser;
 
   const userNameFromProfile = user?.full_name;
   const fallbackName = name || "Unknown User";
-  const isProfileNotFound = userId && !isLoading && !user && isError;
-  const isDeleted = !userId || isProfileNotFound;
+  const isDeleted = !userId;
   const effectiveName = userNameFromProfile || (isDeleted ? "Deleted Account" : fallbackName);
   const displayName = truncateString(effectiveName, 15);
 
@@ -50,14 +67,27 @@ const SystemMessageUserLink = ({ userId, name }: { userId?: string; name: string
 
   return (
     <span
-      onClick={(e) => {
-        e.stopPropagation();
-        openProfileModal(userId);
-      }}
+      onClick={handleProfileClick}
       className="cursor-pointer hover:no-underline hover:opacity-80 transition-opacity align-bottom hover:font-medium"
     >
       {displayName}
     </span>
+  );
+};
+
+export const SystemMessageBadge = ({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) => {
+  return (
+    <div className={cn("flex justify-center w-full", className)}>
+      <div className="inline-flex items-center justify-center bg-background border text-foreground rounded-full px-3 py-1 text-xs font-normal">
+        {children}
+      </div>
+    </div>
   );
 };
 
@@ -164,11 +194,5 @@ export const SystemMessage = ({ message }: SystemMessageProps) => {
     }
   };
 
-  return (
-    <div className="flex justify-center">
-      <div className="bg-background border text-foreground rounded-full px-3 py-1 text-xs font-normal text-center max-w-[90%]">
-        {getSystemMessageNodes(message)}
-      </div>
-    </div>
-  );
+  return <SystemMessageBadge>{getSystemMessageNodes(message)}</SystemMessageBadge>;
 };

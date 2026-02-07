@@ -62,9 +62,19 @@ export const ChatPreviewText = ({ chat, currentUser }: ChatPreviewTextProps) => 
 
   if (lastMessage.deleted_at) {
     return (
-      <span className="italic opacity-70 flex items-center gap-1 min-w-0 truncate">
-        <Ban className="size-3 shrink-0" />
-        <span className="truncate">Pesan sudah dihapus</span>
+      <span className="flex items-center min-w-0 truncate">
+        {chat.type === "group" && (
+          <>
+            <span className="text-foreground truncate max-w-[80px] shrink-0">
+              {lastMessage.sender_id === currentUser?.id ? "You" : finalSenderName}
+            </span>
+            <span className="text-foreground mr-0.5">: </span>
+          </>
+        )}
+        <span className="flex items-center italic opacity-70 truncate min-w-0">
+          <Ban className="size-3 shrink-0 mr-1" />
+          <span className="truncate">Pesan sudah dihapus</span>
+        </span>
       </span>
     );
   }
@@ -85,7 +95,9 @@ export const ChatPreviewText = ({ chat, currentUser }: ChatPreviewTextProps) => 
     );
   }
 
-  if (lastMessage.attachments && lastMessage.attachments.length > 0) {
+  const isFileType = ["file", "image", "video", "audio"].includes(lastMessage.type);
+
+  if ((lastMessage.attachments && lastMessage.attachments.length > 0) || isFileType) {
     return (
       <>
         {chat.type === "group" && (
@@ -104,5 +116,20 @@ export const ChatPreviewText = ({ chat, currentUser }: ChatPreviewTextProps) => 
     );
   }
 
-  return <span className="truncate">File</span>;
+  return (
+    <>
+      {chat.type === "group" && (
+        <>
+          <span className="text-foreground truncate max-w-[80px] shrink-0">
+            {lastMessage.sender_id === currentUser?.id ? "You" : finalSenderName}
+          </span>
+          <span className="text-foreground mr-0.5">: </span>
+        </>
+      )}
+      <span className="flex items-center gap-1 truncate">
+        <File className="size-3 shrink-0" />
+        <span className="truncate">File</span>
+      </span>
+    </>
+  );
 };

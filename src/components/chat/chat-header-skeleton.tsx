@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export function ChatHeaderSkeleton() {
   return (
-    <header className="outline-1 dark:outline-[#212224] outline-[#e4e4e7] z-50 bg-background flex h-[63px] shrink-0 items-center gap-2">
+    <header className="border-b dark:border-[#212224] border-[#e4e4e7] z-50 bg-background flex h-[63px] shrink-0 items-center gap-2">
       <div className="flex gap-2 px-4 w-full justify-between items-center">
         <div className="flex items-center justify-center gap-2">
           <SidebarTrigger className="mr-1" />

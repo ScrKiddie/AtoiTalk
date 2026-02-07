@@ -2,7 +2,10 @@ import { differenceInCalendarDays, format, isToday, isYesterday } from "date-fns
 import { id } from "date-fns/locale";
 
 export const formatMessageDateLabel = (dateStr: string) => {
+  if (!dateStr) return "";
   const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return "";
+
   const now = new Date();
 
   if (isToday(date)) return "Today";

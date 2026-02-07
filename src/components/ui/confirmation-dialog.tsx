@@ -21,6 +21,7 @@ interface ConfirmationDialogProps {
   className?: string;
   overlayClassName?: string;
   modal?: boolean;
+  size?: "default" | "sm" | "lg" | "xl" | "full";
 }
 
 export function ConfirmationDialog({
@@ -36,11 +37,13 @@ export function ConfirmationDialog({
   className,
   overlayClassName,
   modal = true,
+  size = "sm",
 }: ConfirmationDialogProps) {
   return (
     <Dialog open={open} onOpenChange={(val) => !isLoading && onOpenChange(val)} modal={modal}>
       <DialogContent
-        className={`max-w-[320px] sm:max-w-[360px] ${className || ""}`}
+        size={size}
+        className={className}
         overlayClassName={overlayClassName}
         onInteractOutside={(e) => isLoading && e.preventDefault()}
         onEscapeKeyDown={(e) => isLoading && e.preventDefault()}

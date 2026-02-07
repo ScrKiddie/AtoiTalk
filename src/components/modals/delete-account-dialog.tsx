@@ -3,6 +3,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -11,11 +12,9 @@ import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { useDeleteAccount } from "@/hooks/queries";
 import { toast } from "@/lib/toast";
-import { cn } from "@/lib/utils";
 import { ApiError } from "@/types";
 import { AxiosError } from "axios";
-import { AnimatePresence, motion } from "framer-motion";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface DeleteAccountDialogProps {
@@ -25,12 +24,6 @@ interface DeleteAccountDialogProps {
   onSuccess: () => void;
 }
 
-const errorVariants = {
-  hidden: { opacity: 0, y: -5, height: 0, marginTop: 0 },
-  visible: { opacity: 1, y: 0, height: "auto", marginTop: 12 },
-  exit: { opacity: 0, y: -5, height: 0, marginTop: 0 },
-};
-
 export function DeleteAccountDialog({
   isOpen,
   onClose,
@@ -39,7 +32,6 @@ export function DeleteAccountDialog({
 }: DeleteAccountDialogProps) {
   const [password, setPassword] = useState("");
   const [confirmText, setConfirmText] = useState("");
-  const [error, setError] = useState("");
 
   const { mutate: deleteAccount, isPending } = useDeleteAccount();
 
@@ -47,13 +39,12 @@ export function DeleteAccountDialog({
     if (isOpen) {
       setPassword("");
       setConfirmText("");
-      setError("");
     }
   }, [isOpen]);
 
   const handleSubmit = () => {
     if (hasPassword && !password) {
-      setError("Password is required.");
+      toast.error("Password is required.");
       return;
     }
 
@@ -68,14 +59,11 @@ export function DeleteAccountDialog({
           const status = axiosError.response?.status;
 
           if (status === 403) {
-            setError(
+            toast.error(
               "You cannot delete your account because you are the owner of one or more groups. Please transfer ownership or delete the groups first."
             );
           } else {
-            setError("");
-            toast.error(axiosError.response?.data?.error || "Failed to delete account.", {
-              id: "delete-account-error",
-            });
+            toast.error(axiosError.response?.data?.error || "Failed to delete account.");
           }
         },
       }
@@ -85,16 +73,13 @@ export function DeleteAccountDialog({
   return (
     <Dialog open={isOpen} onOpenChange={(val) => !isPending && onClose(val)}>
       <DialogContent
-        className="sm:max-w-[425px]"
+        size="default"
         onInteractOutside={(e) => isPending && e.preventDefault()}
         onEscapeKeyDown={(e) => isPending && e.preventDefault()}
       >
         <DialogHeader>
-          <div className="flex items-center gap-2 text-destructive">
-            <AlertTriangle className="h-6 w-6" />
-            <DialogTitle>Delete Account</DialogTitle>
-          </div>
-          <DialogDescription className="pt-2">
+          <DialogTitle>Delete Account</DialogTitle>
+          <DialogDescription>
             This action cannot be undone. This will permanently delete your account and remove your
             data from our servers.
           </DialogDescription>
@@ -109,11 +94,9 @@ export function DeleteAccountDialog({
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
-                  setError("");
                 }}
                 disabled={isPending}
                 placeholder="Enter your password"
-                className={cn(error && "border-destructive focus-visible:ring-destructive")}
               />
             </div>
           )}
@@ -128,31 +111,15 @@ export function DeleteAccountDialog({
                 value={confirmText}
                 onChange={(e) => {
                   setConfirmText(e.target.value);
-                  setError("");
                 }}
                 disabled={isPending}
                 placeholder="DELETE"
               />
             </div>
           )}
-
-          <AnimatePresence mode="wait">
-            {error && (
-              <motion.div
-                variants={errorVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                transition={{ duration: 0.2 }}
-                className="text-[0.85rem] font-medium text-destructive bg-destructive/10 p-3 rounded-md border border-destructive/20"
-              >
-                {error}
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
 
-        <div className="flex justify-end gap-3">
+        <DialogFooter>
           <Button variant="outline" onClick={() => onClose(false)} disabled={isPending}>
             Cancel
           </Button>
@@ -164,14 +131,14 @@ export function DeleteAccountDialog({
             }
             className="relative"
           >
-            <span className={isPending ? "opacity-0" : ""}>Delete My Account</span>
+            <span className={isPending ? "opacity-0" : ""}>Delete Account</span>
             {isPending && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <Loader2 className="h-4 w-4 animate-spin" />
               </div>
             )}
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

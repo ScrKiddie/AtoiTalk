@@ -2,7 +2,14 @@ import { toast } from "@/lib/toast";
 import { chatService } from "@/services";
 import { useChatStore } from "@/store";
 
-import { ChatListItem, ChatResponse, GroupMember, Message, PaginatedResponse } from "@/types";
+import {
+  ChatListItem,
+  ChatResponse,
+  GroupMember,
+  Message,
+  PaginatedResponse,
+  PublicGroupDTO,
+} from "@/types";
 import { InfiniteData, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const useCreateGroup = () => {
@@ -31,6 +38,29 @@ export const useCreateGroup = () => {
         }
       );
       queryClient.setQueryData<ChatListItem>(["chat", newGroup.id], newGroup as ChatListItem);
+
+      const initialMessages = (newGroup as unknown as ChatListItem).last_message
+        ? [(newGroup as unknown as ChatListItem).last_message!]
+        : [];
+
+      queryClient.setQueryData<InfiniteData<PaginatedResponse<Message>>>(
+        ["messages", newGroup.id],
+        {
+          pages: [
+            {
+              data: initialMessages,
+              meta: {
+                has_next: false,
+                has_prev: false,
+                next_cursor: "",
+                prev_cursor: "",
+              },
+            },
+          ],
+          pageParams: [],
+        }
+      );
+
       toast.success("Group created successfully");
       return newGroup;
     },
@@ -99,7 +129,28 @@ export const useLeaveGroup = (callback?: (groupId: string) => void) => {
           return { ...oldData, pages: newPages };
         }
       );
-      queryClient.removeQueries({ queryKey: ["messages", groupId] });
+
+      queryClient.setQueriesData<InfiniteData<PaginatedResponse<PublicGroupDTO>>>(
+        { queryKey: ["public-groups"] },
+        (oldData) => {
+          if (!oldData?.pages) return oldData;
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page) => ({
+              ...page,
+              data: Array.isArray(page.data)
+                ? page.data.map((group) =>
+                    group.chat_id === groupId ? { ...group, is_member: false } : group
+                  )
+                : [],
+            })),
+          };
+        }
+      );
+
+      setTimeout(() => {
+        queryClient.removeQueries({ queryKey: ["messages", groupId] });
+      }, 500);
       queryClient.invalidateQueries({ queryKey: ["users", "search"] });
       toast.success("Left group successfully");
     },
@@ -130,8 +181,10 @@ export const useDeleteGroup = () => {
           return { ...oldData, pages: newPages };
         }
       );
-      queryClient.removeQueries({ queryKey: ["messages", groupId] });
-      queryClient.removeQueries({ queryKey: ["chat", groupId] });
+      setTimeout(() => {
+        queryClient.removeQueries({ queryKey: ["messages", groupId] });
+        queryClient.removeQueries({ queryKey: ["chat", groupId] });
+      }, 500);
       toast.success("Group deleted successfully");
     },
     onError: (error, groupId) => {
@@ -148,10 +201,10 @@ export const useAddGroupMember = () => {
   return useMutation({
     mutationFn: ({ groupId, userIds }: { groupId: string; userIds: string[] }) =>
       chatService.addGroupMember(groupId, userIds),
-    onSuccess: (data, { groupId, userIds }) => {
+    onSuccess: (_data, { groupId, userIds }) => {
       queryClient.setQueryData<ChatListItem>(["chat", groupId], (oldChat) => {
         if (!oldChat) return oldChat;
-        const backendMemberCount = (data as Message & { member_count?: number }).member_count;
+        const backendMemberCount = (_data as Message & { member_count?: number }).member_count;
         return {
           ...oldChat,
           member_count:
@@ -165,7 +218,7 @@ export const useAddGroupMember = () => {
         { queryKey: ["chats"] },
         (oldData) => {
           if (!oldData) return oldData;
-          const backendMemberCount = (data as Message & { member_count?: number }).member_count;
+          const backendMemberCount = (_data as Message & { member_count?: number }).member_count;
           const newPages = oldData.pages.map((page) => ({
             ...page,
             data: page.data.map((chat) =>
@@ -184,18 +237,6 @@ export const useAddGroupMember = () => {
         }
       );
 
-      queryClient.setQueryData<InfiniteData<PaginatedResponse<Message>>>(
-        ["messages", groupId],
-        (oldData) => {
-          if (!oldData?.pages.length) return oldData;
-          const newPages = [...oldData.pages];
-          newPages[0] = {
-            ...newPages[0],
-            data: [data, ...newPages[0].data],
-          };
-          return { ...oldData, pages: newPages };
-        }
-      );
       toast.success("Members added successfully");
     },
     onError: (error) => {
@@ -211,10 +252,10 @@ export const useKickGroupMember = () => {
   return useMutation({
     mutationFn: ({ groupId, userId }: { groupId: string; userId: string }) =>
       chatService.kickGroupMember(groupId, userId),
-    onSuccess: (data, { groupId }) => {
+    onSuccess: (_data, { groupId }) => {
       queryClient.setQueryData<ChatListItem>(["chat", groupId], (oldChat) => {
         if (!oldChat) return oldChat;
-        const backendMemberCount = (data as Message & { member_count?: number }).member_count;
+        const backendMemberCount = (_data as Message & { member_count?: number }).member_count;
         return {
           ...oldChat,
           member_count:
@@ -228,7 +269,7 @@ export const useKickGroupMember = () => {
         { queryKey: ["chats"] },
         (oldData) => {
           if (!oldData) return oldData;
-          const backendMemberCount = (data as Message & { member_count?: number }).member_count;
+          const backendMemberCount = (_data as Message & { member_count?: number }).member_count;
           const newPages = oldData.pages.map((page) => ({
             ...page,
             data: page.data.map((chat) =>
@@ -247,18 +288,6 @@ export const useKickGroupMember = () => {
         }
       );
 
-      queryClient.setQueryData<InfiniteData<PaginatedResponse<Message>>>(
-        ["messages", groupId],
-        (oldData) => {
-          if (!oldData?.pages.length) return oldData;
-          const newPages = [...oldData.pages];
-          newPages[0] = {
-            ...newPages[0],
-            data: [data, ...newPages[0].data],
-          };
-          return { ...oldData, pages: newPages };
-        }
-      );
       queryClient.invalidateQueries({ queryKey: ["users", "search"] });
       toast.success("Member removed successfully");
     },
@@ -275,7 +304,7 @@ export const useUpdateMemberRole = () => {
   return useMutation({
     mutationFn: ({ groupId, userId, role }: { groupId: string; userId: string; role: string }) =>
       chatService.updateMemberRole(groupId, userId, role),
-    onSuccess: (data, { groupId, userId, role }) => {
+    onSuccess: (_data, { groupId, userId, role }) => {
       queryClient.setQueriesData<InfiniteData<PaginatedResponse<GroupMember>>>(
         { queryKey: ["group-members", "infinite", groupId] },
         (oldData) => {
@@ -292,18 +321,6 @@ export const useUpdateMemberRole = () => {
         }
       );
 
-      queryClient.setQueryData<InfiniteData<PaginatedResponse<Message>>>(
-        ["messages", groupId],
-        (oldData) => {
-          if (!oldData?.pages.length) return oldData;
-          const newPages = [...oldData.pages];
-          newPages[0] = {
-            ...newPages[0],
-            data: [data, ...newPages[0].data],
-          };
-          return { ...oldData, pages: newPages };
-        }
-      );
       toast.success("Role updated successfully");
     },
     onError: (error) => {
@@ -319,7 +336,7 @@ export const useTransferOwnership = () => {
   return useMutation({
     mutationFn: ({ groupId, newOwnerId }: { groupId: string; newOwnerId: string }) =>
       chatService.transferOwnership(groupId, newOwnerId),
-    onSuccess: (data, { groupId, newOwnerId }) => {
+    onSuccess: (_data, { groupId, newOwnerId }) => {
       queryClient.setQueriesData<InfiniteData<PaginatedResponse<GroupMember>>>(
         { queryKey: ["group-members", "infinite", groupId] },
         (oldData) => {
@@ -338,18 +355,7 @@ export const useTransferOwnership = () => {
           };
         }
       );
-      queryClient.setQueryData<InfiniteData<PaginatedResponse<Message>>>(
-        ["messages", groupId],
-        (oldData) => {
-          if (!oldData?.pages.length) return oldData;
-          const newPages = [...oldData.pages];
-          newPages[0] = {
-            ...newPages[0],
-            data: [data, ...newPages[0].data],
-          };
-          return { ...oldData, pages: newPages };
-        }
-      );
+
       toast.success("Ownership transferred successfully");
     },
     onError: (error) => {

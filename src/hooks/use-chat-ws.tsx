@@ -39,7 +39,12 @@ export const useChatWebSocket = (url: string) => {
     queryClient.invalidateQueries({ queryKey: ["chats"] });
 
     if (activeChatId) {
-      queryClient.invalidateQueries({ queryKey: ["messages", activeChatId] });
+      const messagesQueryState = queryClient.getQueryState(["messages", activeChatId]);
+      const isCurrentlyFetching = messagesQueryState?.fetchStatus === "fetching";
+
+      if (!isCurrentlyFetching) {
+        queryClient.invalidateQueries({ queryKey: ["messages", activeChatId] });
+      }
     }
   }, [queryClient]);
 
@@ -77,11 +82,15 @@ export const useChatWebSocket = (url: string) => {
         switch (data.type) {
           case "message.new": {
             const payload = data.payload as Message;
+            const { isJumped: isCurrentlyJumped, activeChatId: currentActiveChatId } =
+              useChatStore.getState();
+            const isJumpedChat = isCurrentlyJumped && payload.chat_id === currentActiveChatId;
 
             queryClient.setQueriesData<InfiniteData<PaginatedResponse<Message>>>(
-              { queryKey: ["messages", payload.chat_id] },
+              { queryKey: ["messages", payload.chat_id], exact: true },
               (oldData) => {
                 if (!oldData) return oldData;
+                if (isJumpedChat) return oldData;
 
                 const newPages = [...oldData.pages];
                 if (newPages.length > 0) {

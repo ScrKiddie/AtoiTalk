@@ -1,5 +1,5 @@
 import { toast } from "@/lib/toast";
-import { chatService } from "@/services";
+import { chatService, messageService } from "@/services";
 import { ChatListItem, PaginatedResponse, PublicGroupDTO } from "@/types";
 import { InfiniteData, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
@@ -8,9 +8,34 @@ export function useJoinGroup() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (groupId: string) => chatService.joinGroup(groupId),
+    mutationFn: async (groupId: string) => {
+      const newChat = await chatService.joinGroup(groupId);
+
+      if (newChat) {
+        try {
+          await queryClient.fetchInfiniteQuery({
+            queryKey: ["messages", newChat.id],
+            queryFn: ({ pageParam = undefined, signal }) =>
+              messageService.getMessages(
+                newChat.id,
+                { limit: 30, cursor: pageParam as string | undefined },
+                signal
+              ),
+            initialPageParam: undefined as string | undefined,
+            staleTime: 1000 * 30,
+          });
+        } catch (error) {
+          console.error("Failed to prefetch messages for joined group:", error);
+        }
+      }
+      return newChat;
+    },
     onSuccess: (newChat) => {
       toast.success("Joined group successfully");
+
+      if (newChat) {
+        queryClient.setQueryData(["chat", newChat.id], newChat);
+      }
 
       queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
         { queryKey: ["chats"] },

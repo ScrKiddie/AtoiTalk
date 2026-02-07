@@ -1,5 +1,4 @@
 import { Card } from "@/components/ui/card";
-import { useUserById } from "@/hooks/queries";
 import { cn } from "@/lib/utils";
 import { ChatListItem, Message, User } from "@/types";
 import { useQueryClient } from "@tanstack/react-query";
@@ -27,24 +26,18 @@ export const MessageReplyPreview = ({
   const cachedUser =
     replySenderId && !isSelfReply ? queryClient.getQueryData<User>(["user", replySenderId]) : null;
 
-  const {
-    data: fetchedUser,
-    isError,
-    isLoading,
-  } = useUserById(isSelfReply || cachedUser ? null : replySenderId);
-
-  const sender = isSelfReply ? current : cachedUser || fetchedUser;
+  const sender = isSelfReply ? current : cachedUser;
 
   if (!message.reply_to) return null;
 
   const hasSenderId = !!message.reply_to.sender_id;
-  const isProfileNotFound = hasSenderId && !isSelfReply && !isLoading && !sender && isError;
   const senderNameFromProfile = sender?.full_name;
   const fallbackName = message.reply_to.sender_name || "Unknown User";
-  const senderName =
-    senderNameFromProfile || (isProfileNotFound ? "Deleted Account" : fallbackName);
-  const isSenderDeleted = (!hasSenderId && !message.reply_to.sender_name) || isProfileNotFound;
-  const finalSenderName = isSenderDeleted ? "Deleted Account" : senderName;
+
+  const isSenderDeleted = !hasSenderId && !message.reply_to.sender_name;
+
+  const finalSenderName =
+    senderNameFromProfile || (isSenderDeleted ? "Deleted Account" : fallbackName);
 
   const replyDate = message.reply_to.created_at ? new Date(message.reply_to.created_at) : null;
   const hiddenDate = chat?.hidden_at ? new Date(chat.hidden_at) : null;

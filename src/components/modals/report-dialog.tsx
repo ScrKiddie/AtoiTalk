@@ -97,8 +97,7 @@ export function ReportDialog({
   return (
     <Dialog open={isOpen} onOpenChange={(val) => !isPending && onClose(val)}>
       <DialogContent
-        className="sm:max-w-[340px] z-[80]"
-        overlayClassName="z-[75]"
+        size="sm"
         onInteractOutside={(e) => isPending && e.preventDefault()}
         onEscapeKeyDown={(e) => isPending && e.preventDefault()}
       >

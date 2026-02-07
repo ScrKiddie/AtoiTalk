@@ -716,7 +716,7 @@ export function NavFooter({
         onOpenChange={(open) => !isUpdatingProfile && handleAccountModalOpen(open)}
       >
         <DialogContent
-          className="sm:max-w-[425px]"
+          size="default"
           onInteractOutside={(e) => (isLightboxOpen || isUpdatingProfile) && e.preventDefault()}
           onEscapeKeyDown={(e) => {
             if (isUpdatingProfile) {
@@ -954,18 +954,13 @@ export function NavFooter({
 
       <Dialog
         open={openChangeEmail}
-        onOpenChange={(open) =>
-          !isEmailSubmitting && !isSendingOTP && !isCaptchaSolving && handleEmailModalChange(open)
-        }
+        onOpenChange={(open) => !isEmailSubmitting && !isSendingOTP && handleEmailModalChange(open)}
       >
         <DialogContent
-          className="sm:max-w-[400px] w-[85%] rounded-lg"
-          onInteractOutside={(e) =>
-            (isEmailSubmitting || isSendingOTP || isCaptchaSolving) && e.preventDefault()
-          }
-          onEscapeKeyDown={(e) =>
-            (isEmailSubmitting || isSendingOTP || isCaptchaSolving) && e.preventDefault()
-          }
+          size="default"
+          className="rounded-lg"
+          onInteractOutside={(e) => (isEmailSubmitting || isSendingOTP) && e.preventDefault()}
+          onEscapeKeyDown={(e) => (isEmailSubmitting || isSendingOTP) && e.preventDefault()}
         >
           <DialogHeader>
             <DialogTitle>Change Email</DialogTitle>
@@ -1114,7 +1109,8 @@ export function NavFooter({
         onOpenChange={(open) => !isSecuritySubmitting && handleSecurityModalChange(open)}
       >
         <DialogContent
-          className="sm:max-w-[400px] w-[85%] rounded-lg"
+          size="default"
+          className="rounded-lg"
           onInteractOutside={(e) => isSecuritySubmitting && e.preventDefault()}
           onEscapeKeyDown={(e) => isSecuritySubmitting && e.preventDefault()}
         >
@@ -1288,7 +1284,7 @@ export function NavFooter({
           setOpenBlocked(val);
         }}
       >
-        <DialogContent className="sm:max-w-[425px] h-[600px] flex flex-col">
+        <DialogContent size="default" className="h-[600px] flex flex-col">
           <DialogHeader>
             <DialogTitle>Blocked Users</DialogTitle>
             <DialogDescription>Manage users you have blocked.</DialogDescription>

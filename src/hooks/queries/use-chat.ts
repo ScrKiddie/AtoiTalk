@@ -1,4 +1,3 @@
-import { toast } from "@/lib/toast";
 import { chatService } from "@/services";
 import { useChatStore } from "@/store";
 import type {
@@ -44,7 +43,6 @@ export function useChats(params?: GetChatsParams, options?: { enabled?: boolean 
 
 export function useChat(chatId: string | null) {
   const queryClient = useQueryClient();
-  const activeChatId = useChatStore((state) => state.activeChatId);
 
   const cachedData = useMemo(() => {
     if (!chatId) return undefined;
@@ -84,7 +82,7 @@ export function useChat(chatId: string | null) {
     queryFn: ({ signal }) => {
       return chatService.getChatById(chatId!, signal);
     },
-    enabled: !!chatId && activeChatId === chatId,
+    enabled: !!chatId,
     retry: (failureCount, error) => {
       const axiosError = error as { response?: { status: number } };
       const status = axiosError?.response?.status;
@@ -116,12 +114,11 @@ export function useCreatePrivateChat() {
       const existingMessages = queryClient.getQueryData<InfiniteData<PaginatedResponse<Message>>>([
         "messages",
         newChat.id,
-        undefined,
       ]);
 
       if (!existingMessages && !newChat.last_message) {
         queryClient.setQueryData<InfiniteData<PaginatedResponse<Message>>>(
-          ["messages", newChat.id, undefined],
+          ["messages", newChat.id],
           {
             pages: [
               {
@@ -140,10 +137,6 @@ export function useCreatePrivateChat() {
       }
 
       setActiveChatId(newChat.id);
-    },
-    onError: (error) => {
-      console.error("Failed to create private chat:", error);
-      toast.error("Failed to start chat");
     },
   });
 }
