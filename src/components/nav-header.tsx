@@ -137,14 +137,14 @@ export function NavHeader() {
                       renderActions={(user) => (
                         <div
                           key={user.id}
-                          className="flex items-center justify-between p-2 hover:bg-muted rounded-md transition-colors group gap-2 min-w-0"
+                          className="flex items-center justify-between p-2 hover:bg-muted rounded-md transition-colors group gap-2 min-w-0 overflow-hidden"
                         >
-                          <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden">
+                          <div className="flex items-center gap-3 flex-1 w-0 overflow-hidden">
                             <Avatar>
                               <AvatarImage src={user.avatar || undefined} />
                               <AvatarFallback>{user.full_name[0]}</AvatarFallback>
                             </Avatar>
-                            <div className="flex flex-col text-left min-w-0 w-full">
+                            <div className="flex flex-col text-left min-w-0 overflow-hidden">
                               <span className="text-sm font-medium truncate">{user.full_name}</span>
                               <span className="text-xs text-muted-foreground truncate">
                                 @{user.username}

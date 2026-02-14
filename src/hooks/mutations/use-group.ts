@@ -118,6 +118,20 @@ export const useLeaveGroup = (callback?: (groupId: string) => void) => {
     onSuccess: (_data, groupId) => {
       if (callback) callback(groupId);
       setActiveChatId(null);
+
+      const allChats = queryClient.getQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>({
+        queryKey: ["chats"],
+      });
+      let groupName = "Group";
+      for (const [, cacheData] of allChats) {
+        const found = cacheData?.pages.flatMap((p) => p.data).find((c) => c.id === groupId);
+        if (found?.name) {
+          const name = found.name;
+          groupName = name.length > 20 ? name.slice(0, 20) + "..." : name;
+          break;
+        }
+      }
+
       queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
         { queryKey: ["chats"] },
         (oldData) => {
@@ -152,7 +166,7 @@ export const useLeaveGroup = (callback?: (groupId: string) => void) => {
         queryClient.removeQueries({ queryKey: ["messages", groupId] });
       }, 500);
       queryClient.invalidateQueries({ queryKey: ["users", "search"] });
-      toast.success("Left group successfully");
+      toast.success(`Left "${groupName}"`);
     },
     onError: (error) => {
       console.error("Failed to leave group:", error);
@@ -170,6 +184,19 @@ export const useDeleteGroup = () => {
       useChatStore.getState().addDeletedChatId(groupId);
     },
     onSuccess: (_data, groupId) => {
+      const allChats = queryClient.getQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>({
+        queryKey: ["chats"],
+      });
+      let groupName = "Group";
+      for (const [, cacheData] of allChats) {
+        const found = cacheData?.pages.flatMap((p) => p.data).find((c) => c.id === groupId);
+        if (found?.name) {
+          const name = found.name;
+          groupName = name.length > 20 ? name.slice(0, 20) + "..." : name;
+          break;
+        }
+      }
+
       queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
         { queryKey: ["chats"] },
         (oldData) => {
@@ -185,7 +212,7 @@ export const useDeleteGroup = () => {
         queryClient.removeQueries({ queryKey: ["messages", groupId] });
         queryClient.removeQueries({ queryKey: ["chat", groupId] });
       }, 500);
-      toast.success("Group deleted successfully");
+      toast.success(`"${groupName}" deleted`);
     },
     onError: (error, groupId) => {
       useChatStore.getState().removeDeletedChatId(groupId);
