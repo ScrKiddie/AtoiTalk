@@ -162,7 +162,11 @@ const MessageBubble = ({
 
   const isChatBlockedOrDeleted =
     chat?.type === "private" &&
-    (chat?.is_blocked_by_me || chat?.is_blocked_by_other || chat?.other_user_is_deleted);
+    (chat?.is_blocked_by_me ||
+      chat?.is_blocked_by_other ||
+      chat?.other_user_is_deleted ||
+      chat?.other_user_is_banned ||
+      partnerProfile?.is_banned);
 
   const formattedTime = new Date(message.created_at).toLocaleTimeString([], {
     hour: "2-digit",

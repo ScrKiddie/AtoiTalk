@@ -41,6 +41,8 @@ import {
   CircleUserRound,
   DoorOpen,
   Eye,
+  Home,
+  LayoutDashboard,
   Loader2,
   Lock,
   Search,
@@ -129,10 +131,12 @@ export function NavFooter({
   current,
   activeMenu,
   setActiveMenu,
+  mode = "app",
 }: {
   current: User;
   activeMenu: string | null;
   setActiveMenu: (menu: string | null) => void;
+  mode?: "app" | "admin";
 }) {
   const [openAccount, setOpenAccount] = useState(false);
   const [openSecurity, setOpenSecurity] = useState(false);
@@ -665,6 +669,33 @@ export function NavFooter({
                   <CircleUserRound />
                   Account
                 </DropdownMenuItem>
+                {mode === "admin" ? (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onSelect={() => {
+                        window.location.href = "/";
+                      }}
+                    >
+                      <Home className="h-4 w-4" />
+                      Back to App
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  activeUser.role === "admin" && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onSelect={() => {
+                          window.location.href = "/admin/dashboard";
+                        }}
+                      >
+                        <LayoutDashboard className="h-4 w-4" />
+                        Admin Dashboard
+                      </DropdownMenuItem>
+                    </>
+                  )
+                )}
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>

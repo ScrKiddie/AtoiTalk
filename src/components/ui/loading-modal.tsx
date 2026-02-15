@@ -26,7 +26,7 @@ export function LoadingModal({ isOpen, className, overlayClassName }: LoadingMod
       >
         <VisuallyHidden>
           <DialogTitle>Loading</DialogTitle>
-          <DialogDescription>Please wait...</DialogDescription>
+          <DialogDescription>Please wait</DialogDescription>
         </VisuallyHidden>
         <Spinner className="h-10 w-10 text-white" />
       </DialogContent>

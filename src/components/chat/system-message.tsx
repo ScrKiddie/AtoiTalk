@@ -84,7 +84,7 @@ export const SystemMessageBadge = ({
 }) => {
   return (
     <div className={cn("flex justify-center w-full", className)}>
-      <div className="inline-flex items-center justify-center bg-background border text-foreground rounded-full px-3 py-1 text-xs font-normal">
+      <div className="inline-block text-center bg-background border text-foreground rounded-full px-3 py-1 text-xs font-normal max-w-[75%]">
         {children}
       </div>
     </div>

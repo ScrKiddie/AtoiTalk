@@ -62,7 +62,17 @@ function SidebarProvider({
   onOpenChange?: (open: boolean) => void;
 }) {
   const isMobile = useIsMobile();
-  const [openMobile, setOpenMobile] = React.useState(false);
+  const [openMobile, setOpenMobile] = React.useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem(`${SIDEBAR_COOKIE_NAME}_mobile`);
+      return stored === "true";
+    }
+    return false;
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem(`${SIDEBAR_COOKIE_NAME}_mobile`, String(openMobile));
+  }, [openMobile]);
 
   const [_open, _setOpen] = React.useState(defaultOpen);
   const open = openProp ?? _open;

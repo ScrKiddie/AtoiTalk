@@ -73,7 +73,12 @@ const ChatHeader = ({
         </span>
       );
       statusColor = "text-foreground text-xs";
-    } else if (partnerProfile?.is_blocked_by_me || partnerProfile?.is_blocked_by_other) {
+    } else if (
+      partnerProfile?.is_blocked_by_me ||
+      partnerProfile?.is_blocked_by_other ||
+      partnerProfile?.is_banned ||
+      displayChat.other_user_is_banned
+    ) {
       statusContent = "Last seen a long time ago";
       statusColor = "text-muted-foreground";
     } else if (isTyping) {

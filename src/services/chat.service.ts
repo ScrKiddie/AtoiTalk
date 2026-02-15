@@ -152,20 +152,6 @@ export const chatService = {
     return response.data;
   },
 
-  async getGroupInviteCode(
-    groupId: string,
-    signal?: AbortSignal
-  ): Promise<{ code: string; expires_at: string }> {
-    const response = await api.get<
-      ApiResponse<{ invite_code?: string; code?: string; expires_at: string }>
-    >(`/api/chats/group/${groupId}/invite`, { signal });
-    const data = response.data.data;
-    return {
-      code: data.invite_code || data.code || "",
-      expires_at: data.expires_at,
-    };
-  },
-
   async resetGroupInviteCode(groupId: string): Promise<{ code: string; expires_at: string }> {
     const response = await api.put<
       ApiResponse<{ invite_code?: string; code?: string; expires_at: string }>

@@ -556,7 +556,16 @@ export const useChatWebSocket = (url: string) => {
 
           case "user.banned":
           case "user.deleted": {
-            const { user_id } = data.payload as { user_id: string };
+            const { user_id } = data.payload as { user_id: string; reason?: string };
+
+            if (data.type === "user.banned" && user_id === currentUser?.id) {
+              window.dispatchEvent(
+                new CustomEvent("user-banned", {
+                  detail: { reason: (data.payload as { reason?: string }).reason },
+                })
+              );
+            }
+
             queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
               { queryKey: ["chats"] },
               (oldData) => {
@@ -580,6 +589,44 @@ export const useChatWebSocket = (url: string) => {
                         other_user_is_banned: data.type === "user.banned",
                         other_user_is_deleted: data.type === "user.deleted",
                         is_online: false,
+                      };
+                    }
+                    return chat;
+                  }),
+                }));
+                return { ...oldData, pages: newPages };
+              }
+            );
+            queryClient.invalidateQueries({ queryKey: ["user", user_id] });
+            break;
+          }
+
+          case "user.unbanned": {
+            const { user_id } = data.payload as { user_id: string };
+
+            if (user_id === currentUser?.id) {
+              window.dispatchEvent(new CustomEvent("user-unbanned"));
+            }
+
+            queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
+              { queryKey: ["chats"] },
+              (oldData) => {
+                if (!oldData) return oldData;
+                const newPages = oldData.pages.map((page) => ({
+                  ...page,
+                  data: page.data.map((chat: ChatListItem) => {
+                    if (chat.type === "private" && chat.other_user_id === user_id) {
+                      queryClient.setQueryData<ChatListItem>(["chat", chat.id], (oldChat) => {
+                        if (!oldChat) return oldChat;
+                        return {
+                          ...oldChat,
+                          other_user_is_banned: false,
+                        };
+                      });
+
+                      return {
+                        ...chat,
+                        other_user_is_banned: false,
                       };
                     }
                     return chat;
@@ -879,6 +926,35 @@ export const useChatWebSocket = (url: string) => {
                 ...payload,
               };
             });
+
+            if (currentUser && currentUser.id === payload.id) {
+              useAuthStore.getState().setUser({
+                ...currentUser,
+                ...payload,
+              });
+            }
+
+            queryClient.setQueriesData<InfiniteData<PaginatedResponse<GroupMember>>>(
+              { queryKey: ["group-members"] },
+              (oldData) => {
+                if (!oldData) return oldData;
+                const newPages = oldData.pages.map((page) => ({
+                  ...page,
+                  data: page.data.map((member) => {
+                    if (member.user_id === payload.id) {
+                      return {
+                        ...member,
+                        full_name: payload.full_name,
+                        avatar: payload.avatar,
+                        username: payload.username,
+                      };
+                    }
+                    return member;
+                  }),
+                }));
+                return { ...oldData, pages: newPages };
+              }
+            );
             break;
           }
 
@@ -985,153 +1061,6 @@ export const useChatWebSocket = (url: string) => {
                 setUserTyping(chatId, senderId, false);
                 delete typingTimeoutsRef.current[key];
               }, 5000);
-            }
-            break;
-          }
-
-          case "group.member_add": {
-            const { group_id, member, member_count } = data.payload as {
-              group_id: string;
-              member: GroupMember;
-              member_count: number;
-            };
-
-            queryClient.setQueriesData<InfiniteData<PaginatedResponse<GroupMember>>>(
-              { queryKey: ["group-members", "infinite", group_id] },
-              (oldData) => {
-                if (!oldData) return oldData;
-                const newPages = [...oldData.pages];
-                const lastPageIndex = newPages.length - 1;
-                if (lastPageIndex >= 0) {
-                  const lastPage = newPages[lastPageIndex];
-                  if (!lastPage.data.some((m) => m.id === member.id)) {
-                    newPages[lastPageIndex] = {
-                      ...lastPage,
-                      data: [...lastPage.data, member],
-                    };
-                  }
-                }
-                return { ...oldData, pages: newPages };
-              }
-            );
-
-            queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
-              { queryKey: ["chats"] },
-              (oldData) => {
-                if (!oldData) return oldData;
-                const newPages = oldData.pages.map((page) => ({
-                  ...page,
-                  data: page.data.map((chat) => {
-                    if (chat.id === group_id) {
-                      return { ...chat, member_count };
-                    }
-                    return chat;
-                  }),
-                }));
-                return { ...oldData, pages: newPages };
-              }
-            );
-
-            queryClient.setQueryData<ChatListItem>(["chat", group_id], (oldChat) => {
-              if (!oldChat) return oldChat;
-              return { ...oldChat, member_count };
-            });
-            break;
-          }
-
-          case "group.member_remove": {
-            const { group_id, user_id, member_count } = data.payload as {
-              group_id: string;
-              user_id: string;
-              member_count: number;
-            };
-
-            queryClient.setQueriesData<InfiniteData<PaginatedResponse<GroupMember>>>(
-              { queryKey: ["group-members", "infinite", group_id] },
-              (oldData) => {
-                if (!oldData) return oldData;
-                const newPages = oldData.pages.map((page) => ({
-                  ...page,
-                  data: page.data.filter((m) => m.user_id !== user_id),
-                }));
-                return { ...oldData, pages: newPages };
-              }
-            );
-
-            queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
-              { queryKey: ["chats"] },
-              (oldData) => {
-                if (!oldData) return oldData;
-                const newPages = oldData.pages.map((page) => ({
-                  ...page,
-                  data: page.data.map((chat) => {
-                    if (chat.id === group_id) {
-                      return { ...chat, member_count };
-                    }
-                    return chat;
-                  }),
-                }));
-                return { ...oldData, pages: newPages };
-              }
-            );
-
-            queryClient.setQueryData<ChatListItem>(["chat", group_id], (oldChat) => {
-              if (!oldChat) return oldChat;
-              return { ...oldChat, member_count };
-            });
-
-            if (user_id === currentUser?.id) {
-              queryClient.invalidateQueries({ queryKey: ["chats"] });
-            }
-            break;
-          }
-
-          case "group.role_update": {
-            const { group_id, user_id, role } = data.payload as {
-              group_id: string;
-              user_id: string;
-              role: "owner" | "admin" | "member";
-            };
-
-            queryClient.setQueriesData<InfiniteData<PaginatedResponse<GroupMember>>>(
-              { queryKey: ["group-members", "infinite", group_id] },
-              (oldData) => {
-                if (!oldData) return oldData;
-                const newPages = oldData.pages.map((page) => ({
-                  ...page,
-                  data: page.data.map((m) => {
-                    if (m.user_id === user_id) {
-                      return { ...m, role };
-                    }
-                    return m;
-                  }),
-                }));
-                return { ...oldData, pages: newPages };
-              }
-            );
-
-            if (user_id === currentUser?.id) {
-              queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
-                { queryKey: ["chats"] },
-                (oldData) => {
-                  if (!oldData) return oldData;
-                  const newPages = oldData.pages.map((page) => ({
-                    ...page,
-                    data: page.data.map((chat) => {
-                      if (chat.id === group_id) {
-                        return { ...chat, my_role: role };
-                      }
-                      return chat;
-                    }),
-                  }));
-                  return { ...oldData, pages: newPages };
-                }
-              );
-
-              queryClient.setQueryData<ChatListItem>(["chat", group_id], (oldChat) => {
-                if (!oldChat) return oldChat;
-                return { ...oldChat, my_role: role };
-              });
             }
             break;
           }

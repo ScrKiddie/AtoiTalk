@@ -94,6 +94,8 @@ const ChatFooter = ({
   const isBlockedByMe = partnerProfile?.is_blocked_by_me;
   const isBlockedByOther = partnerProfile?.is_blocked_by_other;
   const isDeleted = chat?.type === "private" && chat?.other_user_is_deleted;
+  const isBanned =
+    (chat?.type === "private" && chat?.other_user_is_banned) || partnerProfile?.is_banned;
 
   const { sendTyping } = useWebSocketContext();
   const { mutateAsync: refreshMedia } = useRefreshMedia(chat?.id ?? "");
@@ -199,6 +201,25 @@ const ChatFooter = ({
             <p className="text-[10px] text-muted-foreground">
               You cannot send messages to this user.
             </p>
+          </div>
+        </div>
+      </footer>
+    );
+  }
+
+  if (isBanned) {
+    return (
+      <footer className="relative mx-auto p-2 gap-2 w-full flex flex-col items-start bg-background border-t">
+        <FloatingChatButtons
+          showReturnButton={showReturnButton}
+          onReturnJump={onReturnJump}
+          showScrollButton={showScrollButton}
+          scrollToBottom={scrollToBottom}
+        />
+        <div className="flex items-center justify-center gap-2 bg-muted/30 p-2 rounded-xl border shadow-sm w-full min-h-[58px]">
+          <div className="flex flex-col items-center justify-center gap-0.5">
+            <p className="text-sm text-destructive font-medium">This user has been banned.</p>
+            <p className="text-[10px] text-muted-foreground">You cannot send messages to them.</p>
           </div>
         </div>
       </footer>
@@ -534,7 +555,6 @@ const ChatFooter = ({
                   <div className="flex flex-col items-center gap-1">
                     <div className="flex items-center justify-center rounded-full border">
                       <FileUpload.Trigger
-                        asChild
                         asChild
                         disabled={
                           isUploading || isSending || isEditing || isCancelling || isLoading

@@ -12,4 +12,17 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "admin-bundle": [
+            "./src/pages/admin/dashboard.tsx",
+            "./src/pages/admin/users.tsx",
+            "./src/layouts/admin-layout.tsx",
+          ],
+        },
+      },
+    },
+  },
 });

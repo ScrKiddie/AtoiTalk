@@ -20,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input.tsx";
 import { Separator } from "@/components/ui/separator.tsx";
 import { useLogin, useGoogleLogin as useServerGoogleLogin } from "@/hooks/queries";
+import { formatBanMessage } from "@/lib/date-utils";
 import { emailSchema } from "@/lib/validators";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useGoogleLogin } from "@react-oauth/google";
@@ -93,7 +94,7 @@ const Login = () => {
             },
             onError: (error: AxiosError<ApiError, unknown>) => {
               const msg = error.response?.data?.error || "Google login failed";
-              toast.error(msg, { id: "google-error" });
+              toast.error(formatBanMessage(msg));
             },
           }
         );
@@ -103,7 +104,7 @@ const Login = () => {
     },
     onError: () => {
       setIsGooglePopupOpen(false);
-      toast.error("Google login failed", { id: "google-error" });
+      toast.error("Google login failed");
     },
     flow: "auth-code",
   });
@@ -122,12 +123,12 @@ const Login = () => {
     const isValidLength = password.length >= 8 && password.length <= 72;
 
     if (!isValidLength || !hasUpper || !hasLower || !hasNumber || !hasSymbol) {
-      toast.error("Invalid email or password", { id: "auth-error" });
+      toast.error("Invalid email or password");
       return;
     }
 
     if (!captchaToken) {
-      toast.error("Please wait for Captcha verification", { id: "captcha-wait" });
+      toast.error("Please wait for Captcha verification");
       return;
     }
 
@@ -141,8 +142,9 @@ const Login = () => {
         onSuccess: () => {
           navigate("/");
         },
-        onError: () => {
-          toast.error("Invalid email or password", { id: "auth-error" });
+        onError: (error) => {
+          const msg = error.response?.data?.error || "Invalid email or password";
+          toast.error(formatBanMessage(msg));
           captchaRef.current?.reset();
           setCaptchaToken(null);
           setIsCaptchaSolving(true);
