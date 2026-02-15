@@ -1,3 +1,4 @@
+export { adminService } from "./admin.service";
 export { authService } from "./auth.service";
 export { chatService } from "./chat.service";
 export { mediaService } from "./media.service";

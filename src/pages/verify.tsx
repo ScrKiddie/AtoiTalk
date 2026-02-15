@@ -27,6 +27,7 @@ import {
   useSendOTP,
   useGoogleLogin as useServerGoogleLogin,
 } from "@/hooks/queries";
+import { formatBanMessage } from "@/lib/date-utils";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import {
@@ -153,7 +154,7 @@ const Verify = () => {
             },
             onError: (error: AxiosError<ApiError, unknown>) => {
               const msg = error.response?.data?.error || "Google login failed";
-              toast.error(msg, { id: "google-error" });
+              toast.error(formatBanMessage(msg));
             },
           }
         );
@@ -163,7 +164,7 @@ const Verify = () => {
     },
     onError: () => {
       setIsGooglePopupOpen(false);
-      toast.error("Google login failed", { id: "google-fail" });
+      toast.error("Google login failed");
     },
     flow: "auth-code",
   });
@@ -175,7 +176,7 @@ const Verify = () => {
 
   function onSubmit(values: FormValues) {
     if (!captchaToken) {
-      toast.error("Please wait for Captcha verification", { id: "captcha-wait" });
+      toast.error("Please wait for Captcha verification");
       return;
     }
 
@@ -191,7 +192,7 @@ const Verify = () => {
         },
         {
           onSuccess: (response) => {
-            toast.success("Account created successfully", { id: "register-success" });
+            toast.success("Account created successfully");
             useUIStore.getState().setGlobalLoading(true, "Logging In");
             setTimeout(() => {
               useAuthStore.getState().setCredentials(response.token, response.user);
@@ -200,9 +201,8 @@ const Verify = () => {
             }, 1500);
           },
           onError: (error: AxiosError<ApiError, unknown>) => {
-            toast.error(error.response?.data?.error || "Registration failed", {
-              id: "register-error",
-            });
+            const msg = error.response?.data?.error || "Registration failed";
+            toast.error(formatBanMessage(msg));
             captchaRef.current?.reset();
             setCaptchaToken(null);
             setIsCaptchaSolving(true);
@@ -224,9 +224,8 @@ const Verify = () => {
             navigate("/login");
           },
           onError: (error: AxiosError<ApiError, unknown>) => {
-            toast.error(error.response?.data?.error || "Password reset failed", {
-              id: "reset-error",
-            });
+            const msg = error.response?.data?.error || "Password reset failed";
+            toast.error(formatBanMessage(msg));
             captchaRef.current?.reset();
             setCaptchaToken(null);
             setIsCaptchaSolving(true);
@@ -251,7 +250,7 @@ const Verify = () => {
     const currentEmail = form.getValues("email")?.trim();
 
     if (!captchaToken) {
-      toast.error("Please wait for Captcha verification", { id: "captcha-wait" });
+      toast.error("Please wait for Captcha verification");
       isSendingOTPRef.current = false;
       return;
     }
@@ -271,7 +270,7 @@ const Verify = () => {
           isSendingOTPRef.current = false;
         },
         onError: (error: AxiosError<ApiError, unknown>) => {
-          toast.error(error.response?.data?.error || "Failed to send OTP", { id: "otp-error" });
+          toast.error(error.response?.data?.error || "Failed to send OTP");
           captchaRef.current?.reset();
           setCaptchaToken(null);
           setIsCaptchaSolving(true);

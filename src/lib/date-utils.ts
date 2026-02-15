@@ -32,3 +32,17 @@ export const formatChatPreviewDate = (dateString?: string) => {
     return date.toLocaleDateString([], { day: "2-digit", month: "2-digit", year: "2-digit" });
   }
 };
+
+export const formatBanMessage = (message: string) => {
+  const suspendMatch = message.match(/suspended until (.*)/);
+
+  if (suspendMatch && suspendMatch[1]) {
+    const date = new Date(suspendMatch[1]);
+    if (!isNaN(date.getTime())) {
+      const formattedDate = format(date, "d MMMM yyyy, HH:mm", { locale: id });
+      return `Account suspended until ${formattedDate}`;
+    }
+  }
+
+  return message;
+};

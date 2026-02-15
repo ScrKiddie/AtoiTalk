@@ -16,6 +16,7 @@ export interface User {
   is_blocked_by_me?: boolean;
   is_blocked_by_other?: boolean;
   role?: string;
+  is_banned?: boolean;
 }
 
 /**

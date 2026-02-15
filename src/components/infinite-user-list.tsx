@@ -43,7 +43,8 @@ export function InfiniteUserList<T>({
   resetKey,
   selectionMode = false,
   className,
-}: InfiniteUserListProps<T>) {
+  contentClassName,
+}: InfiniteUserListProps<T> & { contentClassName?: string }) {
   const { scrollRef, handleScroll, handleWheel } = useChatListScroll({
     hasNextPage,
     isFetchingNextPage,
@@ -85,7 +86,10 @@ export function InfiniteUserList<T>({
 
   return (
     <ScrollArea viewportRef={scrollRef} onScroll={handleScroll} className={cn("h-full", className)}>
-      <div className="flex flex-col gap-2 min-w-0 overflow-hidden" onWheel={handleWheel}>
+      <div
+        className={cn("flex flex-col gap-2 min-w-0 overflow-hidden", contentClassName)}
+        onWheel={handleWheel}
+      >
         {isLoading &&
           Array.from({ length: skeletonCount }).map((_, i) => (
             <div key={i} className="flex items-center justify-between p-2 gap-2 rounded-md">

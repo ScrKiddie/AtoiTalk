@@ -10,7 +10,7 @@ import InvitePage from "@/pages/invite";
 import Login from "@/pages/login";
 import Verify from "@/pages/verify";
 import { AnimatePresence } from "framer-motion";
-import { useEffect, useRef } from "react";
+import { Suspense, lazy, useEffect, useRef } from "react";
 import {
   Navigate,
   Route,
@@ -19,6 +19,13 @@ import {
   useLocation,
   useNavigate,
 } from "react-router-dom";
+
+const AdminLayout = lazy(() => import("@/layouts/admin-layout"));
+const AdminDashboard = lazy(() => import("@/pages/admin/dashboard"));
+const AdminUsers = lazy(() => import("@/pages/admin/users"));
+const AdminGroups = lazy(() => import("@/pages/admin/groups"));
+const AdminReports = lazy(() => import("@/pages/admin/reports"));
+const ProtectedAdminRoute = lazy(() => import("@/components/protected-admin-route"));
 
 const EmptyChatState = () => {
   return (
@@ -33,13 +40,18 @@ const EmptyChatState = () => {
           </div>
         </div>
       </header>
-      <div className="flex flex-col items-center justify-center h-full p-4">
+      <div className="flex flex-col items-center justify-center flex-1 w-full p-4">
         <div className="flex justify-center w-full">
           <div className="inline-flex items-center justify-center bg-background border text-foreground rounded-full px-3 py-1 text-xs font-normal">
             Select a chat and start messaging
           </div>
         </div>
       </div>
+      <footer className="w-full flex flex-col items-center md:items-end justify-center py-4 px-6 bg-background border-t mt-auto text-center md:text-right">
+        <p className="text-sm text-muted-foreground">
+          AtoiTalk © {new Date().getFullYear()} All Rights Reserved
+        </p>
+      </footer>
     </SidebarInset>
   );
 };
@@ -55,6 +67,9 @@ const AnimatedRoutes = () => {
   const getPageKey = (pathname: string) => {
     if (pathname === "/" || pathname.startsWith("/chat")) {
       return "app-layout";
+    }
+    if (pathname.startsWith("/admin")) {
+      return "admin-layout";
     }
     return pathname;
   };
@@ -77,6 +92,25 @@ const AnimatedRoutes = () => {
       <AnimatePresence mode="wait" initial={true}>
         <Routes location={location} key={getPageKey(location.pathname)}>
           <Route path="/invite/:code" element={<InvitePage />} />
+
+          <Route
+            path="/admin/*"
+            element={
+              <Suspense
+                fallback={<LoadingScreen isLoading={true} message="Initializing AtoiTalk" />}
+              >
+                <ProtectedAdminRoute />
+              </Suspense>
+            }
+          >
+            <Route element={<AdminLayout />}>
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="groups" element={<AdminGroups />} />
+              <Route path="reports" element={<AdminReports />} />
+              <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+            </Route>
+          </Route>
 
           <Route element={<PublicRoute />}>
             <Route path="/login" element={<Login />} />
@@ -112,6 +146,7 @@ import { useState } from "react";
 
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
+import { BannedUserDialog } from "@/components/modals/banned-user-dialog";
 import { UserProfileDialog } from "@/components/modals/user-profile-dialog";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -145,10 +180,11 @@ function App() {
       <ThemeProvider>
         <LoadingScreen
           isLoading={showSplash || globalLoading}
-          message={globalLoading ? loadingMessage || "Loading..." : "Initializing AtoiTalk"}
+          message={globalLoading ? loadingMessage || "Loading" : "Initializing AtoiTalk"}
         />
         <Router>
           <UserProfileDialog />
+          <BannedUserDialog />
           <AnimatedRoutes />
           <Toaster position="top-center" />
         </Router>

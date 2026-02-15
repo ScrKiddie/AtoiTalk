@@ -114,7 +114,7 @@ export function UserProfileDialog() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {user.is_blocked_by_me || user.is_blocked_by_other ? (
+                  {user.is_blocked_by_me || user.is_blocked_by_other || user.is_banned ? (
                     <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
                       Last seen a long time ago
                     </span>
@@ -143,7 +143,7 @@ export function UserProfileDialog() {
                       variant="outline"
                       className="flex-1 flex flex-col gap-1 h-auto py-3"
                       onClick={handleSendMessage}
-                      disabled={user.is_blocked_by_me || user.is_blocked_by_other}
+                      disabled={user.is_blocked_by_me || user.is_blocked_by_other || user.is_banned}
                     >
                       <MessageCircle className="size-5" />
                       <span className="text-xs font-medium">Message</span>
