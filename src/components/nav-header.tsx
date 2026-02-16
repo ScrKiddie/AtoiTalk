@@ -17,13 +17,17 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
-import { useChats, useSearchUsers } from "@/hooks/queries";
+import { useCreatePrivateChat, useSearchUsers } from "@/hooks/queries";
+import { chatService, userService } from "@/services";
 import { useUIStore } from "@/store";
 import { User } from "@/types";
-import { Globe } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Globe, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PublicGroupSearchDialog } from "./modals/public-group-search-dialog";
+
+import { toast } from "sonner";
 
 export function NavHeader() {
   const { theme } = useTheme();
@@ -34,8 +38,6 @@ export function NavHeader() {
   const [userToBlock, setUserToBlock] = useState<string | null>(null);
   const navigate = useNavigate();
   const isBusy = useUIStore((state) => state.isBusy);
-
-  const { data: chatsData } = useChats();
 
   const trimmedSearch = debouncedSearch.trim();
   const {
@@ -57,22 +59,46 @@ export function NavHeader() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  const handleSendMessage = (user: User) => {
-    const existingChat = chatsData?.pages
-      .flatMap((page) => page.data)
-      .find((chat) => chat.type === "private" && chat.other_user_id === user.id);
+  const [creatingChatId, setCreatingChatId] = useState<string | null>(null);
+  const { mutateAsync: createPrivateChat } = useCreatePrivateChat();
+  const queryClient = useQueryClient();
 
-    setOpen(false);
-    setSearch("");
+  const handleSendMessage = async (user: User) => {
+    if (creatingChatId) return;
+    setCreatingChatId(user.id);
 
-    if (existingChat) {
-      navigate(`/chat/${existingChat.id}`);
-    } else {
-      navigate(`/chat/u/${user.id}`);
+    try {
+      const freshUser = await queryClient.fetchQuery({
+        queryKey: ["user", user.id],
+        queryFn: () => userService.getUserById(user.id),
+        staleTime: 10 * 1000,
+      });
+
+      const newChat = await createPrivateChat({ target_user_id: freshUser.id });
+
+      await queryClient.fetchQuery({
+        queryKey: ["chat", newChat.id],
+        queryFn: () => chatService.getChatById(newChat.id),
+        staleTime: 10 * 1000,
+      });
+
+      setOpen(false);
+      navigate(`/chat/${newChat.id}`, { state: { initialUser: freshUser } });
+
+      setTimeout(() => {
+        setCreatingChatId(null);
+        setSearch("");
+        setDebouncedSearch("");
+      }, 500);
+    } catch (error) {
+      console.error("Failed to create chat", error);
+      toast.error("Failed to start conversation");
+      setCreatingChatId(null);
     }
   };
 
   const handleDialogChange = (val: boolean) => {
+    if (creatingChatId) return;
     if (!val) {
       setSearch("");
       setDebouncedSearch("");
@@ -107,23 +133,33 @@ export function NavHeader() {
                   <MailPlus className="size-4" />
                 </Button>
               </DialogTrigger>
-              <DialogContent size="default" className="h-[600px] flex flex-col">
+              <DialogContent
+                size="default"
+                className="h-[600px] flex flex-col"
+                onInteractOutside={(e) => {
+                  if (creatingChatId) e.preventDefault();
+                }}
+                onEscapeKeyDown={(e) => {
+                  if (creatingChatId) e.preventDefault();
+                }}
+              >
                 <DialogHeader>
                   <DialogTitle>New Message</DialogTitle>
                 </DialogHeader>
 
-                <div className="flex-1 overflow-hidden mt-2 relative flex flex-col min-h-0">
-                  <div className="grid gap-4 h-full grid-rows-[auto_1fr] min-w-0 w-full overflow-hidden">
-                    <div className="relative">
-                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search users..."
-                        className="pl-8"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        autoFocus
-                      />
-                    </div>
+                <div className="flex-col gap-4 flex-1 min-h-0 mt-2 flex">
+                  <div className="relative shrink-0">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search users..."
+                      className="pl-8"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      autoFocus
+                      disabled={!!creatingChatId}
+                    />
+                  </div>
+                  <div className="flex-1 min-h-0 -mr-6 pr-6">
                     <InfiniteUserList
                       users={users}
                       isLoading={isSearching}
@@ -160,9 +196,14 @@ export function NavHeader() {
                               variant="outline"
                               className="size-8"
                               onClick={() => handleSendMessage(user)}
+                              disabled={!!creatingChatId}
                               title="Send Message"
                             >
-                              <MessageSquare className="size-4" />
+                              {creatingChatId === user.id ? (
+                                <Loader2 className="size-4 animate-spin" />
+                              ) : (
+                                <MessageSquare className="size-4" />
+                              )}
                             </Button>
                           </div>
                         </div>

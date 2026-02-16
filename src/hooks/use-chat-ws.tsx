@@ -36,14 +36,11 @@ export const useChatWebSocket = (url: string) => {
   const handleReconnect = useCallback(() => {
     const activeChatId = useChatStore.getState().activeChatId;
 
-    queryClient.invalidateQueries({ queryKey: ["chats"] });
-
     if (activeChatId) {
       const messagesQueryState = queryClient.getQueryState(["messages", activeChatId]);
       const isCurrentlyFetching = messagesQueryState?.fetchStatus === "fetching";
 
       if (!isCurrentlyFetching) {
-        queryClient.invalidateQueries({ queryKey: ["messages", activeChatId] });
       }
     }
   }, [queryClient]);
@@ -76,6 +73,7 @@ export const useChatWebSocket = (url: string) => {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        console.log("WebSocket message:", data);
 
         const currentUser = useAuthStore.getState().user;
 
@@ -390,35 +388,61 @@ export const useChatWebSocket = (url: string) => {
               InfiniteData<PaginatedResponse<ChatListItem>>
             >({ queryKey: ["chats"] });
 
-            const chatExists = allChatsCaches.some(([, cache]) =>
+            const chatExistsInList = allChatsCaches.some(([, cache]) =>
               cache?.pages.some((page) =>
                 page.data.some((c: ChatListItem) => c.id === payload.chat_id)
               )
             );
 
-            if (!chatExists) {
-              chatService
-                .getChatById(payload.chat_id)
-                .then((newChat) => {
-                  queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
-                    { queryKey: ["chats"] },
-                    (oldData) => {
-                      if (!oldData) return oldData;
-                      const newPages = [...oldData.pages];
-                      if (newPages.length > 0) {
-                        if (newPages[0].data.some((c: ChatListItem) => c.id === newChat.id))
-                          return oldData;
+            if (!chatExistsInList) {
+              const cachedChat = queryClient.getQueryData<ChatListItem>(["chat", payload.chat_id]);
 
-                        newPages[0] = {
-                          ...newPages[0],
-                          data: [newChat, ...newPages[0].data],
-                        };
-                      }
-                      return { ...oldData, pages: newPages };
+              if (cachedChat) {
+                queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
+                  { queryKey: ["chats"] },
+                  (oldData) => {
+                    if (!oldData) return oldData;
+                    const newPages = [...oldData.pages];
+                    if (newPages.length > 0) {
+                      if (newPages[0].data.some((c: ChatListItem) => c.id === cachedChat.id))
+                        return oldData;
+
+                      newPages[0] = {
+                        ...newPages[0],
+                        data: [cachedChat, ...newPages[0].data],
+                      };
                     }
-                  );
-                })
-                .catch((err) => console.error("Failed to fetch chat details", err));
+                    return { ...oldData, pages: newPages };
+                  }
+                );
+              } else {
+                queryClient
+                  .fetchQuery({
+                    queryKey: ["chat", payload.chat_id],
+                    queryFn: () => chatService.getChatById(payload.chat_id),
+                    staleTime: 10 * 1000,
+                  })
+                  .then((newChat) => {
+                    queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
+                      { queryKey: ["chats"] },
+                      (oldData) => {
+                        if (!oldData) return oldData;
+                        const newPages = [...oldData.pages];
+                        if (newPages.length > 0) {
+                          if (newPages[0].data.some((c: ChatListItem) => c.id === newChat.id))
+                            return oldData;
+
+                          newPages[0] = {
+                            ...newPages[0],
+                            data: [newChat, ...newPages[0].data],
+                          };
+                        }
+                        return { ...oldData, pages: newPages };
+                      }
+                    );
+                  })
+                  .catch((err) => console.error("Failed to fetch chat details", err));
+              }
             }
 
             queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
@@ -898,6 +922,17 @@ export const useChatWebSocket = (url: string) => {
 
           case "user.update": {
             const payload = data.payload as UserUpdateEventPayload;
+
+            queryClient.setQueryData<User>(["user", payload.id], (oldUser) => {
+              if (!oldUser) return undefined;
+              return {
+                ...oldUser,
+                ...payload,
+              };
+            });
+
+            let targetChatId: string | undefined;
+
             queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
               { queryKey: ["chats"] },
               (oldData) => {
@@ -906,10 +941,11 @@ export const useChatWebSocket = (url: string) => {
                   ...page,
                   data: page.data.map((chat: ChatListItem) => {
                     if (chat.type === "private" && chat.other_user_id === payload.id) {
+                      targetChatId = chat.id;
                       return {
                         ...chat,
-                        name: payload.full_name,
-                        avatar: payload.avatar,
+                        name: payload.full_name !== undefined ? payload.full_name : chat.name,
+                        avatar: payload.avatar !== undefined ? payload.avatar : chat.avatar,
                       };
                     }
                     return chat;
@@ -919,20 +955,20 @@ export const useChatWebSocket = (url: string) => {
               }
             );
 
-            queryClient.setQueriesData<User>({ queryKey: ["user", payload.id] }, (oldUser) => {
-              if (!oldUser) return oldUser;
-              return {
-                ...oldUser,
-                ...payload,
-              };
-            });
+            queryClient.setQueriesData<ChatListItem>({ queryKey: ["chat"] }, (oldChat) => {
+              if (!oldChat) return oldChat;
 
-            if (currentUser && currentUser.id === payload.id) {
-              useAuthStore.getState().setUser({
-                ...currentUser,
-                ...payload,
-              });
-            }
+              if (oldChat.type === "private" && oldChat.other_user_id === payload.id) {
+                return {
+                  ...oldChat,
+                  name: payload.full_name !== undefined ? payload.full_name : oldChat.name,
+                  avatar: payload.avatar !== undefined ? payload.avatar : oldChat.avatar,
+                  is_online:
+                    payload.last_seen_at !== undefined ? !!payload.last_seen_at : oldChat.is_online,
+                };
+              }
+              return oldChat;
+            });
 
             queryClient.setQueriesData<InfiniteData<PaginatedResponse<GroupMember>>>(
               { queryKey: ["group-members"] },
@@ -944,9 +980,11 @@ export const useChatWebSocket = (url: string) => {
                     if (member.user_id === payload.id) {
                       return {
                         ...member,
-                        full_name: payload.full_name,
-                        avatar: payload.avatar,
-                        username: payload.username,
+                        full_name:
+                          payload.full_name !== undefined ? payload.full_name : member.full_name,
+                        avatar: payload.avatar !== undefined ? payload.avatar : member.avatar,
+                        username:
+                          payload.username !== undefined ? payload.username : member.username,
                       };
                     }
                     return member;
@@ -955,6 +993,13 @@ export const useChatWebSocket = (url: string) => {
                 return { ...oldData, pages: newPages };
               }
             );
+
+            if (currentUser && currentUser.id === payload.id) {
+              useAuthStore.getState().setUser({
+                ...currentUser,
+                ...payload,
+              });
+            }
             break;
           }
 

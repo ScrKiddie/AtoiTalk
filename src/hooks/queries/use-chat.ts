@@ -108,8 +108,12 @@ export function useCreatePrivateChat() {
 
   return useMutation({
     mutationFn: (data: CreatePrivateChatRequest) => chatService.createPrivateChat(data),
-    onSuccess: async (newChat) => {
-      queryClient.setQueryData<ChatListItem>(["chat", newChat.id], newChat);
+    onSuccess: async (newChatResponse, variables) => {
+      const newChat = await queryClient.fetchQuery({
+        queryKey: ["chat", newChatResponse.id],
+        queryFn: () => chatService.getChatById(newChatResponse.id),
+        staleTime: 10 * 1000,
+      });
 
       const existingMessages = queryClient.getQueryData<InfiniteData<PaginatedResponse<Message>>>([
         "messages",

@@ -1,5 +1,6 @@
 import { userService } from "@/services";
 import { useAuthStore } from "@/store";
+import { User } from "@/types";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useCurrentUser() {
@@ -13,7 +14,10 @@ export function useCurrentUser() {
   });
 }
 
-export function useUserById(id: string | null, options?: { enabled?: boolean }) {
+export function useUserById(
+  id: string | null,
+  options?: { enabled?: boolean; initialData?: User }
+) {
   return useQuery({
     queryKey: ["user", id],
     queryFn: ({ signal }) => userService.getUserById(id!, signal),
@@ -23,6 +27,7 @@ export function useUserById(id: string | null, options?: { enabled?: boolean }) 
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
+    initialData: options?.initialData,
   });
 }
 

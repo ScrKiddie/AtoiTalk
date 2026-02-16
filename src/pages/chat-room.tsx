@@ -37,7 +37,7 @@ import { ChatRetry } from "@/components/chat/chat-retry";
 import { useJumpToMessage } from "@/hooks/use-jump-to-message";
 
 import { useCallback } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { formatMessageDateLabel } from "@/lib/date-utils";
@@ -53,6 +53,7 @@ const ChatRoom = () => {
   const queryClient = useQueryClient();
   const { chatId, userId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (chatId && !isValidUUID(chatId)) {
@@ -221,6 +222,17 @@ const ChatRoom = () => {
   const partnerId = isVirtual ? targetUserId : derivedPartnerId;
 
   const isPartnerDeleted = chat?.type === "private" && chat?.other_user_is_deleted;
+
+  const initialUser = (location.state as { initialUser?: any })?.initialUser;
+
+  useEffect(() => {
+    if (initialUser && partnerId) {
+      const existing = queryClient.getQueryData(["user", partnerId]);
+      if (!existing) {
+        queryClient.setQueryData(["user", partnerId], initialUser);
+      }
+    }
+  }, [initialUser, partnerId, queryClient]);
 
   const {
     data: partnerProfile,

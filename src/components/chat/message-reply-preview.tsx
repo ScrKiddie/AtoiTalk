@@ -75,14 +75,9 @@ export const MessageReplyPreview = ({
       ) : (
         <div className="flex flex-col min-w-0">
           {message.reply_to.content ? (
-            message.reply_to.content
-              .split("\n")
-              .slice(0, 2)
-              .map((line, i) => (
-                <p key={i} className="text-sm text-muted-foreground whitespace-pre-wrap truncate">
-                  {line}
-                </p>
-              ))
+            <p className="text-sm text-muted-foreground line-clamp-2 break-words">
+              {message.reply_to.content}
+            </p>
           ) : (
             <span className="inline-flex items-center gap-1 align-text-bottom text-sm text-muted-foreground">
               <FileIcon className="size-3.5 shrink-0" /> File
