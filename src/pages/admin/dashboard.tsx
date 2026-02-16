@@ -12,7 +12,7 @@ export default function AdminDashboard() {
     data: stats,
     isLoading,
     isError,
-    error,
+
     refetch,
   } = useQuery({
     queryKey: ["admin-stats"],

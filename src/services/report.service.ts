@@ -13,4 +13,11 @@ export const reportService = {
     const response = await api.post<ApiResponse<ReportResponse>>("/api/reports", data);
     return response.data.data;
   },
+
+  /**
+   * Delete a report
+   */
+  deleteReport: async (reportId: string): Promise<void> => {
+    await api.delete(`/api/admin/reports/${reportId}`);
+  },
 };

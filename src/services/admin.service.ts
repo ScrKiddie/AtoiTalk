@@ -94,6 +94,20 @@ export interface ReportListResponse {
   created_at: string;
 }
 
+import { Media } from "@/types";
+
+export interface EvidenceSnapshot {
+  attachments?: (string | Media)[];
+  data?: {
+    attachments?: (string | Media)[];
+  };
+  sender_id?: string;
+  group_id?: string;
+  chat_type?: string;
+  content?: string;
+  [key: string]: unknown;
+}
+
 export interface ReportDetailResponse {
   id: string;
   target_type: string;
@@ -107,7 +121,7 @@ export interface ReportDetailResponse {
   reporter_avatar: string;
   reporter_is_deleted: boolean;
   reporter_is_banned: boolean;
-  evidence_snapshot: any;
+  evidence_snapshot: EvidenceSnapshot;
   admin_notes?: string;
   target_is_banned?: boolean;
   created_at: string;

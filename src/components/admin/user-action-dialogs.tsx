@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { adminService, AdminUserDetailResponse } from "@/services/admin.service";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner as UiSpinner } from "@/components/ui/spinner";
 import { useState } from "react";
@@ -56,66 +57,43 @@ export function UserBanDialog({ open, onOpenChange, userId, onSuccess }: UserBan
   };
 
   return (
-    <Dialog open={open} onOpenChange={(val) => !banMutation.isPending && onOpenChange(val)}>
-      <DialogContent
-        onInteractOutside={(e) => banMutation.isPending && e.preventDefault()}
-        onEscapeKeyDown={(e) => banMutation.isPending && e.preventDefault()}
-      >
-        <DialogHeader>
-          <DialogTitle>Ban User</DialogTitle>
-          <DialogDescription>
-            This will prevent the user from accessing the platform.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="ban-reason">Reason for ban *</Label>
-            <Textarea
-              id="ban-reason"
-              placeholder="Violation of terms of service..."
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              rows={3}
-              disabled={banMutation.isPending}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="ban-duration">Duration (hours, leave empty for permanent)</Label>
-            <Input
-              id="ban-duration"
-              type="number"
-              placeholder="e.g. 24, 48, 168"
-              min={0}
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-              disabled={banMutation.isPending}
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
+    <ConfirmationDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Ban User"
+      description="This will prevent the user from accessing the platform."
+      confirmText="Ban User"
+      variant="destructive"
+      onConfirm={handleSubmit}
+      isLoading={banMutation.isPending}
+      className="sm:max-w-[425px]"
+    >
+      <div className="grid gap-4 py-4">
+        <div className="grid gap-2">
+          <Label htmlFor="ban-reason">Reason for ban *</Label>
+          <Textarea
+            id="ban-reason"
+            placeholder="Violation of terms of service..."
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            rows={3}
             disabled={banMutation.isPending}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={handleSubmit}
-            disabled={!reason || banMutation.isPending}
-            className="relative"
-          >
-            <span className={banMutation.isPending ? "opacity-0" : ""}>Ban User</span>
-            {banMutation.isPending && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <UiSpinner className="size-4 text-primary-foreground" />
-              </div>
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="ban-duration">Duration (hours, leave empty for permanent)</Label>
+          <Input
+            id="ban-duration"
+            type="number"
+            placeholder="e.g. 24, 48, 168"
+            min={0}
+            value={duration}
+            onChange={(e) => setDuration(e.target.value)}
+            disabled={banMutation.isPending}
+          />
+        </div>
+      </div>
+    </ConfirmationDialog>
   );
 }
 
@@ -265,37 +243,16 @@ export function UserUnbanDialog({ open, onOpenChange, userId, onSuccess }: UserU
   };
 
   return (
-    <Dialog open={open} onOpenChange={(val) => !unbanMutation.isPending && onOpenChange(val)}>
-      <DialogContent
-        onInteractOutside={(e) => unbanMutation.isPending && e.preventDefault()}
-        onEscapeKeyDown={(e) => unbanMutation.isPending && e.preventDefault()}
-      >
-        <DialogHeader>
-          <DialogTitle>Unban User</DialogTitle>
-          <DialogDescription>
-            Are you sure you want to unban this user? They will regain access to the platform
-            immediately.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={unbanMutation.isPending}
-          >
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={unbanMutation.isPending} className="relative">
-            <span className={unbanMutation.isPending ? "opacity-0" : ""}>Unban User</span>
-            {unbanMutation.isPending && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <UiSpinner className="size-4 text-primary-foreground" />
-              </div>
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ConfirmationDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Unban User"
+      description="Are you sure you want to unban this user? They will regain access to the platform immediately."
+      confirmText="Unban User"
+      variant="destructive"
+      onConfirm={handleSubmit}
+      isLoading={unbanMutation.isPending}
+    />
   );
 }
 

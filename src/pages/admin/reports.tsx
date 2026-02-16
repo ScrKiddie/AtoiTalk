@@ -8,6 +8,7 @@ import {
   UserResetDialog,
   UserUnbanDialog,
 } from "@/components/admin/user-action-dialogs";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import {
   Dialog,
   DialogContent,
@@ -41,6 +42,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { useDeleteReport } from "@/hooks/mutations/use-delete-report";
 import {
   adminService,
   type AdminUserDetailResponse,
@@ -50,7 +52,7 @@ import {
   type ReportListResponse,
 } from "@/services/admin.service";
 import { mediaService } from "@/services/media.service";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import { format } from "date-fns";
 import {
   AlertCircle,
@@ -63,6 +65,7 @@ import {
   MoreHorizontal,
   RotateCcw,
   Search,
+  Trash2,
   User,
   Users,
   XCircle,
@@ -101,6 +104,10 @@ export default function AdminReports() {
   const [userUnbanOpen, setUserUnbanOpen] = useState(false);
   const [userResetOpen, setUserResetOpen] = useState(false);
   const [actionUserId, setActionUserId] = useState<string | null>(null);
+
+  const [deleteReportId, setDeleteReportId] = useState<string | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const deleteReportMutation = useDeleteReport();
 
   const queryClient = useQueryClient();
 
@@ -171,7 +178,7 @@ export default function AdminReports() {
       (oldData: ReportDetailResponse | undefined) => {
         if (!oldData) return oldData;
 
-        let newData = { ...oldData };
+        const newData = { ...oldData };
         if (newData.reporter_id === targetUserId) {
           newData.reporter_is_banned = false;
         }
@@ -200,22 +207,25 @@ export default function AdminReports() {
       }
     );
 
-    queryClient.setQueriesData({ queryKey: ["admin-group-members-infinite"] }, (oldData: any) => {
-      if (!oldData || !oldData.pages) return oldData;
+    queryClient.setQueriesData(
+      { queryKey: ["admin-group-members-infinite"] },
+      (oldData: InfiniteData<PaginatedResponse<GroupMemberDTO>> | undefined) => {
+        if (!oldData || !oldData.pages) return oldData;
 
-      return {
-        ...oldData,
-        pages: oldData.pages.map((page: PaginatedResponse<GroupMemberDTO>) => ({
-          ...page,
-          data: page.data.map((member) => {
-            if (member.user_id === targetUserId) {
-              return { ...member, is_banned: false };
-            }
-            return member;
-          }),
-        })),
-      };
-    });
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page: PaginatedResponse<GroupMemberDTO>) => ({
+            ...page,
+            data: page.data.map((member) => {
+              if (member.user_id === targetUserId) {
+                return { ...member, is_banned: false };
+              }
+              return member;
+            }),
+          })),
+        };
+      }
+    );
 
     queryClient.invalidateQueries({ queryKey: ["admin-report-detail"] });
     queryClient.invalidateQueries({ queryKey: ["admin-user-detail", targetUserId] });
@@ -229,7 +239,7 @@ export default function AdminReports() {
       (oldData: ReportDetailResponse | undefined) => {
         if (!oldData) return oldData;
 
-        let newData = { ...oldData };
+        const newData = { ...oldData };
         if (newData.reporter_id === targetUserId) {
           newData.reporter_is_banned = true;
         }
@@ -257,22 +267,25 @@ export default function AdminReports() {
       }
     );
 
-    queryClient.setQueriesData({ queryKey: ["admin-group-members-infinite"] }, (oldData: any) => {
-      if (!oldData || !oldData.pages) return oldData;
+    queryClient.setQueriesData(
+      { queryKey: ["admin-group-members-infinite"] },
+      (oldData: InfiniteData<PaginatedResponse<GroupMemberDTO>> | undefined) => {
+        if (!oldData || !oldData.pages) return oldData;
 
-      return {
-        ...oldData,
-        pages: oldData.pages.map((page: PaginatedResponse<GroupMemberDTO>) => ({
-          ...page,
-          data: page.data.map((member) => {
-            if (member.user_id === targetUserId) {
-              return { ...member, is_banned: true };
-            }
-            return member;
-          }),
-        })),
-      };
-    });
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page: PaginatedResponse<GroupMemberDTO>) => ({
+            ...page,
+            data: page.data.map((member) => {
+              if (member.user_id === targetUserId) {
+                return { ...member, is_banned: true };
+              }
+              return member;
+            }),
+          })),
+        };
+      }
+    );
 
     queryClient.invalidateQueries({ queryKey: ["admin-report-detail"] });
     queryClient.invalidateQueries({ queryKey: ["admin-user-detail", targetUserId] });
@@ -411,7 +424,7 @@ export default function AdminReports() {
   };
 
   const handleDownload = async (file: Media) => {
-    let currentUrl = file.url;
+    const currentUrl = file.url;
     if (!currentUrl) return;
 
     const downloadFile = async (url: string) => {
@@ -490,6 +503,17 @@ export default function AdminReports() {
       setUserResetOpen(true);
     } else if (action === "unban") {
       setUserUnbanOpen(true);
+    }
+  };
+
+  const handleDeleteReport = () => {
+    if (deleteReportId) {
+      deleteReportMutation.mutate(deleteReportId, {
+        onSuccess: () => {
+          setDeleteOpen(false);
+          setDeleteReportId(null);
+        },
+      });
     }
   };
 
@@ -680,15 +704,31 @@ export default function AdminReports() {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     ) : (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleViewDetail(report.id)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Eye className="h-4 w-4" />
-                        <span className="sr-only">View Details</span>
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleViewDetail(report.id)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => {
+                              setDeleteReportId(report.id);
+                              setDeleteOpen(true);
+                            }}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     )}
                   </TableCell>
                 </TableRow>
@@ -772,7 +812,7 @@ export default function AdminReports() {
                   {reportDetail.target_type === "message" && (
                     <>
                       <ReportAssociatedEntity
-                        id={reportDetail.evidence_snapshot?.sender_id}
+                        id={reportDetail.evidence_snapshot?.sender_id || ""}
                         type="user"
                         isDeleted={false}
                         isBanned={reportDetail.target_is_banned}
@@ -857,7 +897,7 @@ export default function AdminReports() {
 
                       {reportDetail.evidence_snapshot?.chat_type === "group" && (
                         <ReportAssociatedEntity
-                          id={reportDetail.evidence_snapshot?.group_id}
+                          id={reportDetail.evidence_snapshot?.group_id || ""}
                           type="group"
                           isDeleted={false}
                           label="Context: Group Chat"
@@ -901,7 +941,7 @@ export default function AdminReports() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  setSelectedReport(reportDetail as any);
+                  setSelectedReport(reportDetail);
                   setRejectOpen(true);
                 }}
               >
@@ -909,7 +949,7 @@ export default function AdminReports() {
               </Button>
               <Button
                 onClick={() => {
-                  setSelectedReport(reportDetail as any);
+                  setSelectedReport(reportDetail);
                   setResolveOpen(true);
                 }}
               >
@@ -1046,6 +1086,17 @@ export default function AdminReports() {
         slides={slides}
         showThumbnails={true}
         onIndexChange={setLightboxIndex}
+      />
+
+      <ConfirmationDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Are you absolutely sure?"
+        description="This action cannot be undone. This will permanently delete the report from the database."
+        confirmText="Delete"
+        variant="destructive"
+        onConfirm={handleDeleteReport}
+        isLoading={deleteReportMutation.isPending}
       />
     </div>
   );

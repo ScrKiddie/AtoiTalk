@@ -22,6 +22,8 @@ interface ConfirmationDialogProps {
   overlayClassName?: string;
   modal?: boolean;
   size?: "default" | "sm" | "lg" | "xl" | "full";
+  children?: React.ReactNode;
+  showCancel?: boolean;
 }
 
 export function ConfirmationDialog({
@@ -38,6 +40,8 @@ export function ConfirmationDialog({
   overlayClassName,
   modal = true,
   size = "sm",
+  children,
+  showCancel = true,
 }: ConfirmationDialogProps) {
   return (
     <Dialog open={open} onOpenChange={(val) => !isLoading && onOpenChange(val)} modal={modal}>
@@ -54,10 +58,13 @@ export function ConfirmationDialog({
             {description}
           </DialogDescription>
         </DialogHeader>
+        {children}
         <div className="flex justify-end gap-2 pt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
-            {cancelText}
-          </Button>
+          {showCancel && (
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+              {cancelText}
+            </Button>
+          )}
           <Button variant={variant} onClick={onConfirm} disabled={isLoading} className="relative">
             <span className={isLoading ? "opacity-0" : ""}>{confirmText}</span>
             {isLoading && (

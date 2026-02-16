@@ -677,7 +677,7 @@ export function NavFooter({
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onSelect={() => {
-                        window.location.href = "/";
+                        navigate("/");
                       }}
                     >
                       <Home className="h-4 w-4" />
@@ -690,7 +690,7 @@ export function NavFooter({
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onSelect={() => {
-                          window.location.href = "/admin/dashboard";
+                          navigate("/admin/dashboard");
                         }}
                       >
                         <LayoutDashboard className="h-4 w-4" />

@@ -96,6 +96,18 @@ const ChatFooter = ({
 }: ChatFooterProps) => {
   const [isEmojiOpen, setIsEmojiOpen] = React.useState(false);
   const fileListRef = React.useRef<HTMLDivElement>(null);
+  const captchaRef = React.useRef<CaptchaHandle>(null);
+  const pendingUploadsRef = React.useRef<File[]>([]);
+  const [isSolvingCaptcha, setIsSolvingCaptcha] = React.useState(false);
+
+  const setBusy = useUIStore((state) => state.setBusy);
+
+  const isGlobalUploading = isUploading || isSolvingCaptcha;
+
+  React.useEffect(() => {
+    setBusy(isGlobalUploading || isSending || false);
+    return () => setBusy(false);
+  }, [isGlobalUploading, isSending, setBusy]);
 
   const truncateFilename = (name: string, maxLength: number = 20) => {
     if (name.length <= maxLength) return name;
@@ -109,11 +121,6 @@ const ChatFooter = ({
     const half = Math.floor(visibleChars / 2);
     return `${nameWithoutExt.substring(0, half)}...${nameWithoutExt.substring(nameWithoutExt.length - half)}${extension}`;
   };
-
-  const captchaRef = React.useRef<CaptchaHandle>(null);
-  const pendingUploadsRef = React.useRef<File[]>([]);
-
-  const [isSolvingCaptcha, setIsSolvingCaptcha] = React.useState(false);
 
   const isBlockedByMe = partnerProfile?.is_blocked_by_me;
   const isBlockedByOther = partnerProfile?.is_blocked_by_other;
@@ -391,6 +398,8 @@ const ChatFooter = ({
 
     for (const file of trulyNewFiles) {
       if (file.size > MAX_SIZE) {
+        const key = `${file.name}-${file.size}-${file.lastModified}`;
+        uploadingKeysRef.current.add(key);
         setTimeout(() => {
           toast.error(`File "${truncateFilename(file.name)}" exceeds 20MB`);
         }, 0);
@@ -480,15 +489,6 @@ const ChatFooter = ({
 
     onSendMessage(newMessageText, attachments);
   };
-
-  const isGlobalUploading = isUploading || isSolvingCaptcha;
-
-  const setBusy = useUIStore((state) => state.setBusy);
-
-  React.useEffect(() => {
-    setBusy(isGlobalUploading || isSending || false);
-    return () => setBusy(false);
-  }, [isGlobalUploading, isSending, setBusy]);
 
   return (
     <footer className="relative mx-auto p-2 gap-2 w-full flex flex-col items-start bg-background border-t">

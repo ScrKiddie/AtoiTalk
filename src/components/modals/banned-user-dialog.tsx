@@ -1,12 +1,4 @@
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useAuthStore } from "@/store";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -43,26 +35,22 @@ export function BannedUserDialog() {
   };
 
   return (
-    <AlertDialog open={isOpen}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Account Banned</AlertDialogTitle>
-          <AlertDialogDescription>
-            Your account has been banned by an administrator.
-            {reason && (
-              <span className="block mt-2 font-medium text-destructive">Reason: {reason}</span>
-            )}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogAction
-            onClick={handleLogout}
-            className="bg-destructive hover:bg-destructive/90"
-          >
-            Log Out
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <ConfirmationDialog
+      open={isOpen}
+      onOpenChange={() => {}}
+      title="Account Banned"
+      description="Your account has been banned by an administrator."
+      confirmText="Log Out"
+      onConfirm={handleLogout}
+      variant="destructive"
+      showCancel={false}
+      modal={true}
+    >
+      {reason && (
+        <div className="pt-2">
+          <span className="block font-medium text-destructive">Reason: {reason}</span>
+        </div>
+      )}
+    </ConfirmationDialog>
   );
 }
