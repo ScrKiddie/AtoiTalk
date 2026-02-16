@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useDeleteReport } from "@/hooks/mutations/use-delete-report";
+import { toast } from "@/lib/toast";
 import {
   adminService,
   type AdminUserDetailResponse,
@@ -71,7 +72,6 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
 
 import { ReportAssociatedEntity } from "@/components/admin/report-associated-entity";
 import AttachmentCard from "@/components/attachment-card";
@@ -873,7 +873,7 @@ export default function AdminReports() {
                                   <AttachmentCard
                                     file={item}
                                     isSender={false}
-                                    onClick={() => { }}
+                                    onClick={() => {}}
                                     onImageClick={() => {
                                       setLightboxIndex(index);
                                       setLightboxOpen(true);

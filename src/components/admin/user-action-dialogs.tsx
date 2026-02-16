@@ -16,8 +16,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner as UiSpinner } from "@/components/ui/spinner";
+import { toast } from "@/lib/toast";
 import { useState } from "react";
-import { toast } from "sonner";
 import { UserDetailContent } from "./user-detail-content";
 
 interface UserBanDialogProps {

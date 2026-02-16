@@ -53,8 +53,8 @@ import { format } from "date-fns";
 
 import { GroupDetailContent } from "@/components/admin/group-detail-content";
 
+import { toast } from "@/lib/toast";
 import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
 
 export default function AdminGroups() {
   const queryClient = useQueryClient();

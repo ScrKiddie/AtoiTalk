@@ -73,7 +73,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import {
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from "@/components/ui/sidebar";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { User } from "@/types";
@@ -155,6 +160,7 @@ export function NavFooter({
 
   const navigate = useNavigate();
   const setGlobalLoading = useUIStore((state) => state.setGlobalLoading);
+  const { setOpenMobile } = useSidebar();
   const [isLogoutLoading, setIsLogoutLoading] = useState(false);
 
   const isBusy = useUIStore((state) => state.isBusy);
@@ -677,6 +683,7 @@ export function NavFooter({
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onSelect={() => {
+                        setOpenMobile(false);
                         navigate("/");
                       }}
                     >
@@ -690,6 +697,7 @@ export function NavFooter({
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onSelect={() => {
+                          setOpenMobile(false);
                           navigate("/admin/dashboard");
                         }}
                       >

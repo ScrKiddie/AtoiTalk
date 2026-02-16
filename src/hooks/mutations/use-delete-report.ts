@@ -1,7 +1,7 @@
+import { toast } from "@/lib/toast";
 import { reportService } from "@/services/report.service";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
-import { toast } from "sonner";
 
 export const useDeleteReport = () => {
   const queryClient = useQueryClient();
