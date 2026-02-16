@@ -108,7 +108,7 @@ export function useCreatePrivateChat() {
 
   return useMutation({
     mutationFn: (data: CreatePrivateChatRequest) => chatService.createPrivateChat(data),
-    onSuccess: async (newChatResponse, variables) => {
+    onSuccess: async (newChatResponse) => {
       const newChat = await queryClient.fetchQuery({
         queryKey: ["chat", newChatResponse.id],
         queryFn: () => chatService.getChatById(newChatResponse.id),

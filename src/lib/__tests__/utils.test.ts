@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cn, formatLastSeen } from "../utils";
 
 describe("cn", () => {
@@ -25,6 +25,15 @@ describe("cn", () => {
 });
 
 describe("formatLastSeen", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2024-01-15T12:00:00"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('returns "Last seen just now" for < 60 seconds ago', () => {
     const now = new Date();
     now.setSeconds(now.getSeconds() - 30);
@@ -46,7 +55,7 @@ describe("formatLastSeen", () => {
   });
 
   it('returns "Last seen DD/MM/YY" for older dates', () => {
-    const old = new Date("2024-01-15T12:00:00");
+    const old = new Date("2024-01-01T12:00:00");
     const result = formatLastSeen(old.toISOString());
     expect(result).toMatch(/^Last seen \d{1,2}[\/.]\d{1,2}[\/.]\d{2,4}/);
   });

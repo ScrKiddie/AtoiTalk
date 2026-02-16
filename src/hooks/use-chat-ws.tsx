@@ -33,18 +33,6 @@ export const useChatWebSocket = (url: string) => {
   const isIntentionalCloseRef = useRef(false);
   const isFirstConnectionRef = useRef(true);
 
-  const handleReconnect = useCallback(() => {
-    const activeChatId = useChatStore.getState().activeChatId;
-
-    if (activeChatId) {
-      const messagesQueryState = queryClient.getQueryState(["messages", activeChatId]);
-      const isCurrentlyFetching = messagesQueryState?.fetchStatus === "fetching";
-
-      if (!isCurrentlyFetching) {
-      }
-    }
-  }, [queryClient]);
-
   const connect = useCallback(() => {
     if (!token) return;
     if (
@@ -62,9 +50,6 @@ export const useChatWebSocket = (url: string) => {
     ws.onopen = () => {
       setIsConnected(true);
 
-      if (!isFirstConnectionRef.current) {
-        handleReconnect();
-      }
       isFirstConnectionRef.current = false;
 
       reconnectAttemptRef.current = 0;
@@ -931,8 +916,6 @@ export const useChatWebSocket = (url: string) => {
               };
             });
 
-            let targetChatId: string | undefined;
-
             queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
               { queryKey: ["chats"] },
               (oldData) => {
@@ -941,7 +924,6 @@ export const useChatWebSocket = (url: string) => {
                   ...page,
                   data: page.data.map((chat: ChatListItem) => {
                     if (chat.type === "private" && chat.other_user_id === payload.id) {
-                      targetChatId = chat.id;
                       return {
                         ...chat,
                         name: payload.full_name !== undefined ? payload.full_name : chat.name,
@@ -1201,15 +1183,7 @@ export const useChatWebSocket = (url: string) => {
         }, backoffMs);
       }
     };
-  }, [
-    url,
-    token,
-    queryClient,
-    setUserTyping,
-    setUserOnline,
-    clearUserTypingGlobal,
-    handleReconnect,
-  ]);
+  }, [url, token, queryClient, setUserTyping, setUserOnline, clearUserTypingGlobal]);
 
   useEffect(() => {
     if (!token) return;

@@ -18,7 +18,7 @@ import {
 } from "@/hooks/queries";
 import { toast } from "@/lib/toast";
 import { useAuthStore, useChatStore } from "@/store";
-import { ChatListItem, EditMessageRequest, Media, Message, MessageType } from "@/types";
+import { ChatListItem, EditMessageRequest, Media, Message, MessageType, User } from "@/types";
 import { AxiosError } from "axios";
 
 import ChatFooter from "@/components/chat/chat-footer";
@@ -223,7 +223,7 @@ const ChatRoom = () => {
 
   const isPartnerDeleted = chat?.type === "private" && chat?.other_user_is_deleted;
 
-  const initialUser = (location.state as { initialUser?: any })?.initialUser;
+  const initialUser = (location.state as { initialUser?: User })?.initialUser;
 
   useEffect(() => {
     if (initialUser && partnerId) {
