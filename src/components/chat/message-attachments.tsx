@@ -88,11 +88,11 @@ export const MessageAttachments = ({ message, isCurrentUser }: MessageAttachment
                 } catch (retryError) {
                   console.error("Download failed after refresh", retryError);
                   if (retryError instanceof Error && retryError.message === "File not found") {
-                    toast.error("File tidak ditemukan (mungkin sudah dihapus oleh server).", {
+                    toast.error("File not found (might have been deleted by the server).", {
                       id: "download-failed",
                     });
                   } else {
-                    toast.error("Gagal mendownload file.", { id: "download-failed" });
+                    toast.error("Failed to download file.", { id: "download-failed" });
                   }
                 }
               }

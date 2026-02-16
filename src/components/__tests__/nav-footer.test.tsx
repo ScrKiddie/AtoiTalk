@@ -72,6 +72,10 @@ vi.mock("@/hooks/queries", () => ({
     isPending: false,
   }),
   useLogout: () => mockLogout,
+  useDeleteAccount: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+  }),
   useBlockedUsers: () => ({
     data: { pages: [{ data: [] }] },
     isLoading: false,

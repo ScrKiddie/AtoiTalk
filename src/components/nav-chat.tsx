@@ -189,8 +189,10 @@ export function NavChat({
                             new Date(chat.other_last_read_at) >=
                               new Date(chat.last_message.created_at) ? (
                               <CheckCheck className="size-3.5 text-blue-500" />
+                            ) : chat.is_online ? (
+                              <CheckCheck className="size-3.5 text-muted-foreground" />
                             ) : (
-                              <Check className="size-3.5 text-muted-foreground" />
+                              <Check className="size-3.5 text-muted-foreground/70" />
                             ))}
                           <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                             {formatChatPreviewDate(chat.last_message?.created_at)}

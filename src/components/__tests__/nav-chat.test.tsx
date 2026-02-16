@@ -25,6 +25,7 @@ vi.mock("@/hooks/mutations/use-hide-chat", () => ({
 vi.mock("@/store", () => ({
   useAuthStore: (selector: any) => selector({ user: { id: "user1", name: "Current User" } }),
   useChatStore: (selector: any) => selector({ typingUsers: {} }),
+  useUIStore: (selector: any) => selector({ isBusy: false }),
 }));
 
 const createTestQueryClient = () =>
@@ -87,6 +88,8 @@ describe("NavChat Component", () => {
           content: "Hello there",
           created_at: new Date().toISOString(),
           sender_id: "user2",
+          sender_name: "Alice",
+          type: "text",
         },
         type: "private",
         is_online: true,
@@ -100,6 +103,8 @@ describe("NavChat Component", () => {
           content: "See attachment",
           created_at: new Date().toISOString(),
           sender_id: "user1",
+          sender_name: "Current User",
+          type: "text",
         },
         type: "private",
         is_online: false,
@@ -154,7 +159,9 @@ describe("NavChat Component", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Are you sure you want to delete this chat? This action cannot be undone.")
+        screen.getByText(
+          "Are you sure you want to delete this chat? It will be hidden until a new message is sent."
+        )
       ).toBeInTheDocument();
     });
 
@@ -173,11 +180,13 @@ describe("NavChat Component", () => {
         last_message: {
           deleted_at: new Date().toISOString(),
           sender_id: "user2",
+          sender_name: "Deleted Msg User",
+          type: "text",
         },
         type: "private",
       },
     ];
     renderComponent({ chats });
-    expect(screen.getByText("Pesan sudah dihapus")).toBeInTheDocument();
+    expect(screen.getByText("Message deleted")).toBeInTheDocument();
   });
 });

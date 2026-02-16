@@ -1,6 +1,13 @@
 import { toast } from "@/lib/toast";
 import { messageService } from "@/services/message.service";
-import { ApiError, EditMessageRequest, Media, Message, PaginatedResponse } from "@/types";
+import {
+  ApiError,
+  ChatListItem,
+  EditMessageRequest,
+  Media,
+  Message,
+  PaginatedResponse,
+} from "@/types";
 import { InfiniteData, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 
@@ -74,6 +81,29 @@ export const useEditMessage = () => {
             data: page.data.map((msg) => (msg.id === updatedMessage.id ? updatedMessage : msg)),
           }));
           return { ...old, pages: newPages };
+        }
+      );
+
+      queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
+        { queryKey: ["chats"] },
+        (oldData) => {
+          if (!oldData) return oldData;
+
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page) => ({
+              ...page,
+              data: page.data.map((chat) => {
+                if (chat.id === chatId && chat.last_message?.id === updatedMessage.id) {
+                  return {
+                    ...chat,
+                    last_message: updatedMessage,
+                  };
+                }
+                return chat;
+              }),
+            })),
+          };
         }
       );
     },

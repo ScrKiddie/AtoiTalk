@@ -684,7 +684,9 @@ export function NavFooter({
                     <DropdownMenuItem
                       onSelect={() => {
                         setOpenMobile(false);
-                        navigate("/");
+                        setTimeout(() => {
+                          navigate("/");
+                        }, 300);
                       }}
                     >
                       <Home className="h-4 w-4" />
@@ -698,7 +700,9 @@ export function NavFooter({
                       <DropdownMenuItem
                         onSelect={() => {
                           setOpenMobile(false);
-                          navigate("/admin/dashboard");
+                          setTimeout(() => {
+                            navigate("/admin/dashboard");
+                          }, 300);
                         }}
                       >
                         <LayoutDashboard className="h-4 w-4" />

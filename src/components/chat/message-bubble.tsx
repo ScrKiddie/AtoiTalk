@@ -316,7 +316,7 @@ const MessageBubble = ({
                 className={`text-sm italic flex items-center gap-1 ${isCurrentUser ? "text-background/70" : "text-muted-foreground/80"}`}
               >
                 <Ban className="size-3.5 shrink-0" />
-                Pesan sudah dihapus
+                Message deleted
               </p>
             ) : (
               <>

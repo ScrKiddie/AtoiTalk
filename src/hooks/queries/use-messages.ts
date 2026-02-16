@@ -223,6 +223,33 @@ export function useDeleteMessage() {
 
       return { previousMessages };
     },
+    onSuccess: (_data, { messageId, chatId }) => {
+      queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
+        { queryKey: ["chats"] },
+        (oldData) => {
+          if (!oldData) return oldData;
+
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page) => ({
+              ...page,
+              data: page.data.map((chat) => {
+                if (chat.id === chatId && chat.last_message?.id === messageId) {
+                  return {
+                    ...chat,
+                    last_message: {
+                      ...chat.last_message,
+                      deleted_at: new Date().toISOString(),
+                    },
+                  };
+                }
+                return chat;
+              }),
+            })),
+          };
+        }
+      );
+    },
     onError: (_error, { chatId }, context) => {
       if (context?.previousMessages) {
         queryClient.setQueryData(["messages", chatId], context.previousMessages);

@@ -25,7 +25,27 @@ const AdminDashboard = lazy(() => import("@/pages/admin/dashboard"));
 const AdminUsers = lazy(() => import("@/pages/admin/users"));
 const AdminGroups = lazy(() => import("@/pages/admin/groups"));
 const AdminReports = lazy(() => import("@/pages/admin/reports"));
-const ProtectedAdminRoute = lazy(() => import("@/components/protected-admin-route"));
+const ProtectedAdminRoute = lazy(() => {
+  const dataPromise = queryClient.ensureQueryData({
+    queryKey: ["admin-stats"],
+    queryFn: adminService.getDashboardStats,
+  });
+
+  const preloadChunks = Promise.all([
+    import("@/layouts/admin-layout"),
+    import("@/pages/admin/dashboard"),
+    import("@/pages/admin/users"),
+    import("@/pages/admin/groups"),
+    import("@/pages/admin/reports"),
+  ]);
+
+  return Promise.all([
+    import("@/components/protected-admin-route"),
+    new Promise((resolve) => setTimeout(resolve, 1500)),
+    dataPromise.catch(() => null),
+    preloadChunks,
+  ]).then(([module]) => module);
+});
 
 const EmptyChatState = () => {
   return (
@@ -141,6 +161,8 @@ const AnimatedRoutes = () => {
 };
 
 import { LoadingScreen } from "@/components/ui/loading-screen";
+import { queryClient } from "@/lib/query-client";
+import { adminService } from "@/services";
 import { useAuthStore, useUIStore } from "@/store";
 import { useState } from "react";
 

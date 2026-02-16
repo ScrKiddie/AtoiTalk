@@ -73,7 +73,7 @@ export const ChatPreviewText = ({ chat, currentUser }: ChatPreviewTextProps) => 
         )}
         <span className="flex items-center italic opacity-70 truncate min-w-0">
           <Ban className="size-3 shrink-0 mr-1" />
-          <span className="truncate">Pesan sudah dihapus</span>
+          <span className="truncate">Message deleted</span>
         </span>
       </span>
     );

@@ -9,7 +9,7 @@ import { GroupProfileDialog } from "@/components/modals/group-profile-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getInitials } from "@/lib/avatar-utils";
 import { formatLastSeen } from "@/lib/utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface ChatHeaderProps {
   chat: ChatListItem;
@@ -46,6 +46,10 @@ const ChatHeader = ({
   const displayName = isDeleted ? "Deleted Account" : displayChat.name;
 
   const [showGroupDialog, setShowGroupDialog] = useState(false);
+
+  useEffect(() => {
+    setShowGroupDialog(false);
+  }, [chat.id]);
 
   const initials = getInitials(displayName);
 

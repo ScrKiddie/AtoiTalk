@@ -1,5 +1,5 @@
 import { differenceInCalendarDays, format, isToday, isYesterday } from "date-fns";
-import { id } from "date-fns/locale";
+import { enUS } from "date-fns/locale";
 
 export const formatMessageDateLabel = (dateStr: string) => {
   if (!dateStr) return "";
@@ -14,7 +14,7 @@ export const formatMessageDateLabel = (dateStr: string) => {
   const diff = differenceInCalendarDays(now, date);
 
   if (diff > 1 && diff <= 7) {
-    return format(date, "EEEE", { locale: id });
+    return format(date, "EEEE", { locale: enUS });
   }
 
   return format(date, "dd/MM/yyyy");
@@ -25,11 +25,11 @@ export const formatChatPreviewDate = (dateString?: string) => {
   const date = new Date(dateString);
 
   if (isToday(date)) {
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
   } else if (isYesterday(date)) {
     return "Yesterday";
   } else {
-    return date.toLocaleDateString([], { day: "2-digit", month: "2-digit", year: "2-digit" });
+    return date.toLocaleDateString("en-US", { day: "2-digit", month: "2-digit", year: "2-digit" });
   }
 };
 
@@ -39,7 +39,7 @@ export const formatBanMessage = (message: string) => {
   if (suspendMatch && suspendMatch[1]) {
     const date = new Date(suspendMatch[1]);
     if (!isNaN(date.getTime())) {
-      const formattedDate = format(date, "d MMMM yyyy, HH:mm", { locale: id });
+      const formattedDate = format(date, "d MMMM yyyy, HH:mm", { locale: enUS });
       return `Account suspended until ${formattedDate}`;
     }
   }

@@ -70,7 +70,7 @@ export const MessageReplyPreview = ({
       {message.reply_to.deleted_at ? (
         <p className="text-sm text-muted-foreground/70 italic line-clamp-2 flex items-center gap-1">
           <Ban className="size-3 shrink-0" />
-          Pesan sudah dihapus
+          Message deleted
         </p>
       ) : (
         <div className="flex flex-col min-w-0">
