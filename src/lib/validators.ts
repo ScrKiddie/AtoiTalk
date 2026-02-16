@@ -14,8 +14,8 @@ export const usernameSchema = z
   .string()
   .min(3, { message: "Username must be at least 3 characters." })
   .max(50, { message: "Username must be at most 50 characters." })
-  .regex(/^[a-z0-9_]+$/, {
-    message: "Username can only contain lowercase letters, numbers, and underscores.",
+  .regex(/^[a-zA-Z0-9]+$/, {
+    message: "Username can only contain letters and numbers.",
   });
 
 export const nameSchema = z
@@ -45,5 +45,5 @@ export const groupNameSchema = z
 
 export const groupDescriptionSchema = z
   .string()
-  .max(500, { message: "Description must be at most 500 characters." })
+  .max(255, { message: "Description must be at most 255 characters." })
   .optional();

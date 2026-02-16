@@ -55,7 +55,7 @@ describe("passwordSchema", () => {
 
 describe("usernameSchema", () => {
   it("accepts valid username", () => {
-    expect(usernameSchema.safeParse("john_doe123").success).toBe(true);
+    expect(usernameSchema.safeParse("johndoe123").success).toBe(true);
   });
 
   it("rejects too short (<3)", () => {
@@ -66,18 +66,20 @@ describe("usernameSchema", () => {
     expect(usernameSchema.safeParse("a".repeat(51)).success).toBe(false);
   });
 
-  it("rejects uppercase letters", () => {
-    expect(usernameSchema.safeParse("JohnDoe").success).toBe(false);
+  it("accepts uppercase letters", () => {
+    expect(usernameSchema.safeParse("JohnDoe").success).toBe(true);
   });
 
-  it("rejects special characters", () => {
+  it("rejects special characters and underscores", () => {
     expect(usernameSchema.safeParse("john-doe").success).toBe(false);
     expect(usernameSchema.safeParse("john.doe").success).toBe(false);
     expect(usernameSchema.safeParse("john doe").success).toBe(false);
+    expect(usernameSchema.safeParse("user_123").success).toBe(false);
+    expect(usernameSchema.safeParse("john_doe").success).toBe(false);
   });
 
-  it("accepts underscores and numbers", () => {
-    expect(usernameSchema.safeParse("user_123").success).toBe(true);
+  it("accepts numbers", () => {
+    expect(usernameSchema.safeParse("user123").success).toBe(true);
   });
 });
 
@@ -179,11 +181,11 @@ describe("groupDescriptionSchema", () => {
     expect(groupDescriptionSchema.safeParse(undefined).success).toBe(true);
   });
 
-  it("rejects too long (>500)", () => {
-    expect(groupDescriptionSchema.safeParse("a".repeat(501)).success).toBe(false);
+  it("rejects too long (>255)", () => {
+    expect(groupDescriptionSchema.safeParse("a".repeat(256)).success).toBe(false);
   });
 
-  it("accepts exactly 500 characters", () => {
-    expect(groupDescriptionSchema.safeParse("a".repeat(500)).success).toBe(true);
+  it("accepts exactly 255 characters", () => {
+    expect(groupDescriptionSchema.safeParse("a".repeat(255)).success).toBe(true);
   });
 });
