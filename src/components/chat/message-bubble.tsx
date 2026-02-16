@@ -199,10 +199,13 @@ const MessageBubble = ({
             <Avatar
               className={cn(
                 "shrink-0 w-10 h-10 self-end transition-opacity",
-                isSenderDeleted ? "cursor-default opacity-80" : "cursor-pointer hover:opacity-80"
+                isSenderDeleted || isBusy
+                  ? "cursor-default opacity-80"
+                  : "cursor-pointer hover:opacity-80"
               )}
               onClick={(e) => {
                 e.stopPropagation();
+                if (isBusy) return;
                 if (!isSenderDeleted) handleOpenProfile(message.sender_id);
               }}
             >
@@ -286,10 +289,11 @@ const MessageBubble = ({
                 <p
                   className={cn(
                     "text-sm font-[500] line-clamp-1 transition-opacity text-foreground",
-                    isSenderDeleted ? "cursor-default" : "cursor-pointer hover:opacity-80"
+                    isSenderDeleted || isBusy ? "cursor-default" : "cursor-pointer hover:opacity-80"
                   )}
                   onClick={(e) => {
                     e.stopPropagation();
+                    if (isBusy) return;
                     if (!isSenderDeleted) handleOpenProfile(message.sender_id);
                   }}
                 >

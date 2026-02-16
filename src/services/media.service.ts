@@ -8,9 +8,10 @@ export const mediaService = {
   /**
    * Upload a media file (image, video, file, audio)
    */
-  async uploadMedia(file: File, signal?: AbortSignal): Promise<Media> {
+  async uploadMedia(file: File, captchaToken: string, signal?: AbortSignal): Promise<Media> {
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("captcha_token", captchaToken);
 
     const response = await api.post<ApiResponse<Media>>("/api/media/upload", formData, {
       headers: {

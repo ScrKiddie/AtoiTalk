@@ -1,18 +1,26 @@
-import { toast } from "@/lib/toast";
 import { mediaService } from "@/services/media.service";
 import { useMutation } from "@tanstack/react-query";
 
 export const useUploadMedia = () => {
   return useMutation({
-    mutationFn: ({ file, signal }: { file: File; signal?: AbortSignal }) =>
-      mediaService.uploadMedia(file, signal),
+    mutationFn: ({
+      file,
+      captchaToken,
+      signal,
+    }: {
+      file: File;
+      captchaToken: string;
+      signal?: AbortSignal;
+    }) => mediaService.uploadMedia(file, captchaToken, signal),
     onError: (error) => {
-      if (error.name === "CanceledError" || error.message === "canceled") {
-        console.log("Upload canceled");
+      if (
+        error.name === "Aborted" ||
+        error.message === "aborted" ||
+        error.name === "CanceledError"
+      ) {
         return;
       }
-      console.error("Upload failed:", error);
-      toast.error("Failed to upload file");
+      console.error("Upload failed in mutation:", error);
     },
   });
 };

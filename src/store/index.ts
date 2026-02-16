@@ -155,6 +155,9 @@ interface UIState {
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
 
+  isBusy: boolean;
+  setBusy: (busy: boolean) => void;
+
   profileModal: {
     isOpen: boolean;
     userId: string | null;
@@ -172,11 +175,13 @@ export const useUIStore = create<UIState>()((set) => ({
   globalLoading: false,
   loadingMessage: null,
   sidebarOpen: true,
+  isBusy: false,
 
   setGlobalLoading: (loading, message) =>
     set({ globalLoading: loading, loadingMessage: message || null }),
   toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
+  setBusy: (busy) => set({ isBusy: busy }),
 
   profileModal: {
     isOpen: false,

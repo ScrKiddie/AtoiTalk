@@ -364,7 +364,8 @@ const ChatRoom = () => {
 
   const { mutateAsync: uploadMediaMutation, isPending: isUploadingState } = useUploadMedia();
   const uploadMedia = useCallback(
-    (variables: { file: File; signal?: AbortSignal }) => uploadMediaMutation(variables),
+    (variables: { file: File; captchaToken: string; signal?: AbortSignal }) =>
+      uploadMediaMutation(variables),
     [uploadMediaMutation]
   );
   const isUploading = isUploadingState || uploadingFiles.length > 0;
@@ -885,10 +886,10 @@ const ChatRoom = () => {
 
             {((isMessagesError && items.length === 0) || jumpError) && (
               <ChatRetry
-                title={jumpError && !isMessagesError ? "Message not found" : undefined}
+                title={jumpError && !isMessagesError ? "Failed to load message" : undefined}
                 description={
                   jumpError && !isMessagesError
-                    ? "The message you are looking for may have been deleted or is no longer available."
+                    ? "Could not jump to the message. Please check your connection and try again."
                     : undefined
                 }
                 onRetry={() => {

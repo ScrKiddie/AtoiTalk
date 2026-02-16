@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
 import { useChats, useSearchUsers } from "@/hooks/queries";
+import { useUIStore } from "@/store";
 import { User } from "@/types";
 import { Globe } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -32,6 +33,7 @@ export function NavHeader() {
   const [publicSearchOpen, setPublicSearchOpen] = useState(false);
   const [userToBlock, setUserToBlock] = useState<string | null>(null);
   const navigate = useNavigate();
+  const isBusy = useUIStore((state) => state.isBusy);
 
   const { data: chatsData } = useChats();
 
@@ -100,6 +102,7 @@ export function NavHeader() {
                   className="size-8 group-data-[collapsible=icon]:hidden"
                   variant="outline"
                   size="icon"
+                  disabled={isBusy}
                 >
                   <MailPlus className="size-4" />
                 </Button>
@@ -173,6 +176,7 @@ export function NavHeader() {
               className="size-8 group-data-[collapsible=icon]:hidden"
               variant="outline"
               size="icon"
+              disabled={isBusy}
               onClick={() => setPublicSearchOpen(true)}
               title="Groups"
             >

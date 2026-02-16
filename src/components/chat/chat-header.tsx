@@ -39,6 +39,7 @@ const ChatHeader = ({
 
   const isTyping = typingUsers[chat.id]?.some((id) => id !== currentUser?.id);
   const openProfileModal = useUIStore((state) => state.openProfileModal);
+  const isBusy = useUIStore((state) => state.isBusy);
 
   const displayChat = chat;
   const isDeleted = displayChat.type === "private" && displayChat.other_user_is_deleted;
@@ -129,12 +130,14 @@ const ChatHeader = ({
 
             <div
               className={`flex items-center gap-2 transition-opacity ${
-                (displayChat.type === "private" && partnerProfile && !isDeleted) ||
-                (displayChat.type === "group" && !isChatLoading && !isChatError)
+                !isBusy &&
+                ((displayChat.type === "private" && partnerProfile && !isDeleted) ||
+                  (displayChat.type === "group" && !isChatLoading && !isChatError))
                   ? "cursor-pointer hover:opacity-80"
-                  : "cursor-default"
+                  : "cursor-default opacity-100"
               }`}
               onClick={() => {
+                if (isBusy) return;
                 if (displayChat.type === "private" && partnerId && partnerProfile && !isDeleted) {
                   openProfileModal(partnerId, { hideMessageButton: true });
                 } else if (displayChat.type === "group" && !isChatLoading && !isChatError) {

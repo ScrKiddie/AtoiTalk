@@ -6,6 +6,7 @@ import { ChatListItem, EditMessage, EditMessageRequest, Media, Message, User } f
 import { File as FileIcon, Loader2, SendHorizonal, Shredder, Smile, Unlock, X } from "lucide-react";
 
 import AttachmentCard from "@/components/attachment-card";
+import { Captcha, CaptchaHandle } from "@/components/captcha";
 import {
   EmojiPicker,
   EmojiPickerContent,
@@ -17,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea.tsx";
 import { useWebSocketContext } from "@/context/websocket-context";
 import { useUserById } from "@/hooks/queries";
 import { useRefreshMedia } from "@/hooks/use-refresh-media";
+import { useUIStore } from "@/store";
 import { AnimatePresence, motion } from "motion/react";
 import * as React from "react";
 import { FloatingChatButtons } from "./floating-chat-buttons";
@@ -52,7 +54,11 @@ interface ChatFooterProps {
   uploadingFiles: File[];
   setUploadingFiles: React.Dispatch<React.SetStateAction<File[]>>;
   uploadingKeysRef: React.MutableRefObject<Set<string>>;
-  uploadMedia: (variables: { file: File; signal?: AbortSignal }) => Promise<Media>;
+  uploadMedia: (variables: {
+    file: File;
+    captchaToken: string;
+    signal?: AbortSignal;
+  }) => Promise<Media>;
   isUploading: boolean;
   isLoading?: boolean;
 }
@@ -90,6 +96,24 @@ const ChatFooter = ({
 }: ChatFooterProps) => {
   const [isEmojiOpen, setIsEmojiOpen] = React.useState(false);
   const fileListRef = React.useRef<HTMLDivElement>(null);
+
+  const truncateFilename = (name: string, maxLength: number = 20) => {
+    if (name.length <= maxLength) return name;
+    const extensionIndex = name.lastIndexOf(".");
+    const extension = extensionIndex !== -1 ? name.substring(extensionIndex) : "";
+    const nameWithoutExt = extensionIndex !== -1 ? name.substring(0, extensionIndex) : name;
+
+    const visibleChars = maxLength - extension.length - 3;
+    if (visibleChars <= 0) return name;
+
+    const half = Math.floor(visibleChars / 2);
+    return `${nameWithoutExt.substring(0, half)}...${nameWithoutExt.substring(nameWithoutExt.length - half)}${extension}`;
+  };
+
+  const captchaRef = React.useRef<CaptchaHandle>(null);
+  const pendingUploadsRef = React.useRef<File[]>([]);
+
+  const [isSolvingCaptcha, setIsSolvingCaptcha] = React.useState(false);
 
   const isBlockedByMe = partnerProfile?.is_blocked_by_me;
   const isBlockedByOther = partnerProfile?.is_blocked_by_other;
@@ -153,6 +177,8 @@ const ChatFooter = ({
       abortControllerRef.current = null;
     }
 
+    pendingUploadsRef.current = [];
+
     setUploadingFiles([]);
     uploadingKeysRef.current.clear();
 
@@ -166,6 +192,80 @@ const ChatFooter = ({
       setIsCancelling(false);
     }
   }, [isCancelling, minCancelTimePassed, isUploading]);
+
+  const processNextFile = async (token: string) => {
+    if (pendingUploadsRef.current.length === 0) {
+      setIsSolvingCaptcha(false);
+      return;
+    }
+
+    const file = pendingUploadsRef.current[0];
+    const remainingFiles = pendingUploadsRef.current.slice(1);
+
+    pendingUploadsRef.current = remainingFiles;
+
+    if (!abortControllerRef.current) {
+      abortControllerRef.current = new AbortController();
+    }
+    const signal = abortControllerRef.current.signal;
+
+    try {
+      const media = await uploadMedia({ file, captchaToken: token, signal });
+
+      if (!signal.aborted) {
+        setAttachments((prev) => [...prev, media]);
+
+        setUploadingFiles((prev) =>
+          prev.filter(
+            (f) =>
+              f !== file &&
+              !(
+                f.name === file.name &&
+                f.size === file.size &&
+                f.lastModified === file.lastModified
+              )
+          )
+        );
+
+        const key = `${file.name}-${file.size}-${file.lastModified}`;
+        uploadingKeysRef.current.delete(key);
+
+        if (remainingFiles.length > 0 && pendingUploadsRef.current.length > 0) {
+          captchaRef.current?.reset();
+        } else {
+          setIsSolvingCaptcha(false);
+        }
+      }
+    } catch (error) {
+      if (signal.aborted) {
+        console.log("Upload aborted for", file.name);
+        setIsSolvingCaptcha(false);
+        return;
+      }
+
+      console.error("File upload error:", error);
+
+      setUploadingFiles((prev) =>
+        prev.filter(
+          (f) =>
+            f !== file &&
+            !(f.name === file.name && f.size === file.size && f.lastModified === file.lastModified)
+        )
+      );
+      const key = `${file.name}-${file.size}-${file.lastModified}`;
+      uploadingKeysRef.current.delete(key);
+
+      if (remainingFiles.length > 0) {
+        captchaRef.current?.reset();
+      } else {
+        setIsSolvingCaptcha(false);
+      }
+
+      setTimeout(() => {
+        toast.error(`Failed to upload "${truncateFilename(file.name)}"`);
+      }, 0);
+    }
+  };
 
   const handleTyping = () => {
     if (!chat?.id) return;
@@ -291,7 +391,9 @@ const ChatFooter = ({
 
     for (const file of trulyNewFiles) {
       if (file.size > MAX_SIZE) {
-        toast.error("File exceeds 20MB limit", { id: "file-size-error" });
+        setTimeout(() => {
+          toast.error(`File "${truncateFilename(file.name)}" exceeds 20MB`);
+        }, 0);
         continue;
       }
       validFiles.push(file);
@@ -317,81 +419,11 @@ const ChatFooter = ({
       return [...prev, ...uniqueNew];
     });
 
-    if (!abortControllerRef.current) {
-      abortControllerRef.current = new AbortController();
-    }
-    const signal = abortControllerRef.current.signal;
+    pendingUploadsRef.current = [...pendingUploadsRef.current, ...validFiles];
 
-    for (const file of validFiles) {
-      if (signal.aborted) break;
+    setIsSolvingCaptcha(true);
 
-      let retryCount = 0;
-      const MAX_RETRIES = 3;
-      let success = false;
-
-      while (!success && retryCount < MAX_RETRIES) {
-        try {
-          const media = await uploadMedia({ file, signal });
-
-          if (signal.aborted) break;
-
-          setAttachments((prev) => [...prev, media]);
-
-          setUploadingFiles((prev) =>
-            prev.filter(
-              (f) =>
-                f !== file &&
-                !(
-                  f.name === file.name &&
-                  f.size === file.size &&
-                  f.lastModified === file.lastModified
-                )
-            )
-          );
-
-          const key = `${file.name}-${file.size}-${file.lastModified}`;
-          uploadingKeysRef.current.delete(key);
-          success = true;
-
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-        } catch (error) {
-          console.error("File upload error:", error);
-
-          if (
-            typeof error === "object" &&
-            error !== null &&
-            "response" in error &&
-            (error as { response: { status: number } }).response?.status === 429
-          ) {
-            retryCount++;
-            toast.error(`Rate limit hit. Pausing for 5s... (Retry ${retryCount}/${MAX_RETRIES})`, {
-              id: "rate-limit-wait",
-            });
-            await new Promise((resolve) => setTimeout(resolve, 5000));
-
-            if (signal.aborted) break;
-
-            continue;
-          }
-
-          setUploadingFiles((prev) =>
-            prev.filter(
-              (f) =>
-                f !== file &&
-                !(
-                  f.name === file.name &&
-                  f.size === file.size &&
-                  f.lastModified === file.lastModified
-                )
-            )
-          );
-
-          const key = `${file.name}-${file.size}-${file.lastModified}`;
-          uploadingKeysRef.current.delete(key);
-          break;
-        }
-      }
-    }
+    captchaRef.current?.reset();
   };
 
   const handleSendMessage = async () => {
@@ -442,15 +474,48 @@ const ChatFooter = ({
       return;
     }
 
-    if (isUploading) {
+    if (isUploading || isSolvingCaptcha) {
       return;
     }
 
     onSendMessage(newMessageText, attachments);
   };
 
+  const isGlobalUploading = isUploading || isSolvingCaptcha;
+
+  const setBusy = useUIStore((state) => state.setBusy);
+
+  React.useEffect(() => {
+    setBusy(isGlobalUploading || isSending || false);
+    return () => setBusy(false);
+  }, [isGlobalUploading, isSending, setBusy]);
+
   return (
     <footer className="relative mx-auto p-2 gap-2 w-full flex flex-col items-start bg-background border-t">
+      <Captcha
+        ref={captchaRef}
+        onVerify={(token) => {
+          if (pendingUploadsRef.current.length > 0) {
+            processNextFile(token);
+          } else {
+            setIsSolvingCaptcha(false);
+          }
+        }}
+        onError={() => {
+          toast.error("Security check failed. Please try again.");
+          setIsSolvingCaptcha(false);
+          pendingUploadsRef.current = [];
+          setUploadingFiles([]);
+          uploadingKeysRef.current.clear();
+        }}
+        onExpire={() => {
+          if (pendingUploadsRef.current.length > 0) {
+            captchaRef.current?.reset();
+          } else {
+            setIsSolvingCaptcha(false);
+          }
+        }}
+      />
       <FloatingChatButtons
         showReturnButton={showReturnButton}
         onReturnJump={onReturnJump}
@@ -482,7 +547,7 @@ const ChatFooter = ({
                   <Button
                     size="icon"
                     variant="ghost"
-                    disabled={isUploading || isSending || isEditing || isLoading}
+                    disabled={isGlobalUploading || isSending || isEditing || isLoading}
                     className="size-6 hover:bg-background/50 rounded-full"
                     onClick={() => {
                       if (replyTo) {
@@ -547,7 +612,7 @@ const ChatFooter = ({
               >
                 <FileUpload.Dropzone
                   className={
-                    isUploading || isSending || isEditing || isCancelling
+                    isGlobalUploading || isSending || isEditing || isCancelling
                       ? "pointer-events-none opacity-80"
                       : ""
                   }
@@ -557,17 +622,17 @@ const ChatFooter = ({
                       <FileUpload.Trigger
                         asChild
                         disabled={
-                          isUploading || isSending || isEditing || isCancelling || isLoading
+                          isGlobalUploading || isSending || isEditing || isCancelling || isLoading
                         }
                       >
                         <Button
                           variant="ghost"
                           size="icon"
                           disabled={
-                            isUploading || isSending || isEditing || isCancelling || isLoading
+                            isGlobalUploading || isSending || isEditing || isCancelling || isLoading
                           }
                         >
-                          {isUploading || isCancelling ? (
+                          {isGlobalUploading || isCancelling ? (
                             <Loader2 className="size-6 text-muted-foreground animate-spin" />
                           ) : (
                             <FileIcon className="size-6 text-muted-foreground" />
@@ -580,7 +645,7 @@ const ChatFooter = ({
                         <p className="font-medium text-sm">Cancelling your uploads...</p>
                         <p className="text-muted-foreground text-xs">Please wait a moment</p>
                       </>
-                    ) : isUploading && uploadingFiles.length > 0 ? (
+                    ) : isGlobalUploading && uploadingFiles.length > 0 ? (
                       <>
                         <p className="font-medium text-sm">Uploading your file....</p>
                         <p className="text-muted-foreground text-xs">
@@ -616,7 +681,7 @@ const ChatFooter = ({
                     >
                       <div
                         ref={fileListRef}
-                        className={`max-h-[7.8rem] gap-[8px] flex-col flex ${isUploading || isSending || isEditing ? "overflow-hidden opacity-50 pointer-events-none" : "overflow-auto"}`}
+                        className={`max-h-[7.8rem] gap-[8px] flex-col flex ${isGlobalUploading || isSending || isEditing ? "overflow-hidden opacity-50 pointer-events-none" : "overflow-auto"}`}
                       >
                         <AnimatePresence initial={false}>
                           {editMessage &&
@@ -636,7 +701,7 @@ const ChatFooter = ({
                                       file={item}
                                       isSender={false}
                                       isEditMode={true}
-                                      disabled={isUploading || isSending || isEditing}
+                                      disabled={isGlobalUploading || isSending || isEditing}
                                       onRefresh={handleRefreshMedia}
                                       onClick={() => {
                                         const updatedAttachments =
@@ -669,7 +734,7 @@ const ChatFooter = ({
                                 file={media}
                                 isSender={false}
                                 isEditMode={true}
-                                disabled={isUploading || isSending || isEditing}
+                                disabled={isGlobalUploading || isSending || isEditing}
                                 onRefresh={handleRefreshMedia}
                                 onClick={() => {
                                   setAttachments(attachments.filter((a) => a.id !== media.id));
@@ -692,12 +757,12 @@ const ChatFooter = ({
             <Button
               size="icon"
               variant="ghost"
-              disabled={isUploading || isSending || isEditing || isLoading}
+              disabled={isGlobalUploading || isSending || isEditing || isLoading}
               className={`size-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted ${attachmentMode ? "bg-muted text-foreground" : ""}`}
               onClick={() => {
                 setAttachmentMode(!attachmentMode);
                 if (attachmentMode) {
-                  if (!isUploading && !isSending) {
+                  if (!isGlobalUploading && !isSending) {
                     setAttachments([]);
                     setUploadingFiles([]);
                     if (editMessage) {
@@ -723,7 +788,7 @@ const ChatFooter = ({
                 <Button
                   size="icon"
                   variant="ghost"
-                  disabled={isUploading || isSending || isEditing || isLoading}
+                  disabled={isGlobalUploading || isSending || isEditing || isLoading}
                   className={`size-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted ${isEmojiOpen ? "bg-muted text-foreground" : ""}`}
                 >
                   <Smile className="size-5" />
@@ -761,13 +826,13 @@ const ChatFooter = ({
 
           <Textarea
             disabled={
-              isUploading || isSending || isEditing || uploadingFiles.length > 0 || isLoading
+              isGlobalUploading || isSending || isEditing || uploadingFiles.length > 0 || isLoading
             }
             className="min-h-[40px] max-h-[120px] pb-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2 shadow-none flex-1"
             placeholder={
               isLoading
                 ? "Loading chat..."
-                : isUploading || uploadingFiles.length > 0
+                : isGlobalUploading || uploadingFiles.length > 0
                   ? "Uploading files..."
                   : isSending
                     ? "Sending..."
@@ -794,7 +859,7 @@ const ChatFooter = ({
             <Button
               size="icon"
               disabled={
-                isUploading ||
+                isGlobalUploading ||
                 isSending ||
                 isEditing ||
                 (attachments.length === 0 &&

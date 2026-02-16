@@ -21,7 +21,7 @@ import { useHideChat } from "@/hooks/mutations/use-hide-chat";
 import { getInitials } from "@/lib/avatar-utils";
 import { formatChatPreviewDate } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
-import { useAuthStore, useChatStore } from "@/store";
+import { useAuthStore, useChatStore, useUIStore } from "@/store";
 import { ChatListItem } from "@/types";
 import {
   Ban,
@@ -71,6 +71,7 @@ export function NavChat({
   const currentUser = useAuthStore((state) => state.user);
   const typingUsers = useChatStore((state) => state.typingUsers);
   const setActiveChatId = useChatStore((state) => state.setActiveChatId);
+  const isBusy = useUIStore((state) => state.isBusy);
 
   const match = location.pathname.match(/\/chat\/([^/]+)/);
   const activeId = match ? match[1] : null;
@@ -93,7 +94,9 @@ export function NavChat({
 
   const handleChatClick = (chat: ChatListItem) => {
     setActiveMenu(null);
-    navigate(`/chat/${chat.id}`);
+    if (!isBusy) {
+      navigate(`/chat/${chat.id}`);
+    }
   };
 
   if (isLoading) {
@@ -148,7 +151,8 @@ export function NavChat({
                       activeId === chat.id
                         ? "bg-muted font-normal data-[active=true]:font-normal"
                         : "",
-                      !(hoveredIndex === index || activeMenu === menuId || isMobile) && "!pr-4"
+                      !(hoveredIndex === index || activeMenu === menuId || isMobile) && "!pr-4",
+                      isBusy ? "opacity-50 cursor-not-allowed" : ""
                     )}
                   >
                     <div className="relative">

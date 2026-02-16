@@ -157,6 +157,8 @@ export function NavFooter({
   const setGlobalLoading = useUIStore((state) => state.setGlobalLoading);
   const [isLogoutLoading, setIsLogoutLoading] = useState(false);
 
+  const isBusy = useUIStore((state) => state.isBusy);
+
   const handleLogout = async () => {
     setGlobalLoading(true, "Logging Out");
     setIsLogoutLoading(true);
@@ -637,6 +639,7 @@ export function NavFooter({
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
                 size="lg"
+                disabled={isBusy}
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground gap-2"
               >
                 <Avatar className="h-8 w-8">

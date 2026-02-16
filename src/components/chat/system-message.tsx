@@ -21,6 +21,7 @@ const SystemMessageUserLink = ({ userId, name }: { userId?: string; name: string
   const { user: currentUser } = useAuthStore();
   const openProfileModal = useUIStore((state) => state.openProfileModal);
   const setLoadingProfile = useUIStore((state) => state.setLoadingProfile);
+  const isBusy = useUIStore((state) => state.isBusy);
   const queryClient = useQueryClient();
 
   const isMe = currentUser?.id === userId;
@@ -28,6 +29,7 @@ const SystemMessageUserLink = ({ userId, name }: { userId?: string; name: string
 
   const handleProfileClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (isBusy) return;
     if (!userId) return;
 
     setLoadingProfile(true);
@@ -68,7 +70,10 @@ const SystemMessageUserLink = ({ userId, name }: { userId?: string; name: string
   return (
     <span
       onClick={handleProfileClick}
-      className="cursor-pointer hover:no-underline hover:opacity-80 transition-opacity align-bottom hover:font-medium"
+      className={cn(
+        "transition-opacity align-bottom hover:font-medium",
+        isBusy ? "cursor-default opacity-100" : "cursor-pointer hover:no-underline hover:opacity-80"
+      )}
     >
       {displayName}
     </span>
