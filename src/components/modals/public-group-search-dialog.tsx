@@ -27,7 +27,7 @@ import { cn } from "@/lib/utils";
 import { groupDescriptionSchema, groupNameSchema } from "@/lib/validators";
 import { PublicGroupDTO, User } from "@/types";
 import { AnimatePresence, motion } from "framer-motion";
-import { Camera, Check, Globe, Loader2, Plus, Search, Trash2, Users, X } from "lucide-react";
+import { Camera, Check, Globe, Loader2, LogIn, Plus, Search, Trash2, Users, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -282,9 +282,8 @@ export function PublicGroupSearchDialog({ isOpen, onClose }: PublicGroupSearchDi
       const filename = originalFilename || "avatar.jpg";
       formData.append("avatar", groupAvatar, filename);
     }
-    selectedMembers.forEach((member) => {
-      formData.append("member_ids", member.id);
-    });
+    const memberIds = selectedMembers.map((member) => member.id);
+    formData.append("member_ids", JSON.stringify(memberIds));
     formData.append("is_public", isPublic.toString());
 
     createGroup(formData, {
@@ -394,9 +393,9 @@ export function PublicGroupSearchDialog({ isOpen, onClose }: PublicGroupSearchDi
                             </div>
                           </div>
                           <Button
-                            size={group.is_member ? "icon" : "sm"}
+                            size="icon"
                             variant={group.is_member ? "ghost" : "default"}
-                            className={group.is_member ? "size-8" : "h-8 text-xs"}
+                            className="size-8"
                             onClick={() => handleJoin(group)}
                             disabled={isCurrentJoining || (isJoining && !!joiningGroupId)}
                           >
@@ -405,7 +404,7 @@ export function PublicGroupSearchDialog({ isOpen, onClose }: PublicGroupSearchDi
                             ) : group.is_member ? (
                               <Check className="size-4 text-primary" />
                             ) : (
-                              "Join"
+                              <LogIn className="size-4" />
                             )}
                           </Button>
                         </div>

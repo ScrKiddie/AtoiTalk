@@ -179,22 +179,28 @@ export const useDeleteGroup = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (groupId: string) => chatService.deleteGroup(groupId),
-    onMutate: (groupId) => {
+    mutationFn: ({ groupId }: { groupId: string; name?: string }) =>
+      chatService.deleteGroup(groupId),
+    onMutate: ({ groupId }) => {
       useChatStore.getState().addDeletedChatId(groupId);
     },
-    onSuccess: (_data, groupId) => {
-      const allChats = queryClient.getQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>({
-        queryKey: ["chats"],
-      });
-      let groupName = "Group";
-      for (const [, cacheData] of allChats) {
-        const found = cacheData?.pages.flatMap((p) => p.data).find((c) => c.id === groupId);
-        if (found?.name) {
-          const name = found.name;
-          groupName = name.length > 20 ? name.slice(0, 20) + "..." : name;
-          break;
+    onSuccess: (_data, { groupId, name }) => {
+      let groupName = name || "Group";
+
+      if (!name) {
+        const allChats = queryClient.getQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>({
+          queryKey: ["chats"],
+        });
+        for (const [, cacheData] of allChats) {
+          const found = cacheData?.pages.flatMap((p) => p.data).find((c) => c.id === groupId);
+          if (found?.name) {
+            const foundName = found.name;
+            groupName = foundName.length > 20 ? foundName.slice(0, 20) + "..." : foundName;
+            break;
+          }
         }
+      } else {
+        groupName = name.length > 20 ? name.slice(0, 20) + "..." : name;
       }
 
       queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
@@ -214,7 +220,7 @@ export const useDeleteGroup = () => {
       }, 500);
       toast.success(`"${groupName}" deleted`);
     },
-    onError: (error, groupId) => {
+    onError: (error, { groupId }) => {
       useChatStore.getState().removeDeletedChatId(groupId);
       console.error("Failed to delete group:", error);
       toast.error("Failed to delete group");

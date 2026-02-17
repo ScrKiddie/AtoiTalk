@@ -160,10 +160,11 @@ export function useSendMessage() {
           const newPages = [...oldData.pages];
           if (newPages.length > 0) {
             const firstPage = newPages[0];
-            if (firstPage.data.some((m) => m.id === newMessage.id)) return oldData;
+            const currentData = firstPage.data || [];
+            if (currentData.some((m) => m.id === newMessage.id)) return oldData;
             newPages[0] = {
               ...firstPage,
-              data: [...firstPage.data, newMessage],
+              data: [...currentData, newMessage],
             };
           }
           return { ...oldData, pages: newPages };

@@ -260,14 +260,17 @@ export function GroupProfileDialog({
 
   const handleDeleteGroup = () => {
     setActiveChatId(null);
-    deleteGroup(chat.id, {
-      onSuccess: () => {
-        onClose(false);
-        setTimeout(() => {
-          navigate("/");
-        }, 300);
-      },
-    });
+    deleteGroup(
+      { groupId: chat.id, name: chat.name },
+      {
+        onSuccess: () => {
+          onClose(false);
+          setTimeout(() => {
+            navigate("/");
+          }, 300);
+        },
+      }
+    );
   };
 
   const handlePromoteToAdmin = (member: GroupMember) => {

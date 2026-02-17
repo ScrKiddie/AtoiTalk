@@ -143,7 +143,10 @@ const Login = () => {
           navigate("/");
         },
         onError: (error) => {
-          const msg = error.response?.data?.error || "Invalid email or password";
+          let msg = error.response?.data?.error || "Invalid email or password";
+          if (error.response?.status === 401) {
+            msg = "Invalid email or password";
+          }
           toast.error(formatBanMessage(msg));
           captchaRef.current?.reset();
           setCaptchaToken(null);

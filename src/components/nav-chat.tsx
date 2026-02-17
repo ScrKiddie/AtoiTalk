@@ -397,16 +397,19 @@ export function NavChat({
                 if (chat.id === activeId) {
                   setActiveChatId(null);
                 }
-                deleteGroup(chat.id, {
-                  onSuccess: () => {
-                    setChatToDelete(null);
-                    if (chat.id === activeId) {
-                      setTimeout(() => {
-                        navigate("/");
-                      }, 300);
-                    }
-                  },
-                });
+                deleteGroup(
+                  { groupId: chat.id, name: chat.name },
+                  {
+                    onSuccess: () => {
+                      setChatToDelete(null);
+                      if (chat.id === activeId) {
+                        setTimeout(() => {
+                          navigate("/");
+                        }, 300);
+                      }
+                    },
+                  }
+                );
               } else {
                 if (chat.id === activeId) {
                   setActiveChatId(null);

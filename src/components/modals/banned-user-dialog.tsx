@@ -1,4 +1,11 @@
-import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useAuthStore } from "@/store";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -35,22 +42,34 @@ export function BannedUserDialog() {
   };
 
   return (
-    <ConfirmationDialog
-      open={isOpen}
-      onOpenChange={() => {}}
-      title="Account Banned"
-      description="Your account has been banned by an administrator."
-      confirmText="Log Out"
-      onConfirm={handleLogout}
-      variant="destructive"
-      showCancel={false}
-      modal={true}
-    >
-      {reason && (
-        <div className="pt-2">
-          <span className="block font-medium text-destructive">Reason: {reason}</span>
+    <Dialog open={isOpen} onOpenChange={() => {}} modal={true}>
+      <DialogContent
+        className="sm:w-[400px] text-center [&>button]:hidden"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
+        <div className="flex flex-col items-center justify-center gap-4 py-4">
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="text-xl text-center">Account Banned</DialogTitle>
+            <DialogDescription className="text-center text-muted-foreground">
+              Your account has been banned by an administrator.
+            </DialogDescription>
+          </DialogHeader>
+
+          {reason && (
+            <div className="w-full rounded-md bg-muted/50 p-3 border border-border/50">
+              <span className="text-sm font-medium block mb-1 text-muted-foreground">Reason:</span>
+              <p className="text-sm">{reason}</p>
+            </div>
+          )}
+
+          <div className="w-full pt-2">
+            <Button variant="destructive" onClick={handleLogout} className="w-full">
+              Log Out
+            </Button>
+          </div>
         </div>
-      )}
-    </ConfirmationDialog>
+      </DialogContent>
+    </Dialog>
   );
 }
