@@ -7,11 +7,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { GlobalLightbox } from "@/components/ui/lightbox";
 import { LoadingModal } from "@/components/ui/loading-modal";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useChats, useUserById } from "@/hooks/queries";
+import { useCreatePrivateChat, useUserById } from "@/hooks/queries";
 import { toast } from "@/lib/toast";
 import { formatLastSeen } from "@/lib/utils";
 import { useAuthStore, useUIStore } from "@/store";
-import { Ban, Copy, Flag, MessageCircle } from "lucide-react";
+import { Ban, Copy, Flag, Loader2, MessageCircle } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -30,7 +30,7 @@ export function UserProfileDialog() {
   const { user: currentUser } = useAuthStore();
   const navigate = useNavigate();
 
-  const { data: chatsData } = useChats(undefined, { enabled: isOpen });
+  const { mutate: createChat, isPending: isCreatingChat } = useCreatePrivateChat();
 
   const handleBlockUser = () => {
     setIsBlockConfirmOpen(true);
@@ -59,18 +59,18 @@ export function UserProfileDialog() {
   const handleSendMessage = () => {
     if (!user) return;
 
-    const existingChat = chatsData?.pages
-      .flatMap((page) => page.data)
-      .find((chat) => chat.type === "private" && chat.other_user_id === user.id);
-
-    if (existingChat) {
-      closeProfileModal();
-      navigate(`/chat/${existingChat.id}`);
-      return;
-    }
-
-    closeProfileModal();
-    navigate(`/chat/u/${user.id}`);
+    createChat(
+      { target_user_id: user.id },
+      {
+        onSuccess: (data) => {
+          closeProfileModal();
+          navigate(`/chat/${data.id}`);
+        },
+        onError: () => {
+          toast.error("Failed to start conversation");
+        },
+      }
+    );
   };
 
   const showDirectMessageButton = !config?.hideMessageButton;
@@ -143,10 +143,21 @@ export function UserProfileDialog() {
                       variant="outline"
                       className="flex-1 flex flex-col gap-1 h-auto py-3"
                       onClick={handleSendMessage}
-                      disabled={user.is_blocked_by_me || user.is_blocked_by_other || user.is_banned}
+                      disabled={
+                        user.is_blocked_by_me ||
+                        user.is_blocked_by_other ||
+                        user.is_banned ||
+                        isCreatingChat
+                      }
                     >
-                      <MessageCircle className="size-5" />
-                      <span className="text-xs font-medium">Message</span>
+                      {isCreatingChat ? (
+                        <Loader2 className="size-5 animate-spin" />
+                      ) : (
+                        <MessageCircle className="size-5" />
+                      )}
+                      <span className="text-xs font-medium">
+                        {isCreatingChat ? "Opening..." : "Message"}
+                      </span>
                     </Button>
                   )}
 

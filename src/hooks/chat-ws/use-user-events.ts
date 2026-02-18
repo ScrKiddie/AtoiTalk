@@ -58,6 +58,16 @@ export const useUserEvents = (
         };
       });
 
+      if (currentUser && currentUser.id === payload.id) {
+        queryClient.setQueryData<User>(["user", "current"], (oldUser) => {
+          if (!oldUser) return oldUser;
+          return {
+            ...oldUser,
+            ...payload,
+          };
+        });
+      }
+
       queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
         { queryKey: ["chats"] },
         (oldData) => {

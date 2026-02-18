@@ -187,11 +187,13 @@ const ChatHeader = ({
         </div>
       </header>
 
-      <GroupProfileDialog
-        isOpen={showGroupDialog}
-        onClose={setShowGroupDialog}
-        chat={displayChat}
-      />
+      {displayChat.type === "group" && (
+        <GroupProfileDialog
+          isOpen={showGroupDialog}
+          onClose={setShowGroupDialog}
+          chat={displayChat}
+        />
+      )}
     </>
   );
 };

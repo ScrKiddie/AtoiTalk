@@ -21,7 +21,7 @@ import { ApiError, User } from "@/types";
 import { AxiosError } from "axios";
 import { AnimatePresence, motion } from "framer-motion";
 import { Camera, Eye, Loader2, Trash2 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { ImageCropper } from "../image-cropper";
 
@@ -64,6 +64,16 @@ export function UserProfileDialog({
     avatarPreview: user.avatar || null,
     deleteAvatar: false,
   });
+
+  useEffect(() => {
+    setAccountData((prev) => ({
+      ...prev,
+      name: user.full_name,
+      username: user.username,
+      bio: user.bio || "",
+      avatarPreview: user.avatar || null,
+    }));
+  }, [user]);
 
   const [profileErrors, setProfileErrors] = useState<ProfileErrors>({});
   const [isModalAvatarLoaded, setIsModalAvatarLoaded] = useState(false);
