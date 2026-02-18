@@ -6,9 +6,10 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar.tsx";
 import { WebSocketProvider } from "@/context/websocket-context";
 import ChatRoom from "@/pages/chat-room.tsx";
+import ForgotPassword from "@/pages/forgot-password";
 import InvitePage from "@/pages/invite";
 import Login from "@/pages/login";
-import Verify from "@/pages/verify";
+import Register from "@/pages/register";
 import { AnimatePresence } from "framer-motion";
 import { Suspense, lazy, useEffect, useRef } from "react";
 import {
@@ -134,9 +135,8 @@ const AnimatedRoutes = () => {
 
           <Route element={<PublicRoute />}>
             <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Verify />} />
-            <Route path="/forgot" element={<Verify />} />
-            <Route path="/verify" element={<Verify />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot" element={<ForgotPassword />} />
           </Route>
           <Route element={<ProtectedRoute />}>
             <Route
