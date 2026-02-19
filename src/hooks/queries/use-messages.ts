@@ -96,9 +96,7 @@ export function useJumpToMessage(chatId: string | null) {
             pageParams: [undefined],
           });
 
-          const shouldJumpMode = jumpData.meta.has_prev;
-
-          setIsJumped(shouldJumpMode);
+          setIsJumped(true);
           setJumpTargetId(targetMessageId);
           setJumpTimestamp(Date.now());
           return true;

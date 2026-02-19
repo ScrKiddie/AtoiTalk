@@ -288,6 +288,15 @@ export const useChatMessages = ({
     }
   }, [returnStack, scrollToMessage, handleRemoteJump, returnToLatest]);
 
+  useEffect(() => {
+    if (isJumped && !hasPreviousPage && !isRemoteJumping) {
+      const timer = setTimeout(() => {
+        clearJumpState();
+      }, 1200);
+      return () => clearTimeout(timer);
+    }
+  }, [isJumped, hasPreviousPage, isRemoteJumping, clearJumpState]);
+
   return {
     messages,
     items,
