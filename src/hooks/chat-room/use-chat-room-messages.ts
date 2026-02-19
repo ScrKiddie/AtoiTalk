@@ -46,7 +46,7 @@ export const useChatMessages = ({
     enabled: !!currentChatId && activeChatId === currentChatId && !!chat,
   });
 
-  const { jumpToMessage, returnToLatest, isJumped, jumpTargetId, jumpTimestamp } =
+  const { jumpToMessage, returnToLatest, isJumped, jumpTargetId, jumpTimestamp, clearJumpState } =
     useQueryJump(currentChatId);
 
   useEffect(() => {
@@ -265,12 +265,16 @@ export const useChatMessages = ({
   );
 
   const handleScrollToBottom = useCallback(() => {
-    if (isJumped) {
+    setReturnStack([]);
+    if (hasPreviousPage) {
       returnToLatest();
     } else {
+      if (isJumped) {
+        clearJumpState();
+      }
       virtualizerRef.current?.scrollToIndex(items.length - 1, { align: "end" });
     }
-  }, [isJumped, returnToLatest, items.length]);
+  }, [hasPreviousPage, returnToLatest, isJumped, clearJumpState, items.length]);
 
   const handleReturnJump = useCallback(() => {
     if (returnStack.length > 0) {

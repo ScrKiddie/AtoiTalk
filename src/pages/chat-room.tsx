@@ -47,6 +47,7 @@ const ChatRoom = () => {
     handleJumpToMessage,
     handleReturnJump,
     handleScrollToBottom,
+    showScrollButton,
 
     messageRefs,
     highlightedMessageId,
@@ -177,7 +178,7 @@ const ChatRoom = () => {
         partnerProfile={partnerProfile}
         chat={chat || undefined}
         scrollToBottom={handleScrollToBottom}
-        showScrollButton={true}
+        showScrollButton={showScrollButton}
         showReturnButton={returnStack.length > 0}
         onReturnJump={handleReturnJump}
         current={currentUser}

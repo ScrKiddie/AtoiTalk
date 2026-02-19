@@ -204,6 +204,7 @@ export const useVirtuaChat = ({
   useEffect(() => {
     if (items.length === 0 && currentChatId) {
       initialScrollDone.current = null;
+      setIsReadyToDisplay(false);
     }
   }, [items.length, currentChatId]);
 
@@ -219,7 +220,9 @@ export const useVirtuaChat = ({
       initialScrollDone.current = currentChatId;
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          setIsReadyToDisplay(true);
+          setTimeout(() => {
+            setIsReadyToDisplay(true);
+          }, 100);
         });
       });
     } else if (isJumping && items.length > 0) {
