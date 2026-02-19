@@ -254,7 +254,7 @@ export const useChatMessages = ({
   const handleJumpToMessage = useCallback(
     (targetId: string, fromMessageId?: string) => {
       if (fromMessageId) {
-        setReturnStack((prev) => [...prev, fromMessageId]);
+        setReturnStack([fromMessageId]);
       }
 
       if (!scrollToMessage(targetId)) {
@@ -265,7 +265,6 @@ export const useChatMessages = ({
   );
 
   const handleScrollToBottom = useCallback(() => {
-    setReturnStack([]);
     if (hasPreviousPage) {
       returnToLatest();
     } else {

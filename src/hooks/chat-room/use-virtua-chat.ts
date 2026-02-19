@@ -138,7 +138,7 @@ export const useVirtuaChat = ({
       const offset = ref.scrollOffset;
 
       const atBottom = offset >= ref.scrollSize - ref.viewportSize - 200;
-      setShowScrollButton(!atBottom);
+      setShowScrollButton(!atBottom || hasPreviousPage);
 
       if (wasAtBottomRef.current && !isFetchingNextPage && items.length > 0 && !isJumping) {
         scrollToBottom();
@@ -167,7 +167,7 @@ export const useVirtuaChat = ({
       }
 
       const atBottom = offset >= ref.scrollSize - ref.viewportSize - 200;
-      setShowScrollButton(!atBottom);
+      setShowScrollButton(!atBottom || hasPreviousPage);
 
       wasAtBottomRef.current = atBottom && !hasPreviousPage;
 
