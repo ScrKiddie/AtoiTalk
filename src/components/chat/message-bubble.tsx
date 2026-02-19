@@ -329,7 +329,7 @@ const MessageBubble = ({
                 />
                 <MessageAttachments message={message} isCurrentUser={isCurrentUser} />
                 {message.content && (
-                  <p className="text-sm whitespace-pre-wrap break-all">
+                  <p className="text-sm whitespace-pre-wrap break-words min-w-0">
                     {message.content.split(/(https?:\/\/[^\s]+)/g).map((part, index) => {
                       if (part.match(/(https?:\/\/[^\s]+)/g)) {
                         return (

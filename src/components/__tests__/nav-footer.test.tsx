@@ -177,8 +177,8 @@ describe("NavFooter Component", () => {
     await waitFor(() => expect(screen.getByText("Account Settings")).toBeInTheDocument());
 
     const nameInput = screen.getByDisplayValue("Test User");
-    await user.clear(nameInput);
-    await user.type(nameInput, "Updated Name");
+    await user.tripleClick(nameInput);
+    await user.keyboard("Updated Name");
 
     const saveButton = screen.getByRole("button", { name: "Save Changes" });
     await user.click(saveButton);

@@ -20,8 +20,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useCreateGroupForm } from "@/hooks/group/use-create-group-form";
 import { cn } from "@/lib/utils";
 import { User } from "@/types";
-import { AnimatePresence, motion } from "framer-motion";
 import { Camera, Plus, Trash2, Users, X } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
 interface CreateGroupTabProps {

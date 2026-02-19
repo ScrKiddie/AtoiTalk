@@ -1,5 +1,5 @@
 import { authService } from "@/services";
-import { useAuthStore, useUIStore } from "@/store";
+import { useAuthStore, useChatStore, useUIStore } from "@/store";
 import type {
   ApiError,
   AuthResponse,
@@ -95,6 +95,8 @@ export function useLogout() {
     } finally {
       logout();
       queryClient.clear();
+      useChatStore.getState().reset();
+      useUIStore.getState().reset();
     }
   };
 }

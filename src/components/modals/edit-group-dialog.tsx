@@ -20,8 +20,8 @@ import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { groupDescriptionSchema, groupNameSchema } from "@/lib/validators";
 import { ChatListItem } from "@/types";
-import { AnimatePresence, motion } from "framer-motion";
 import { Camera, Trash2, Users } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
@@ -114,6 +114,9 @@ export function EditGroupDialog({ isOpen, onClose, chat }: EditGroupDialogProps)
   };
 
   const handleCropComplete = (blob: Blob) => {
+    if (groupAvatarPreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(groupAvatarPreview);
+    }
     const previewUrl = URL.createObjectURL(blob);
     setGroupAvatar(blob as File);
     setGroupAvatarPreview(previewUrl);
@@ -122,6 +125,9 @@ export function EditGroupDialog({ isOpen, onClose, chat }: EditGroupDialogProps)
   };
 
   const handleDeleteGroupAvatar = () => {
+    if (groupAvatarPreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(groupAvatarPreview);
+    }
     setGroupAvatar(null);
     setGroupAvatarPreview(null);
     setRemoveAvatar(true);

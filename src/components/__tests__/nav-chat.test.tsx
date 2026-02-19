@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { NavChat } from "../nav-chat";
+import { NavChat } from "../layouts/nav-chat";
 
 const mockNavigate = vi.fn();
 vi.mock("react-router-dom", async () => {

@@ -20,8 +20,8 @@ import { cn } from "@/lib/utils";
 import { bioSchema, nameSchema, usernameSchema } from "@/lib/validators";
 import { ApiError, User } from "@/types";
 import { AxiosError } from "axios";
-import { AnimatePresence, motion } from "framer-motion";
 import { Camera, Eye, Trash2 } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { ImageCropper } from "../../image-cropper";
@@ -193,6 +193,9 @@ export function MyProfileDialog({
   };
 
   const handleCropComplete = (blob: Blob) => {
+    if (accountData.avatarPreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(accountData.avatarPreview);
+    }
     const previewUrl = URL.createObjectURL(blob);
     setAccountData((prev) => ({
       ...prev,
@@ -204,6 +207,9 @@ export function MyProfileDialog({
   };
 
   const handleDeleteAvatar = () => {
+    if (accountData.avatarPreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(accountData.avatarPreview);
+    }
     setAccountData((prev) => ({
       ...prev,
       avatarFile: null,
@@ -307,7 +313,7 @@ export function MyProfileDialog({
                 )}
                 disabled={isUpdatingProfile}
                 onChange={(e) => {
-                  const normalized = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "");
+                  const normalized = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "");
                   setAccountData({ ...accountData, username: normalized });
                   validateField("username", normalized);
                 }}

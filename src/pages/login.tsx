@@ -24,7 +24,7 @@ import { formatBanMessage } from "@/lib/date-utils";
 import { emailSchema } from "@/lib/validators";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useGoogleLogin } from "@react-oauth/google";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import * as z from "zod";

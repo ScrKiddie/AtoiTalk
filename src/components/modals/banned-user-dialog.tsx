@@ -6,14 +6,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useAuthStore } from "@/store";
+import { useLogout } from "@/hooks/queries";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export function BannedUserDialog() {
   const [isOpen, setIsOpen] = useState(false);
   const [reason, setReason] = useState<string | null>(null);
-  const logout = useAuthStore((state) => state.logout);
+  const logout = useLogout();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,8 +35,8 @@ export function BannedUserDialog() {
     };
   }, []);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate("/login");
     setIsOpen(false);
   };

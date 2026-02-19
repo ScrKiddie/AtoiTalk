@@ -67,6 +67,8 @@ interface ChatState {
 
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+
+  reset: () => void;
 }
 
 export const useChatStore = create<ChatState>()((set) => ({
@@ -77,6 +79,15 @@ export const useChatStore = create<ChatState>()((set) => ({
   recentlyDeletedChatIds: new Set(),
   searchQuery: "",
   setSearchQuery: (query) => set({ searchQuery: query }),
+  reset: () =>
+    set({
+      activeChatId: null,
+      isJumped: false,
+      typingUsers: {},
+      onlineUsers: new Set(),
+      recentlyDeletedChatIds: new Set(),
+      searchQuery: "",
+    }),
   setIsJumped: (jumped) => set({ isJumped: jumped }),
 
   addDeletedChatId: (chatId) =>
@@ -169,6 +180,8 @@ interface UIState {
   openProfileModal: (userId: string, config?: { hideMessageButton?: boolean }) => void;
   closeProfileModal: () => void;
   setLoadingProfile: (loading: boolean) => void;
+
+  reset: () => void;
 }
 
 export const useUIStore = create<UIState>()((set) => ({
@@ -193,4 +206,13 @@ export const useUIStore = create<UIState>()((set) => ({
   closeProfileModal: () =>
     set((state) => ({ profileModal: { ...state.profileModal, isOpen: false } })),
   setLoadingProfile: (loading) => set({ isLoadingProfile: loading }),
+  reset: () =>
+    set({
+      globalLoading: false,
+      loadingMessage: null,
+      sidebarOpen: true,
+      isBusy: false,
+      profileModal: { isOpen: false, userId: null, config: {} },
+      isLoadingProfile: false,
+    }),
 }));

@@ -30,7 +30,7 @@ import { ApiError } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useGoogleLogin } from "@react-oauth/google";
 import { AxiosError } from "axios";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -225,7 +225,7 @@ export default function Register() {
                     placeholder="Username"
                     {...field}
                     onChange={(e) => {
-                      const normalized = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "");
+                      const normalized = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "");
                       field.onChange(normalized);
                     }}
                   />

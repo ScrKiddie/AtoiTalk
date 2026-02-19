@@ -10,7 +10,7 @@ import ForgotPassword from "@/pages/forgot-password";
 import InvitePage from "@/pages/invite";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "motion/react";
 import { Suspense, lazy, useEffect, useRef } from "react";
 import {
   Navigate,

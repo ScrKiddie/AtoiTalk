@@ -16,7 +16,7 @@ import { passwordSchema } from "@/lib/validators";
 import { useUIStore } from "@/store";
 import { ApiError, User } from "@/types";
 import { AxiosError } from "axios";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";

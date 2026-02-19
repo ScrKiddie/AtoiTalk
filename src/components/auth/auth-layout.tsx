@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { ReactNode } from "react";
 
 interface AuthLayoutProps {

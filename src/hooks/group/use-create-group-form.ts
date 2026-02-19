@@ -35,6 +35,9 @@ export const useCreateGroupForm = (onClose: (open: boolean) => void) => {
   const groupAvatarInputRef = useRef<HTMLInputElement>(null);
 
   const resetGroupForm = () => {
+    if (groupAvatarPreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(groupAvatarPreview);
+    }
     setGroupName("");
     setGroupDescription("");
     setGroupAvatar(null);
@@ -80,6 +83,9 @@ export const useCreateGroupForm = (onClose: (open: boolean) => void) => {
   };
 
   const handleCropComplete = (blob: Blob) => {
+    if (groupAvatarPreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(groupAvatarPreview);
+    }
     const previewUrl = URL.createObjectURL(blob);
     setGroupAvatar(blob as File);
     setGroupAvatarPreview(previewUrl);
@@ -87,6 +93,9 @@ export const useCreateGroupForm = (onClose: (open: boolean) => void) => {
   };
 
   const handleDeleteGroupAvatar = () => {
+    if (groupAvatarPreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(groupAvatarPreview);
+    }
     setGroupAvatar(null);
     setGroupAvatarPreview(null);
   };
