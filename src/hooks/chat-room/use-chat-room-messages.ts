@@ -217,6 +217,17 @@ export const useChatMessages = ({
     }
   }, [isMessagesError]);
 
+  const [returnStack, setReturnStack] = useState<string[]>([]);
+  const prevChatIdRef = useRef(currentChatId);
+
+  useEffect(() => {
+    if (currentChatId !== prevChatIdRef.current) {
+      prevChatIdRef.current = currentChatId;
+      setReturnStack([]);
+      if (isJumped) returnToLatest();
+    }
+  }, [currentChatId, isJumped, returnToLatest]);
+
   const handleRemoteJump = useCallback(
     async (targetId: string) => {
       setIsRemoteJumping(true);
@@ -241,12 +252,16 @@ export const useChatMessages = ({
   );
 
   const handleJumpToMessage = useCallback(
-    (targetId: string) => {
+    (targetId: string, fromMessageId?: string) => {
+      if (fromMessageId) {
+        setReturnStack((prev) => [...prev, fromMessageId]);
+      }
+
       if (!scrollToMessage(targetId)) {
         handleRemoteJump(targetId);
       }
     },
-    [scrollToMessage, handleRemoteJump]
+    [scrollToMessage, handleRemoteJump, isJumped, items.length]
   );
 
   const handleScrollToBottom = useCallback(() => {
@@ -258,8 +273,17 @@ export const useChatMessages = ({
   }, [isJumped, returnToLatest, items.length]);
 
   const handleReturnJump = useCallback(() => {
-    returnToLatest();
-  }, [returnToLatest]);
+    if (returnStack.length > 0) {
+      const lastSourceId = returnStack[returnStack.length - 1];
+      setReturnStack((prev) => prev.slice(0, -1));
+
+      if (!scrollToMessage(lastSourceId)) {
+        handleRemoteJump(lastSourceId);
+      }
+    } else {
+      returnToLatest();
+    }
+  }, [returnStack, scrollToMessage, handleRemoteJump, returnToLatest]);
 
   return {
     messages,
@@ -291,5 +315,6 @@ export const useChatMessages = ({
     hasNextPage,
     hasPreviousPage,
     isReadyToDisplay,
+    returnStack,
   };
 };

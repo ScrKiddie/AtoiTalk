@@ -46,6 +46,13 @@ export const useVirtuaChat = ({
   const [isReadyToDisplay, setIsReadyToDisplay] = useState(false);
 
   const [shifting, setShifting] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isJumping) {
@@ -247,7 +254,8 @@ export const useVirtuaChat = ({
         lastSuccessfulJump.current = { id: jumpTargetId, timestamp: jumpTimestamp || 0 };
         setInternalHighlightedId(jumpTargetId);
 
-        setTimeout(() => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => {
           setInternalHighlightedId(null);
         }, 1000);
         return true;
@@ -292,7 +300,8 @@ export const useVirtuaChat = ({
       if (index !== -1) {
         virtualizerRef.current.scrollToIndex(index, { align: "center" });
         setInternalHighlightedId(messageId);
-        setTimeout(() => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => {
           setInternalHighlightedId(null);
         }, 1000);
         return true;

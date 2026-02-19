@@ -85,6 +85,7 @@ const ChatRoom = () => {
     handleEditMessage,
     handleFetchNextPage,
     handleFetchPreviousPage,
+    returnStack,
   } = useChatRoom();
 
   return (
@@ -177,7 +178,7 @@ const ChatRoom = () => {
         chat={chat || undefined}
         scrollToBottom={handleScrollToBottom}
         showScrollButton={true}
-        showReturnButton={true}
+        showReturnButton={returnStack.length > 0}
         onReturnJump={handleReturnJump}
         current={currentUser}
         isEditing={isEditing}

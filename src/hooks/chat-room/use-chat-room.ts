@@ -65,6 +65,7 @@ export const useChatRoom = () => {
     handleFetchPreviousPage,
     hasPreviousPage,
     isReadyToDisplay,
+    returnStack,
   } = useChatMessages({
     currentChatId,
     activeChatId,
@@ -260,5 +261,6 @@ export const useChatRoom = () => {
 
     isVirtual,
     isReadyToDisplay,
+    returnStack,
   };
 };

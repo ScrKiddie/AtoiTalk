@@ -27,7 +27,7 @@ export const FloatingChatButtons = ({
           >
             <Button
               size="icon"
-              className="rounded-full bg-background text-foreground border shadow-sm hover:bg-muted transition-all"
+              className="rounded-md bg-background text-foreground border shadow-sm hover:bg-muted transition-all"
               onClick={onReturnJump}
             >
               <SendToBack className="size-5 md:size-4" />
