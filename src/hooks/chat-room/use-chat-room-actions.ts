@@ -12,10 +12,7 @@ interface UseChatActionsProps {
   isVirtual: boolean;
   targetUserId: string | null;
   messages: Message[];
-  returnToLatest: () => void;
   scrollToBottom: () => void;
-  isJumped: boolean;
-  hasPreviousPage: boolean;
 }
 
 export const useChatActions = ({
@@ -23,10 +20,7 @@ export const useChatActions = ({
   isVirtual,
   targetUserId,
   messages,
-  returnToLatest,
   scrollToBottom,
-  isJumped,
-  hasPreviousPage,
 }: UseChatActionsProps) => {
   const navigate = useNavigate();
 
@@ -171,10 +165,6 @@ export const useChatActions = ({
       setReplyTo(null);
       setAttachments([]);
       setAttachmentMode(false);
-
-      if (isJumped && hasPreviousPage) {
-        returnToLatest();
-      }
 
       scrollToBottom();
     };

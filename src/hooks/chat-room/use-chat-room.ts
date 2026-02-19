@@ -63,7 +63,6 @@ export const useChatRoom = () => {
     highlightedMessageId,
     handleFetchNextPage,
     handleFetchPreviousPage,
-    hasPreviousPage,
     isReadyToDisplay,
     returnStack,
   } = useChatMessages({
@@ -113,10 +112,7 @@ export const useChatRoom = () => {
     isVirtual,
     targetUserId,
     messages,
-    returnToLatest: handleScrollToBottom,
     scrollToBottom: handleScrollToBottom,
-    isJumped,
-    hasPreviousPage,
   });
 
   const { mutate: markAsRead } = useMarkAsRead();
