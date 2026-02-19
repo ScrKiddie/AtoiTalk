@@ -1,5 +1,5 @@
 import { useVirtuaChat } from "@/hooks/chat-room/use-virtua-chat";
-import { useMessages } from "@/hooks/queries";
+import { useMessages, useJumpToMessage as useQueryJump } from "@/hooks/queries";
 import { formatMessageDateLabel } from "@/lib/date-utils";
 import { ChatListItem, Message } from "@/types";
 import { AxiosError } from "axios";
@@ -46,8 +46,8 @@ export const useChatMessages = ({
     enabled: !!currentChatId && activeChatId === currentChatId && !!chat,
   });
 
-  const isJumped = false;
-  const jumpTargetId = null;
+  const { jumpToMessage, returnToLatest, isJumped, jumpTargetId, jumpTimestamp } =
+    useQueryJump(currentChatId);
 
   useEffect(() => {
     if (isMessagesError && messagesError) {
@@ -135,7 +135,10 @@ export const useChatMessages = ({
     [displayMessages]
   );
 
-  const setJumpError = () => {};
+  const [jumpError, setJumpError] = useState(false);
+  const [isRemoteJumping, setIsRemoteJumping] = useState(false);
+  const [failedJumpTargetId, setFailedJumpTargetId] = useState<string | null>(null);
+
   const [isErrorNextPage, setIsErrorNextPage] = useState(false);
   const [isErrorPreviousPage, setIsErrorPreviousPage] = useState(false);
 
@@ -163,8 +166,6 @@ export const useChatMessages = ({
     }
   }, [fetchPreviousPage]);
 
-  const isRemoteJumping = false;
-
   const {
     virtualizerRef,
     items,
@@ -173,6 +174,8 @@ export const useChatMessages = ({
     showScrollButton,
     shifting,
     isReadyToDisplay,
+    highlightedMessageId,
+    scrollToMessage,
   } = useVirtuaChat({
     messages,
     hasNextPage,
@@ -184,7 +187,9 @@ export const useChatMessages = ({
     fetchNextPage: handleFetchNextPage,
     fetchPreviousPage: handleFetchPreviousPage,
     currentChatId,
-    isJumping: false,
+    isJumping: isJumped || isRemoteJumping,
+    jumpTargetId,
+    jumpTimestamp,
   });
 
   const [displayedStickyDate, setDisplayedStickyDate] = useState<string | null>(null);
@@ -212,19 +217,49 @@ export const useChatMessages = ({
     }
   }, [isMessagesError]);
 
-  const failedJumpTargetId = null;
+  const handleRemoteJump = useCallback(
+    async (targetId: string) => {
+      setIsRemoteJumping(true);
+      setJumpError(false);
+      setFailedJumpTargetId(null);
 
-  const handleRemoteJump = async () => {};
+      try {
+        const success = await jumpToMessage(targetId);
+        if (!success) {
+          setJumpError(true);
+          setFailedJumpTargetId(targetId);
+        }
+      } catch (error) {
+        console.error("Jump failed:", error);
+        setJumpError(true);
+        setFailedJumpTargetId(targetId);
+      } finally {
+        setIsRemoteJumping(false);
+      }
+    },
+    [jumpToMessage]
+  );
 
-  const highlightedMessageId = null;
+  const handleJumpToMessage = useCallback(
+    (targetId: string) => {
+      if (!scrollToMessage(targetId)) {
+        handleRemoteJump(targetId);
+      }
+    },
+    [scrollToMessage, handleRemoteJump]
+  );
 
-  const returnToMessageId = null;
+  const handleScrollToBottom = useCallback(() => {
+    if (isJumped) {
+      returnToLatest();
+    } else {
+      virtualizerRef.current?.scrollToIndex(items.length - 1, { align: "end" });
+    }
+  }, [isJumped, returnToLatest, items.length]);
 
-  const handleJumpToMessage = () => {};
-
-  const handleScrollToBottom = () => {};
-
-  const handleReturnJump = () => {};
+  const handleReturnJump = useCallback(() => {
+    returnToLatest();
+  }, [returnToLatest]);
 
   return {
     messages,
@@ -239,13 +274,12 @@ export const useChatMessages = ({
     isRefetching,
     refetchMessages: refetch,
     isJumped,
-    jumpError: false,
+    jumpError,
     setJumpError,
     jumpTargetId,
     failedJumpTargetId,
     isRemoteJumping,
-    returnToMessageId,
-    setReturnToMessageId: () => {},
+    returnToMessageId: null,
     handleRemoteJump,
     handleJumpToMessage,
     handleReturnJump,

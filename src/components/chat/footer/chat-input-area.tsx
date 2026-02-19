@@ -105,7 +105,7 @@ export function ChatInputArea({
           }
         }}
         placeholder={isEditing ? "Edit message..." : "Type a message..."}
-        className="min-h-[20px] max-h-[140px] py-2 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 resize-none px-0 shadow-none scrollbar-thin"
+        className="min-h-[20px] max-h-[140px] !px-2 py-2 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 resize-none px-0 shadow-none scrollbar-thin"
         rows={1}
         disabled={disabled}
       />

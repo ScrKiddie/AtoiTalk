@@ -21,6 +21,8 @@ interface UseVirtuaChatProps {
   fetchPreviousPage: () => void;
   currentChatId: string | null;
   isJumping?: boolean;
+  jumpTargetId?: string | null;
+  jumpTimestamp?: number | null;
 }
 
 export const useVirtuaChat = ({
@@ -35,6 +37,8 @@ export const useVirtuaChat = ({
   fetchPreviousPage,
   currentChatId,
   isJumping = false,
+  jumpTargetId,
+  jumpTimestamp,
 }: UseVirtuaChatProps) => {
   const virtualizerRef = useRef<VListHandle>(null);
   const [activeStickyDate, setActiveStickyDate] = useState<string | null>(null);
@@ -44,8 +48,12 @@ export const useVirtuaChat = ({
   const [shifting, setShifting] = useState(false);
 
   useEffect(() => {
-    setShifting(isFetchingNextPage);
-  }, [isFetchingNextPage]);
+    if (!isJumping) {
+      setShifting(isFetchingNextPage);
+    } else {
+      setShifting(false);
+    }
+  }, [isFetchingNextPage, isJumping]);
 
   useEffect(() => {
     setActiveStickyDate(null);
@@ -197,7 +205,8 @@ export const useVirtuaChat = ({
       currentChatId &&
       initialScrollDone.current !== currentChatId &&
       items.length > 0 &&
-      virtualizerRef.current
+      virtualizerRef.current &&
+      !isJumping
     ) {
       virtualizerRef.current.scrollToIndex(items.length - 1, { align: "end" });
       initialScrollDone.current = currentChatId;
@@ -206,8 +215,60 @@ export const useVirtuaChat = ({
           setIsReadyToDisplay(true);
         });
       });
+    } else if (isJumping && items.length > 0) {
+      setIsReadyToDisplay(true);
     }
-  }, [currentChatId, items.length]);
+  }, [currentChatId, items.length, isJumping]);
+
+  const lastSuccessfulJump = useRef<{ id: string; timestamp: number } | null>(null);
+  const [internalHighlightedId, setInternalHighlightedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isJumping || !jumpTargetId || items.length === 0 || !virtualizerRef.current) return;
+
+    if (
+      lastSuccessfulJump.current &&
+      lastSuccessfulJump.current.id === jumpTargetId &&
+      lastSuccessfulJump.current.timestamp === (jumpTimestamp || 0)
+    ) {
+      return;
+    }
+
+    const performJump = () => {
+      const index = items.findIndex((item) => {
+        if (item.type === "message") {
+          return item.message.id === jumpTargetId;
+        }
+        return false;
+      });
+
+      if (index !== -1 && virtualizerRef.current) {
+        virtualizerRef.current.scrollToIndex(index, { align: "center" });
+        lastSuccessfulJump.current = { id: jumpTargetId, timestamp: jumpTimestamp || 0 };
+        setInternalHighlightedId(jumpTargetId);
+
+        setTimeout(() => {
+          setInternalHighlightedId(null);
+        }, 1000);
+        return true;
+      }
+      return false;
+    };
+
+    if (performJump()) return;
+
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    const interval = setInterval(() => {
+      attempts++;
+      if (performJump() || attempts >= maxAttempts) {
+        clearInterval(interval);
+      }
+    }, 50);
+
+    return () => clearInterval(interval);
+  }, [isJumping, jumpTargetId, jumpTimestamp, items]);
 
   return {
     virtualizerRef,
@@ -218,5 +279,25 @@ export const useVirtuaChat = ({
     showScrollButton,
     shifting,
     isReadyToDisplay,
+    highlightedMessageId: internalHighlightedId,
+    scrollToMessage: (messageId: string) => {
+      if (!virtualizerRef.current) return false;
+      const index = items.findIndex((item) => {
+        if (item.type === "message") {
+          return item.message.id === messageId;
+        }
+        return false;
+      });
+
+      if (index !== -1) {
+        virtualizerRef.current.scrollToIndex(index, { align: "center" });
+        setInternalHighlightedId(messageId);
+        setTimeout(() => {
+          setInternalHighlightedId(null);
+        }, 1000);
+        return true;
+      }
+      return false;
+    },
   };
 };

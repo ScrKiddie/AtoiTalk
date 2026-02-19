@@ -38,6 +38,7 @@ const ChatRoom = () => {
     isRefetching,
     refetchMessages,
     isReadyToDisplay,
+    isJumped,
     jumpError,
     jumpTargetId,
     failedJumpTargetId,
@@ -127,10 +128,10 @@ const ChatRoom = () => {
         setMessageToDelete={setMessageToDelete}
         setShowDeleteModal={setShowDeleteModal}
         setAttachments={setAttachments}
-        highlightedMessageId={highlightedMessageId}
+        highlightedMessageId={highlightedMessageId ?? null}
         handleJumpToMessage={handleJumpToMessage}
         messageRefs={messageRefs}
-        activeMessageId={activeMessageId}
+        activeMessageId={activeMessageId ?? null}
         editMessage={editMessage}
         isGlobalBusy={isGlobalBusy}
         partnerProfile={partnerProfile}
@@ -147,6 +148,7 @@ const ChatRoom = () => {
         refetchMessages={refetchMessages}
         handleFetchNextPage={handleFetchNextPage}
         handleFetchPreviousPage={handleFetchPreviousPage}
+        isJumped={isJumped}
       />
 
       <ChatFooter

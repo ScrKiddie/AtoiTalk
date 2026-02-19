@@ -46,6 +46,7 @@ interface ChatMessageListProps {
   refetchMessages: () => void;
   handleFetchNextPage: () => void;
   handleFetchPreviousPage: () => void;
+  isJumped: boolean;
 }
 
 export const ChatMessageList = ({
@@ -83,6 +84,7 @@ export const ChatMessageList = ({
   refetchMessages,
   handleFetchNextPage,
   handleFetchPreviousPage,
+  isJumped,
 }: ChatMessageListProps) => {
   return (
     <div className="flex-1 min-h-0 w-full relative flex flex-col">
@@ -90,6 +92,7 @@ export const ChatMessageList = ({
         <>
           {(isMessagesLoading && items.length === 0) ||
           isRemoteJumping ||
+          (isJumped && isMessagesLoading) ||
           (!isReadyToDisplay && items.length > 0 && !isRefetching) ? (
             <ChatLoading />
           ) : null}
