@@ -5,8 +5,13 @@ import { Spinner } from "@/components/ui/spinner";
 import { AnimatePresence, motion } from "framer-motion";
 import { Control } from "react-hook-form";
 
+interface OtpFormValues {
+  email: string;
+  code: string;
+}
+
 interface OtpInputProps {
-  control: Control<any>;
+  control: Control<OtpFormValues>;
   isSendingOTP: boolean;
   isCaptchaSolving: boolean;
   captchaToken: string | null;
