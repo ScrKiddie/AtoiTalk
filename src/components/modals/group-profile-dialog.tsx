@@ -6,7 +6,7 @@ import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { GlobalLightbox } from "@/components/ui/lightbox";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useGroupMemberActions } from "@/hooks/group-profile/use-group-member-actions";
+import { useGroupMemberActions } from "@/hooks/group/use-group-member-actions";
 import { useDeleteGroup, useLeaveGroup } from "@/hooks/mutations/use-group";
 import { useChat } from "@/hooks/queries";
 import { useAuthStore, useChatStore, useUIStore } from "@/store";

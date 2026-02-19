@@ -1,4 +1,4 @@
-import { useChatWebSocket } from "@/hooks/use-chat-ws";
+import { useChatWebSocket } from "@/hooks/websocket/use-chat-ws";
 import React, { createContext, useContext } from "react";
 
 interface WebSocketContextType {

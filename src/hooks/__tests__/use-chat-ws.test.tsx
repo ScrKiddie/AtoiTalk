@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useChatWebSocket } from "../use-chat-ws";
+import { useChatWebSocket } from "../websocket/use-chat-ws";
 
 const { createMockStore } = vi.hoisted(() => {
   return {

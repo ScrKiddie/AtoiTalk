@@ -20,6 +20,7 @@ interface UseVirtuaChatProps {
   fetchNextPage: () => void;
   fetchPreviousPage: () => void;
   currentChatId: string | null;
+  isJumping?: boolean;
 }
 
 export const useVirtuaChat = ({
@@ -33,6 +34,7 @@ export const useVirtuaChat = ({
   fetchNextPage,
   fetchPreviousPage,
   currentChatId,
+  isJumping = false,
 }: UseVirtuaChatProps) => {
   const virtualizerRef = useRef<VListHandle>(null);
   const [activeStickyDate, setActiveStickyDate] = useState<string | null>(null);
@@ -121,11 +123,11 @@ export const useVirtuaChat = ({
       const atBottom = offset >= ref.scrollSize - ref.viewportSize - 200;
       setShowScrollButton(!atBottom);
 
-      if (wasAtBottomRef.current && !isFetchingNextPage && items.length > 0) {
+      if (wasAtBottomRef.current && !isFetchingNextPage && items.length > 0 && !isJumping) {
         scrollToBottom();
       }
     });
-  }, [items.length, isFetchingNextPage, scrollToBottom]);
+  }, [items.length, isFetchingNextPage, scrollToBottom, isJumping]);
 
   const handleScroll = useCallback(
     (offset: number) => {

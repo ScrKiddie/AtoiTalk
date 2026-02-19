@@ -1,11 +1,11 @@
 import { useAuthStore, useChatStore } from "@/store";
 import { Message } from "@/types";
 import { useCallback, useRef } from "react";
-import { useChatEvents } from "./chat-ws/use-chat-events";
-import { useConnection } from "./chat-ws/use-connection";
-import { useMessageEvents } from "./chat-ws/use-message-events";
-import { useTyping } from "./chat-ws/use-typing";
-import { useUserEvents } from "./chat-ws/use-user-events";
+import { useChatEvents } from "./use-chat-events";
+import { useConnection } from "./use-connection";
+import { useMessageEvents } from "./use-message-events";
+import { useTyping } from "./use-typing";
+import { useUserEvents } from "./use-user-events";
 
 export const useChatWebSocket = (url: string) => {
   const token = useAuthStore((state) => state.token);

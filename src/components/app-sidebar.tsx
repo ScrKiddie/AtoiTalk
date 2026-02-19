@@ -3,8 +3,8 @@ import { NavChat } from "@/components/nav-chat.tsx";
 import { NavFooter } from "@/components/nav-footer.tsx";
 import { NavHeader } from "@/components/nav-header.tsx";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from "@/components/ui/sidebar";
+import { useChatListScroll } from "@/hooks/chat-list/use-chat-list-scroll";
 import { useChats } from "@/hooks/queries";
-import { useChatListScroll } from "@/hooks/use-chat-list-scroll";
 import { useAuthStore, useChatStore, useUIStore } from "@/store";
 import * as React from "react";
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

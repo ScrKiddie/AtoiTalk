@@ -1,6 +1,6 @@
 import AttachmentCard from "@/components/attachment-card";
 import { GlobalLightbox } from "@/components/ui/lightbox";
-import { useRefreshMedia } from "@/hooks/use-refresh-media";
+import { useRefreshMedia } from "@/hooks/mutations/use-refresh-media";
 import { toast } from "@/lib/toast";
 import { Media, Message } from "@/types";
 import React, { useState } from "react";

@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { useChatListScroll } from "@/hooks/use-chat-list-scroll";
+import { useChatListScroll } from "@/hooks/chat-list/use-chat-list-scroll";
 import { Loader2, RefreshCcw } from "lucide-react";
 import { useEffect } from "react";
 

@@ -2,7 +2,7 @@ import { CreateGroupTab } from "@/components/modals/public-group-search/create-g
 import { FindGroupTab } from "@/components/modals/public-group-search/find-group-tab";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useCreateGroupForm } from "@/hooks/public-group-search/use-create-group-form";
+import { useCreateGroupForm } from "@/hooks/group/use-create-group-form";
 import { useEffect, useState } from "react";
 
 interface PublicGroupSearchDialogProps {
