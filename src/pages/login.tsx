@@ -1,6 +1,6 @@
 import Logo from "@/components/logo.tsx";
 import { ModeToggle } from "@/components/mode-toggle.tsx";
-import { useTheme } from "@/components/theme-provider.tsx";
+import { useTheme } from "@/components/providers/theme-provider";
 import { Button } from "@/components/ui/button.tsx";
 import {
   Card,
@@ -29,7 +29,7 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import * as z from "zod";
 
-import { Captcha, CaptchaHandle } from "@/components/captcha";
+import { Captcha, CaptchaHandle } from "@/components/auth/captcha";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/lib/toast";

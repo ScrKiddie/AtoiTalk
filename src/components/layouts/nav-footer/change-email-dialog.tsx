@@ -1,4 +1,4 @@
-import { Captcha, CaptchaHandle } from "@/components/captcha";
+import { Captcha, CaptchaHandle } from "@/components/auth/captcha";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

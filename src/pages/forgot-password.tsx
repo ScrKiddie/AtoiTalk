@@ -1,6 +1,6 @@
 import { AuthLayout } from "@/components/auth/auth-layout";
+import { Captcha, CaptchaHandle } from "@/components/auth/captcha";
 import { OtpInput } from "@/components/auth/otp-input";
-import { Captcha, CaptchaHandle } from "@/components/captcha";
 import { Button } from "@/components/ui/button";
 import {
   Form,

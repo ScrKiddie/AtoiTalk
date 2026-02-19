@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { BrowserRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { NavFooter } from "../nav-footer";
+import { NavFooter } from "../layouts/nav-footer";
 
 const { mockSetGlobalLoading, mockToast } = vi.hoisted(() => {
   return {
@@ -87,7 +87,7 @@ vi.mock("@/hooks/queries", () => ({
   }),
 }));
 
-vi.mock("@/components/captcha", () => ({
+vi.mock("@/components/auth/captcha", () => ({
   Captcha: ({ onVerify }: any) => {
     return (
       <div data-testid="mock-captcha">

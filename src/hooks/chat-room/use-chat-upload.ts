@@ -1,4 +1,4 @@
-import { CaptchaHandle } from "@/components/captcha";
+import { CaptchaHandle } from "@/components/auth/captcha";
 import { toast } from "@/lib/toast";
 import { Media } from "@/types";
 import React, { useRef, useState } from "react";

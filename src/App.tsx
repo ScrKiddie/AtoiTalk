@@ -1,8 +1,8 @@
-import { AppSidebar } from "@/components/app-sidebar.tsx";
+import { AppSidebar } from "@/components/layouts/app-sidebar.tsx";
 import { ModeToggle } from "@/components/mode-toggle.tsx";
-import ProtectedRoute from "@/components/protected-route";
-import PublicRoute from "@/components/public-route";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
+import ProtectedRoute from "@/components/routes/protected-route";
+import PublicRoute from "@/components/routes/public-route";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar.tsx";
 import { WebSocketProvider } from "@/context/websocket-context";
 import ChatRoom from "@/pages/chat-room.tsx";
@@ -41,7 +41,7 @@ const ProtectedAdminRoute = lazy(() => {
   ]);
 
   return Promise.all([
-    import("@/components/protected-admin-route"),
+    import("@/components/routes/protected-admin-route"),
     new Promise((resolve) => setTimeout(resolve, 1500)),
     dataPromise.catch(() => null),
     preloadChunks,

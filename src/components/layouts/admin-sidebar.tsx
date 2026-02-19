@@ -1,6 +1,6 @@
+import { NavFooter } from "@/components/layouts/nav-footer";
 import Logo from "@/components/logo";
-import { NavFooter } from "@/components/nav-footer";
-import { useTheme } from "@/components/theme-provider";
+import { useTheme } from "@/components/providers/theme-provider";
 import {
   Sidebar,
   SidebarContent,

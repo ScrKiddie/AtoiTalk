@@ -1,4 +1,4 @@
-import { Captcha } from "@/components/captcha";
+import { Captcha } from "@/components/auth/captcha";
 import { FloatingChatButtons } from "@/components/chat/floating-chat-buttons";
 import { ChatBlockState } from "@/components/chat/footer/chat-block-state";
 import { ChatFileDropzone } from "@/components/chat/footer/chat-file-dropzone";

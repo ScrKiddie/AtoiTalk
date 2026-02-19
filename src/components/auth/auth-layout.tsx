@@ -1,6 +1,6 @@
 import Logo from "@/components/logo.tsx";
 import { ModeToggle } from "@/components/mode-toggle.tsx";
-import { useTheme } from "@/components/theme-provider.tsx";
+import { useTheme } from "@/components/providers/theme-provider";
 import {
   Card,
   CardContent,

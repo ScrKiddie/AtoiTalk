@@ -1,5 +1,5 @@
-import { AdminSidebar } from "@/components/admin-sidebar";
-import { ModeToggle } from "@/components/mode-toggle";
+import { AdminSidebar } from "@/components/layouts/admin-sidebar";
+import { ModeToggle } from "@/components/mode-toggle.tsx";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";

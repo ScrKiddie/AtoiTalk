@@ -1,7 +1,7 @@
 import { ChatSearchInput } from "@/components/chat-search-input.tsx";
-import { NavChat } from "@/components/nav-chat.tsx";
-import { NavFooter } from "@/components/nav-footer.tsx";
-import { NavHeader } from "@/components/nav-header.tsx";
+import { NavChat } from "@/components/layouts/nav-chat.tsx";
+import { NavFooter } from "@/components/layouts/nav-footer.tsx";
+import { NavHeader } from "@/components/layouts/nav-header.tsx";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from "@/components/ui/sidebar";
 import { useChatListScroll } from "@/hooks/chat-list/use-chat-list-scroll";
 import { useChats } from "@/hooks/queries";

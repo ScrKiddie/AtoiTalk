@@ -36,8 +36,8 @@ import { User } from "@/types";
 import { useState } from "react";
 import { BlockedUsersDialog } from "./nav-footer/blocked-users-dialog";
 import { ChangeEmailDialog } from "./nav-footer/change-email-dialog";
+import { MyProfileDialog } from "./nav-footer/my-profile-dialog";
 import { SecurityDialog } from "./nav-footer/security-dialog";
-import { UserProfileDialog } from "./nav-footer/user-profile-dialog";
 
 export function NavFooter({
   current,
@@ -212,7 +212,7 @@ export function NavFooter({
         </SidebarMenuItem>
       </SidebarMenu>
 
-      <UserProfileDialog
+      <MyProfileDialog
         open={openAccount}
         onOpenChange={setOpenAccount}
         user={activeUser}

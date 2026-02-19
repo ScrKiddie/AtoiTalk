@@ -24,7 +24,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Camera, Eye, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
-import { ImageCropper } from "../image-cropper";
+import { ImageCropper } from "../../image-cropper";
 
 const profileSchema = z.object({
   username: usernameSchema.optional(),
@@ -44,7 +44,7 @@ const errorVariants = {
   exit: { opacity: 0, y: -5, height: 0, marginTop: 0 },
 };
 
-export function UserProfileDialog({
+export function MyProfileDialog({
   open,
   onOpenChange,
   user,
@@ -458,7 +458,7 @@ export function UserProfileDialog({
       <ImageCropper
         image={selectedImage}
         open={cropModalOpen}
-        onOpenChange={(open) => {
+        onOpenChange={(open: boolean) => {
           setCropModalOpen(open);
         }}
         onCropComplete={handleCropComplete}

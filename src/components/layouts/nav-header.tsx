@@ -4,10 +4,11 @@ import { InfiniteList } from "@/components/infinite-list";
 import Logo from "@/components/logo.tsx";
 import { BlockUserDialog } from "@/components/modals/block-user-dialog";
 
-import { useTheme } from "@/components/theme-provider.tsx";
+import { useTheme } from "@/components/providers/theme-provider.tsx";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button.tsx";
 
+import { PublicGroupSearchDialog } from "@/components/modals/public-group-search-dialog";
 import {
   Dialog,
   DialogContent,
@@ -25,7 +26,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Globe, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { PublicGroupSearchDialog } from "./modals/public-group-search-dialog";
 
 import { toast } from "sonner";
 
