@@ -1,4 +1,4 @@
-import { InfiniteUserList } from "@/components/infinite-user-list";
+import { InfiniteList } from "@/components/infinite-list";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -96,9 +96,9 @@ export function GroupDetailContent({
       <div className="flex-1 min-h-0 flex flex-col">
         <h4 className="text-sm font-semibold mb-3 shrink-0">Members</h4>
         <div className="flex-1 min-h-0 border rounded-md">
-          <InfiniteUserList
+          <InfiniteList
             contentClassName="gap-0"
-            users={membersList}
+            items={membersList}
             isLoading={membersLoading}
             isError={membersError}
             hasNextPage={!!hasNextPage}
@@ -106,7 +106,7 @@ export function GroupDetailContent({
             fetchNextPage={fetchNextPage}
             refetch={refetchMembers}
             skeletonCount={3}
-            renderActions={(member) => (
+            renderItem={(member: any) => (
               <div
                 key={member.id}
                 className="flex items-center justify-between p-3 border-b last:border-0 hover:bg-muted/50 transition-colors"

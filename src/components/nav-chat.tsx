@@ -42,7 +42,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ChatPreviewText } from "@/components/chat/chat-preview-text";
 import { BlockUserDialog } from "@/components/modals/block-user-dialog";
 import { ReportDialog } from "@/components/modals/report-dialog";
-import { UnblockUserDialog } from "@/components/modals/unblock-user-dialog";
 import { Button } from "@/components/ui/button";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog.tsx";
 
@@ -452,15 +451,15 @@ export function NavChat({
       )}
 
       <BlockUserDialog
-        open={!!userToBlock}
-        onOpenChange={(open) => !open && setUserToBlock(null)}
-        userId={userToBlock || ""}
-      />
-
-      <UnblockUserDialog
-        open={!!userToUnblock}
-        onOpenChange={(open) => !open && setUserToUnblock(null)}
-        userId={userToUnblock || ""}
+        open={!!userToBlock || !!userToUnblock}
+        onOpenChange={(open) => {
+          if (!open) {
+            setUserToBlock(null);
+            setUserToUnblock(null);
+          }
+        }}
+        userId={userToBlock || userToUnblock || ""}
+        action={userToUnblock ? "unblock" : "block"}
       />
     </>
   );

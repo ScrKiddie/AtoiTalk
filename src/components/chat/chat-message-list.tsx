@@ -39,6 +39,7 @@ interface ChatMessageListProps {
   isMessagesError: boolean;
   jumpError: boolean;
   isRefetching: boolean;
+  isReadyToDisplay: boolean;
   failedJumpTargetId: string | null;
   jumpTargetId: string | null;
   handleRemoteJump: (id: string) => void;
@@ -74,6 +75,8 @@ export const ChatMessageList = ({
   isRemoteJumping,
   isMessagesError,
   jumpError,
+  isRefetching,
+  isReadyToDisplay,
   failedJumpTargetId,
   jumpTargetId,
   handleRemoteJump,
@@ -85,7 +88,11 @@ export const ChatMessageList = ({
     <div className="flex-1 min-h-0 w-full relative flex flex-col">
       {chat ? (
         <>
-          {(isMessagesLoading && items.length === 0) || isRemoteJumping ? <ChatLoading /> : null}
+          {(isMessagesLoading && items.length === 0) ||
+          isRemoteJumping ||
+          (!isReadyToDisplay && items.length > 0 && !isRefetching) ? (
+            <ChatLoading />
+          ) : null}
 
           {((isMessagesError && items.length === 0) || jumpError) && (
             <ChatRetry

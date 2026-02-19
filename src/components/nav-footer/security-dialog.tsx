@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
+import { Spinner } from "@/components/ui/spinner";
 import { useChangePassword, useLogout } from "@/hooks/queries";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -16,7 +17,6 @@ import { useUIStore } from "@/store";
 import { ApiError, User } from "@/types";
 import { AxiosError } from "axios";
 import { AnimatePresence, motion } from "framer-motion";
-import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -305,7 +305,7 @@ export function SecurityDialog({
             <span className={isSecuritySubmitting ? "opacity-0" : ""}>Save Password</span>
             {isSecuritySubmitting && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Spinner className="h-4 w-4" />
               </div>
             )}
           </Button>

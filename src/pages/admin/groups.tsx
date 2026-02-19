@@ -1,4 +1,4 @@
-import { GroupDetailContent } from "@/components/admin/group-detail-content";
+import { AdminGroupDetailDialog } from "@/components/admin/groups/admin-group-detail-dialog";
 import { DissolveGroupDialog } from "@/components/admin/groups/dissolve-group-dialog";
 import { GroupsFilter } from "@/components/admin/groups/groups-filter";
 import { GroupsTable } from "@/components/admin/groups/groups-table";
@@ -9,14 +9,12 @@ import {
   UserResetDialog,
 } from "@/components/admin/user-action-dialogs";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { LoadingModal } from "@/components/ui/loading-modal";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useAdminGroups } from "@/hooks/admin/use-admin-groups";
 import { useGroupActions } from "@/hooks/admin/use-group-actions";
 import { toast } from "@/lib/toast";
 import { adminService } from "@/services/admin.service";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, RotateCcw } from "lucide-react";
 import { useState } from "react";
 
@@ -54,12 +52,6 @@ export default function AdminGroups() {
   const [memberResetOpen, setMemberResetOpen] = useState(false);
   const [memberDetailOpen, setMemberDetailOpen] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
-
-  const { data: groupDetail, isLoading: detailLoading } = useQuery({
-    queryKey: ["admin-group-detail", detailGroupId],
-    queryFn: () => adminService.getGroupDetail(detailGroupId!),
-    enabled: !!detailGroupId && detailOpen,
-  });
 
   const handleViewDetail = async (groupId: string, chatId: string) => {
     setIsLoadingDetail(true);
@@ -148,44 +140,24 @@ export default function AdminGroups() {
         onDissolve={handleDissolveClick}
       />
 
-      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="sm:max-w-lg overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>Group Detail</DialogTitle>
-          </DialogHeader>
-          {detailLoading ? (
-            <div className="space-y-4 py-4">
-              <div className="flex items-center gap-4">
-                <Skeleton className="h-16 w-16 rounded-full" />
-                <div className="space-y-2">
-                  <Skeleton className="h-5 w-32" />
-                  <Skeleton className="h-4 w-48" />
-                </div>
-              </div>
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          ) : groupDetail ? (
-            <GroupDetailContent
-              group={groupDetail}
-              onViewMember={(id) => {
-                setSelectedMemberId(id);
-                setMemberDetailOpen(true);
-              }}
-              onBanMember={(id) => {
-                setSelectedMemberId(id);
-                setMemberBanOpen(true);
-              }}
-              onResetMember={(id) => {
-                setSelectedMemberId(id);
-                setMemberResetOpen(true);
-              }}
-              onUnbanMember={(id) => memberUnbanMutation.mutate(id)}
-            />
-          ) : null}
-        </DialogContent>
-      </Dialog>
+      <AdminGroupDetailDialog
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        groupId={detailGroupId}
+        onViewMember={(id) => {
+          setSelectedMemberId(id);
+          setMemberDetailOpen(true);
+        }}
+        onBanMember={(id) => {
+          setSelectedMemberId(id);
+          setMemberBanOpen(true);
+        }}
+        onResetMember={(id) => {
+          setSelectedMemberId(id);
+          setMemberResetOpen(true);
+        }}
+        onUnbanMember={(id) => memberUnbanMutation.mutate(id)}
+      />
 
       <ResetGroupInfoDialog
         open={resetDialogOpen}

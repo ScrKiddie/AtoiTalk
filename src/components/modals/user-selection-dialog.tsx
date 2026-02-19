@@ -1,4 +1,4 @@
-import { InfiniteUserList } from "@/components/infinite-user-list";
+import { InfiniteList } from "@/components/infinite-list";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -187,8 +187,8 @@ export function UserSelectionDialog({
         </div>
 
         <div className="flex-1 min-h-0 bg-muted/10 -mx-6 px-6">
-          <InfiniteUserList
-            users={users}
+          <InfiniteList
+            items={users}
             isLoading={isSearching}
             isError={!!isError}
             hasNextPage={!!hasNextPage}
@@ -202,7 +202,7 @@ export function UserSelectionDialog({
             skeletonCount={5}
             selectionMode={true}
             resetKey={debouncedSearch}
-            renderActions={(user) => {
+            renderItem={(user: any) => {
               const isSelected = selectedUsers.some((u) => u.id === user.id);
               return (
                 <div

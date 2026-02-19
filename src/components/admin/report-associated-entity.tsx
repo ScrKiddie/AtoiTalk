@@ -1,8 +1,7 @@
-import { GroupDetailContent } from "@/components/admin/group-detail-content";
+import { AdminGroupDetailDialog } from "@/components/admin/groups/admin-group-detail-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getInitials } from "@/lib/avatar-utils";
 import { adminService } from "@/services/admin.service";
@@ -26,27 +25,40 @@ export function ReportAssociatedEntity({
 }) {
   const [groupDetailOpen, setGroupDetailOpen] = useState(false);
 
-  const { data: user, isLoading: userLoading } = useQuery({
+  const {
+    data: user,
+    isLoading: userLoading,
+    isError: isUserError,
+    error: userError,
+  } = useQuery({
     queryKey: ["admin-user-detail", id],
     queryFn: () => adminService.getUser(id),
     enabled: type === "user" && !isDeleted,
     retry: false,
   });
 
-  const { data: group, isLoading: groupLoading } = useQuery({
+  const {
+    data: group,
+    isLoading: groupLoading,
+    isError: isGroupError,
+    error: groupError,
+  } = useQuery({
     queryKey: ["admin-group-detail", id],
     queryFn: () => adminService.getGroupDetail(id),
     enabled: type === "group" && !isDeleted,
     retry: false,
   });
 
-  if (isDeleted) {
+  const isUserNotFound = isUserError && (userError as any)?.response?.status === 404;
+  const isGroupNotFound = isGroupError && (groupError as any)?.response?.status === 404;
+
+  if (isDeleted || isUserNotFound || isGroupNotFound) {
     return (
       <div className="border rounded-md p-4 space-y-2">
         <h4 className="font-semibold text-sm text-muted-foreground">{label}</h4>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-muted-foreground">
-            Deleted {type === "user" ? "Account" : "Group"}
+            {isUserNotFound || (isDeleted && type === "user") ? "Deleted Account" : "Deleted Group"}
           </Badge>
         </div>
       </div>
@@ -55,13 +67,6 @@ export function ReportAssociatedEntity({
 
   if (type === "user") {
     if (userLoading) return <Skeleton className="h-24 w-full" />;
-
-    if (!user)
-      return (
-        <div className="p-4 border rounded text-sm text-muted-foreground">
-          {label}: User not found (might be deleted).
-        </div>
-      );
 
     const isUserBanned = isBanned !== undefined ? isBanned : user.is_banned;
 
@@ -115,12 +120,6 @@ export function ReportAssociatedEntity({
 
   if (type === "group") {
     if (groupLoading) return <Skeleton className="h-24 w-full" />;
-    if (!group)
-      return (
-        <div className="p-4 border rounded text-sm text-muted-foreground">
-          {label}: Group not found.
-        </div>
-      );
 
     return (
       <div className="border rounded-md p-4">
@@ -143,17 +142,15 @@ export function ReportAssociatedEntity({
           </div>
         </div>
 
-        <Dialog open={groupDetailOpen} onOpenChange={setGroupDetailOpen}>
-          <DialogContent className="sm:max-w-lg overflow-hidden">
-            <GroupDetailContent
-              group={group}
-              onViewMember={(uid) => onUserAction(uid, "view")}
-              onBanMember={(uid) => onUserAction(uid, "ban")}
-              onResetMember={(uid) => onUserAction(uid, "reset")}
-              onUnbanMember={(uid) => onUserAction(uid, "unban")}
-            />
-          </DialogContent>
-        </Dialog>
+        <AdminGroupDetailDialog
+          open={groupDetailOpen}
+          onOpenChange={setGroupDetailOpen}
+          groupId={id}
+          onViewMember={(uid: string) => onUserAction(uid, "view")}
+          onBanMember={(uid: string) => onUserAction(uid, "ban")}
+          onResetMember={(uid: string) => onUserAction(uid, "reset")}
+          onUnbanMember={(uid: string) => onUserAction(uid, "unban")}
+        />
       </div>
     );
   }

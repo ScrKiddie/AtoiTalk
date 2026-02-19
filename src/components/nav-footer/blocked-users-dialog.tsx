@@ -1,5 +1,5 @@
-import { InfiniteUserList } from "@/components/infinite-user-list";
-import { UnblockUserDialog } from "@/components/modals/unblock-user-dialog";
+import { InfiniteList } from "@/components/infinite-list";
+import { BlockUserDialog } from "@/components/modals/block-user-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useBlockedUsers } from "@/hooks/queries";
-import { Search, Unlock } from "lucide-react";
+import { Ban, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function BlockedUsersDialog({
@@ -59,7 +59,12 @@ export function BlockedUsersDialog({
           onOpenChange(val);
         }}
       >
-        <DialogContent size="default" className="h-[600px] flex flex-col">
+        <DialogContent
+          size="default"
+          className="h-[600px] flex flex-col"
+          onInteractOutside={(e) => userToUnblock && e.preventDefault()}
+          onEscapeKeyDown={(e) => userToUnblock && e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>Blocked Users</DialogTitle>
             <DialogDescription>Manage users you have blocked.</DialogDescription>
@@ -76,45 +81,48 @@ export function BlockedUsersDialog({
               />
             </div>
             <div className="flex-1 overflow-hidden">
-              <InfiniteUserList
-                users={blockedUsers}
+              <InfiniteList
+                items={blockedUsers}
                 isLoading={isLoadingBlocked}
                 isError={!!isBlockedError}
                 hasNextPage={!!hasNextBlockedPage}
                 isFetchingNextPage={!!isFetchingNextBlockedPage}
                 fetchNextPage={() => fetchNextBlockedPage()}
                 refetch={() => refetchBlocked()}
-                emptyMessage="No blocked users found."
+                emptyMessage={
+                  trimmedBlockedSearch ? "No users found." : "You haven't blocked any users yet."
+                }
                 loadingHeight="h-11"
                 showBorder={false}
-                skeletonButtonCount={1}
                 resetKey={debouncedBlockedSearch}
-                renderActions={(user) => (
+                skeletonButtonCount={1}
+                renderItem={(user: any) => (
                   <div
                     key={user.id}
-                    className="flex items-center justify-between p-2 hover:bg-muted rounded-md transition-colors"
+                    className="flex items-center justify-between p-2 hover:bg-muted rounded-md transition-colors group gap-2 min-w-0 overflow-hidden"
                   >
-                    <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden">
+                    <div className="flex items-center gap-3 flex-1 w-0 overflow-hidden">
                       <Avatar>
                         <AvatarImage src={user.avatar || undefined} />
                         <AvatarFallback>{user.full_name[0]}</AvatarFallback>
                       </Avatar>
-                      <div className="flex flex-col min-w-0 w-full text-left">
+                      <div className="flex flex-col text-left min-w-0 overflow-hidden">
                         <span className="text-sm font-medium truncate">{user.full_name}</span>
                         <span className="text-xs text-muted-foreground truncate">
                           @{user.username}
                         </span>
                       </div>
                     </div>
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      className="size-8 text-muted-foreground hover:text-primary"
-                      onClick={() => setUserToUnblock(user.id)}
-                      title="Unblock User"
-                    >
-                      <Unlock className="size-4" />
-                    </Button>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="size-8 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-200"
+                        onClick={() => setUserToUnblock(user.id)}
+                      >
+                        <Ban className="size-4" />
+                      </Button>
+                    </div>
                   </div>
                 )}
               />
@@ -123,12 +131,13 @@ export function BlockedUsersDialog({
         </DialogContent>
       </Dialog>
 
-      <UnblockUserDialog
+      <BlockUserDialog
         open={!!userToUnblock}
         onOpenChange={(val) => {
           if (!val) setUserToUnblock(null);
         }}
         userId={userToUnblock}
+        action="unblock"
       />
     </>
   );

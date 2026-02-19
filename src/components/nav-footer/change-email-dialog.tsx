@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import { useChangeEmail, useLogout, useSendOTP } from "@/hooks/queries";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -17,7 +18,6 @@ import { useUIStore } from "@/store";
 import { ApiError, User } from "@/types";
 import { AxiosError } from "axios";
 import { AnimatePresence, motion } from "framer-motion";
-import { Loader2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -231,7 +231,7 @@ export function ChangeEmailDialog({
                 <span className={isSendingOTP ? "opacity-0" : ""}>Request OTP</span>
                 {isSendingOTP && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Spinner className="h-4 w-4" />
                   </div>
                 )}
               </Button>
@@ -323,7 +323,7 @@ export function ChangeEmailDialog({
             </span>
             {(isEmailSubmitting || isCaptchaSolving) && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Spinner className="h-4 w-4" />
               </div>
             )}
           </Button>

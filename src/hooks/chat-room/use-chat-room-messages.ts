@@ -1,6 +1,5 @@
-import { useJumpToMessage } from "@/hooks/chat-room/use-jump-to-message";
 import { useVirtuaChat } from "@/hooks/chat-room/use-virtua-chat";
-import { useJumpToMessage as useJumpToMessageState, useMessages } from "@/hooks/queries";
+import { useMessages } from "@/hooks/queries";
 import { formatMessageDateLabel } from "@/lib/date-utils";
 import { ChatListItem, Message } from "@/types";
 import { AxiosError } from "axios";
@@ -47,14 +46,8 @@ export const useChatMessages = ({
     enabled: !!currentChatId && activeChatId === currentChatId && !!chat,
   });
 
-  const {
-    jumpToMessage: jumpToMessageMutation,
-    returnToLatest,
-    clearJumpState,
-    isJumped,
-    jumpTargetId,
-    jumpTimestamp,
-  } = useJumpToMessageState(currentChatId);
+  const isJumped = false;
+  const jumpTargetId = null;
 
   useEffect(() => {
     if (isMessagesError && messagesError) {
@@ -82,13 +75,9 @@ export const useChatMessages = ({
       activeChatId === currentChatId &&
       currentChatId !== initialCheckDoneRef.current
     ) {
-      if (hasPreviousPage) {
-        console.log("[ChatRoom] Force returning to latest messages on entry");
-        returnToLatest();
-      }
       initialCheckDoneRef.current = currentChatId;
     }
-  }, [currentChatId, activeChatId, hasPreviousPage, returnToLatest]);
+  }, [currentChatId, activeChatId]);
 
   useEffect(() => {
     if (isJumped) return;
@@ -128,7 +117,7 @@ export const useChatMessages = ({
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   );
 
-  const groupedMessages = useMemo(
+  useMemo(
     () =>
       displayMessages.reduce(
         (acc, message) => {
@@ -146,30 +135,7 @@ export const useChatMessages = ({
     [displayMessages]
   );
 
-  const [jumpError, setJumpError] = useState(false);
-
-  useEffect(() => {
-    if (
-      jumpTargetId &&
-      !isMessagesLoading &&
-      !isRefetching &&
-      !isMessagesError &&
-      !jumpError &&
-      !jumpError &&
-      groupedMessages.length === 0
-    ) {
-      setJumpError(true);
-    }
-  }, [
-    jumpTargetId,
-    isMessagesLoading,
-    isRefetching,
-    isMessagesError,
-    jumpError,
-    groupedMessages.length,
-    clearJumpState,
-  ]);
-
+  const setJumpError = () => {};
   const [isErrorNextPage, setIsErrorNextPage] = useState(false);
   const [isErrorPreviousPage, setIsErrorPreviousPage] = useState(false);
 
@@ -197,16 +163,16 @@ export const useChatMessages = ({
     }
   }, [fetchPreviousPage]);
 
-  const [isRemoteJumping, setIsRemoteJumping] = useState(false);
+  const isRemoteJumping = false;
 
   const {
     virtualizerRef,
     items,
-    scrollToBottom,
     activeStickyDate,
     handleScroll,
     showScrollButton,
     shifting,
+    isReadyToDisplay,
   } = useVirtuaChat({
     messages,
     hasNextPage,
@@ -218,7 +184,7 @@ export const useChatMessages = ({
     fetchNextPage: handleFetchNextPage,
     fetchPreviousPage: handleFetchPreviousPage,
     currentChatId,
-    isJumping: isJumped || isRemoteJumping,
+    isJumping: false,
   });
 
   const [displayedStickyDate, setDisplayedStickyDate] = useState<string | null>(null);
@@ -246,130 +212,19 @@ export const useChatMessages = ({
     }
   }, [isMessagesError]);
 
-  const [failedJumpTargetId, setFailedJumpTargetId] = useState<string | null>(null);
+  const failedJumpTargetId = null;
 
-  useEffect(() => {
-    if (isJumped && !hasPreviousPage && !isFetchingPreviousPage && !isMessagesLoading) {
-      if (!showScrollButton) {
-        clearJumpState();
-      }
-    }
-  }, [
-    isJumped,
-    hasPreviousPage,
-    isFetchingPreviousPage,
-    isMessagesLoading,
-    clearJumpState,
-    showScrollButton,
-  ]);
+  const handleRemoteJump = async () => {};
 
-  const handleRemoteJump = useCallback(
-    async (targetId: string) => {
-      setJumpError(false);
-      setFailedJumpTargetId(null);
-      setIsRemoteJumping(true);
+  const highlightedMessageId = null;
 
-      const success = await jumpToMessageMutation(targetId);
+  const returnToMessageId = null;
 
-      if (!success) {
-        setIsRemoteJumping(false);
-        setJumpError(true);
-        setFailedJumpTargetId(targetId);
-      }
-    },
-    [jumpToMessageMutation]
-  );
+  const handleJumpToMessage = () => {};
 
-  const { jumpToMessage: internalJumpToMessage, highlightedMessageId } = useJumpToMessage({
-    onRemoteJump: handleRemoteJump,
-    virtualizerRef,
-    items,
-  });
-  const [returnToMessageId, setReturnToMessageId] = useState<string | null>(null);
+  const handleScrollToBottom = () => {};
 
-  const handleJumpToMessage = useCallback(
-    (targetId: string, fromMessageId?: string) => {
-      if (fromMessageId) {
-        setReturnToMessageId(fromMessageId);
-      }
-      requestAnimationFrame(() => {
-        internalJumpToMessage(targetId);
-      });
-    },
-    [internalJumpToMessage]
-  );
-
-  const handleScrollToBottom = useCallback(() => {
-    console.log(
-      "[ChatRoom] handleScrollToBottom called. isJumped:",
-      isJumped,
-      "hasPreviousPage:",
-      hasPreviousPage
-    );
-    setJumpError(false);
-    setFailedJumpTargetId(null);
-
-    if (isJumped && !hasPreviousPage) {
-      scrollToBottom();
-    } else if (isJumped || hasPreviousPage) {
-      returnToLatest();
-    } else {
-      scrollToBottom();
-    }
-  }, [isJumped, hasPreviousPage, returnToLatest, scrollToBottom]);
-
-  const lastProcessedJumpTimestampRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (!jumpTargetId || !jumpTimestamp || isMessagesLoading) return;
-
-    if (lastProcessedJumpTimestampRef.current === jumpTimestamp) return;
-
-    const targetIndex = items.findIndex(
-      (item) => item.type === "message" && item.message.id === jumpTargetId
-    );
-
-    if (targetIndex !== -1 && virtualizerRef.current) {
-      lastProcessedJumpTimestampRef.current = jumpTimestamp;
-
-      const isNearBottom = items.length - 1 - targetIndex < 5;
-      const align = isNearBottom ? "end" : "center";
-
-      virtualizerRef.current.scrollToIndex(targetIndex, { align });
-
-      setTimeout(() => {
-        setIsRemoteJumping(false);
-
-        internalJumpToMessage(jumpTargetId);
-      }, 500);
-    } else {
-      if (!isMessagesLoading && jumpTargetId) {
-        console.warn("[Jump] Target fetched but not found in items. Resetting jump state.");
-        setIsRemoteJumping(false);
-        lastProcessedJumpTimestampRef.current = jumpTimestamp;
-      }
-    }
-  }, [
-    jumpTargetId,
-    jumpTimestamp,
-    isMessagesLoading,
-    internalJumpToMessage,
-    items,
-    virtualizerRef,
-  ]);
-  useEffect(() => {
-    setReturnToMessageId(null);
-    clearJumpState();
-    setJumpError(false);
-    setFailedJumpTargetId(null);
-  }, [currentChatId, clearJumpState]);
-
-  const handleReturnJump = useCallback(() => {
-    if (returnToMessageId) {
-      handleJumpToMessage(returnToMessageId);
-      setReturnToMessageId(null);
-    }
-  }, [returnToMessageId, handleJumpToMessage]);
+  const handleReturnJump = () => {};
 
   return {
     messages,
@@ -384,13 +239,13 @@ export const useChatMessages = ({
     isRefetching,
     refetchMessages: refetch,
     isJumped,
-    jumpError,
+    jumpError: false,
     setJumpError,
     jumpTargetId,
     failedJumpTargetId,
     isRemoteJumping,
     returnToMessageId,
-    setReturnToMessageId,
+    setReturnToMessageId: () => {},
     handleRemoteJump,
     handleJumpToMessage,
     handleReturnJump,
@@ -401,5 +256,6 @@ export const useChatMessages = ({
     handleFetchPreviousPage,
     hasNextPage,
     hasPreviousPage,
+    isReadyToDisplay,
   };
 };

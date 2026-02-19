@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GlobalLightbox } from "@/components/ui/lightbox";
+import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { useUpdateProfile } from "@/hooks/queries";
 import { getInitials } from "@/lib/avatar-utils";
@@ -20,7 +21,7 @@ import { bioSchema, nameSchema, usernameSchema } from "@/lib/validators";
 import { ApiError, User } from "@/types";
 import { AxiosError } from "axios";
 import { AnimatePresence, motion } from "framer-motion";
-import { Camera, Eye, Loader2, Trash2 } from "lucide-react";
+import { Camera, Eye, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { ImageCropper } from "../image-cropper";
@@ -216,9 +217,11 @@ export function UserProfileDialog({
       <Dialog open={open} onOpenChange={(val) => !isUpdatingProfile && onOpenChange(val)}>
         <DialogContent
           size="default"
-          onInteractOutside={(e) => (isLightboxOpen || isUpdatingProfile) && e.preventDefault()}
+          onInteractOutside={(e) =>
+            (isLightboxOpen || isUpdatingProfile || cropModalOpen) && e.preventDefault()
+          }
           onEscapeKeyDown={(e) => {
-            if (isUpdatingProfile) {
+            if (isUpdatingProfile || cropModalOpen) {
               e.preventDefault();
             }
           }}
@@ -444,7 +447,7 @@ export function UserProfileDialog({
               <span className={isProfileSubmitting ? "opacity-0" : ""}>Save Changes</span>
               {isProfileSubmitting && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Spinner className="h-4 w-4" />
                 </div>
               )}
             </Button>

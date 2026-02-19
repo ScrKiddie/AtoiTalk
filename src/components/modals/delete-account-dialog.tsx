@@ -10,11 +10,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
+import { Spinner } from "@/components/ui/spinner";
 import { useDeleteAccount } from "@/hooks/queries";
 import { toast } from "@/lib/toast";
 import { ApiError } from "@/types";
 import { AxiosError } from "axios";
-import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface DeleteAccountDialogProps {
@@ -134,7 +134,7 @@ export function DeleteAccountDialog({
             <span className={isPending ? "opacity-0" : ""}>Delete Account</span>
             {isPending && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Spinner className="h-4 w-4" />
               </div>
             )}
           </Button>

@@ -39,6 +39,7 @@ export const useVirtuaChat = ({
   const virtualizerRef = useRef<VListHandle>(null);
   const [activeStickyDate, setActiveStickyDate] = useState<string | null>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [isReadyToDisplay, setIsReadyToDisplay] = useState(false);
 
   const [shifting, setShifting] = useState(false);
 
@@ -48,6 +49,7 @@ export const useVirtuaChat = ({
 
   useEffect(() => {
     setActiveStickyDate(null);
+    setIsReadyToDisplay(false);
   }, [currentChatId]);
 
   const sortedMessages = useMemo(
@@ -199,6 +201,11 @@ export const useVirtuaChat = ({
     ) {
       virtualizerRef.current.scrollToIndex(items.length - 1, { align: "end" });
       initialScrollDone.current = currentChatId;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setIsReadyToDisplay(true);
+        });
+      });
     }
   }, [currentChatId, items.length]);
 
@@ -210,5 +217,6 @@ export const useVirtuaChat = ({
     activeStickyDate,
     showScrollButton,
     shifting,
+    isReadyToDisplay,
   };
 };

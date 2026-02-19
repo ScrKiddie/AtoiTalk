@@ -48,7 +48,7 @@ export function ReportActionDialogs({
 }: ReportActionDialogsProps) {
   return (
     <>
-      <Dialog open={resolveOpen} onOpenChange={onResolveOpenChange}>
+      <Dialog open={resolveOpen} onOpenChange={(val) => !isPending && onResolveOpenChange(val)}>
         <DialogContent
           onInteractOutside={(e) => isPending && e.preventDefault()}
           onEscapeKeyDown={(e) => isPending && e.preventDefault()}
@@ -97,7 +97,7 @@ export function ReportActionDialogs({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={rejectOpen} onOpenChange={onRejectOpenChange}>
+      <Dialog open={rejectOpen} onOpenChange={(val) => !isPending && onRejectOpenChange(val)}>
         <DialogContent
           onInteractOutside={(e) => isPending && e.preventDefault()}
           onEscapeKeyDown={(e) => isPending && e.preventDefault()}

@@ -12,11 +12,10 @@ interface DeleteMessageDialogProps {
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
   setReplyTo: (replyTo: Message | null) => void;
   onConfirmDelete: () => void;
-  setMessageToDelete: (id: string | null) => void;
   isLoading?: boolean;
 }
 
-const DeleteMessageDialog = ({
+export function DeleteMessageDialog({
   showDeleteModal,
   setShowDeleteModal,
   messageToDelete,
@@ -27,9 +26,8 @@ const DeleteMessageDialog = ({
   textareaRef,
   setReplyTo,
   onConfirmDelete,
-
   isLoading = false,
-}: DeleteMessageDialogProps) => {
+}: DeleteMessageDialogProps) {
   const handleDelete = () => {
     if (messageToDelete !== null) {
       if (messageToDelete === editMessage?.id) {
@@ -47,9 +45,8 @@ const DeleteMessageDialog = ({
           textareaRef.current.focus();
         }
       }
-
-      onConfirmDelete();
     }
+    onConfirmDelete();
   };
 
   return (
@@ -57,12 +54,11 @@ const DeleteMessageDialog = ({
       open={showDeleteModal}
       onOpenChange={setShowDeleteModal}
       title="Delete Message"
-      description="Are you sure you want to delete this message? This will delete it for everyone in this chat."
+      description="Are you sure you want to delete this message? This action cannot be undone."
       confirmText="Delete"
+      variant="destructive"
       onConfirm={handleDelete}
       isLoading={isLoading}
     />
   );
-};
-
-export default DeleteMessageDialog;
+}

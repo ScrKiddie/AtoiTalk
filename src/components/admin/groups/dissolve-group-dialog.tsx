@@ -1,13 +1,4 @@
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Loader2 } from "lucide-react";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
 interface DissolveGroupDialogProps {
   open: boolean;
@@ -25,25 +16,16 @@ export function DissolveGroupDialog({
   isPending,
 }: DissolveGroupDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Dissolve Group</DialogTitle>
-          <DialogDescription>
-            Are you sure you want to dissolve <strong>{groupName}</strong>? This action cannot be
-            undone and all members will be removed.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button variant="destructive" onClick={onConfirm} disabled={isPending}>
-            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Dissolve Group
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ConfirmationDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Dissolve Group"
+      description={`Are you sure you want to dissolve "${groupName}"? This action cannot be undone and all members will be removed.`}
+      confirmText="Dissolve Group"
+      cancelText="Cancel"
+      variant="destructive"
+      onConfirm={onConfirm}
+      isLoading={isPending}
+    />
   );
 }

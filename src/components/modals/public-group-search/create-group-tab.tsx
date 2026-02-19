@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import { TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,7 +21,7 @@ import { useCreateGroupForm } from "@/hooks/group/use-create-group-form";
 import { cn } from "@/lib/utils";
 import { User } from "@/types";
 import { AnimatePresence, motion } from "framer-motion";
-import { Camera, Loader2, Plus, Trash2, Users, X } from "lucide-react";
+import { Camera, Plus, Trash2, Users, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 interface CreateGroupTabProps {
@@ -274,7 +275,7 @@ export const CreateGroupTab = ({ activeTab, form }: CreateGroupTabProps) => {
             <span className={isCreatingGroup ? "opacity-0" : ""}>Create Group</span>
             {isCreatingGroup && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Spinner className="h-4 w-4" />
               </div>
             )}
           </Button>

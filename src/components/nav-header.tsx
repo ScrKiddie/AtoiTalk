@@ -1,6 +1,6 @@
 import { MailPlus, MessageSquare, Search } from "lucide-react";
 
-import { InfiniteUserList } from "@/components/infinite-user-list";
+import { InfiniteList } from "@/components/infinite-list";
 import Logo from "@/components/logo.tsx";
 import { BlockUserDialog } from "@/components/modals/block-user-dialog";
 
@@ -160,8 +160,8 @@ export function NavHeader() {
                     />
                   </div>
                   <div className="flex-1 min-h-0 -mr-6 pr-6">
-                    <InfiniteUserList
-                      users={users}
+                    <InfiniteList
+                      items={users}
                       isLoading={isSearching}
                       isError={!!isError}
                       hasNextPage={!!hasNextPage}
@@ -173,7 +173,7 @@ export function NavHeader() {
                       showBorder={false}
                       resetKey={debouncedSearch}
                       skeletonButtonCount={1}
-                      renderActions={(user) => (
+                      renderItem={(user: any) => (
                         <div
                           key={user.id}
                           className="flex items-center justify-between p-2 hover:bg-muted rounded-md transition-colors group gap-2 min-w-0 overflow-hidden"

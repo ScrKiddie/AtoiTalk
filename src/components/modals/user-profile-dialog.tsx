@@ -1,17 +1,17 @@
 import { BlockUserDialog } from "@/components/modals/block-user-dialog";
 import { ReportDialog } from "@/components/modals/report-dialog";
-import { UnblockUserDialog } from "@/components/modals/unblock-user-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { GlobalLightbox } from "@/components/ui/lightbox";
 import { LoadingModal } from "@/components/ui/loading-modal";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Spinner } from "@/components/ui/spinner";
 import { useCreatePrivateChat, useUserById } from "@/hooks/queries";
 import { toast } from "@/lib/toast";
 import { formatLastSeen } from "@/lib/utils";
 import { useAuthStore, useUIStore } from "@/store";
-import { Ban, Copy, Flag, Loader2, MessageCircle } from "lucide-react";
+import { Ban, Copy, Flag, MessageCircle } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -151,7 +151,7 @@ export function UserProfileDialog() {
                       }
                     >
                       {isCreatingChat ? (
-                        <Loader2 className="size-5 animate-spin" />
+                        <Spinner className="size-5" />
                       ) : (
                         <MessageCircle className="size-5" />
                       )}
@@ -258,25 +258,15 @@ export function UserProfileDialog() {
             targetName={user.full_name}
           />
 
-          {user.is_blocked_by_me ? (
-            <UnblockUserDialog
-              userId={user.id}
-              open={isBlockConfirmOpen}
-              onOpenChange={setIsBlockConfirmOpen}
-              className="z-[76]"
-              overlayClassName="z-[75]"
-              modal={true}
-            />
-          ) : (
-            <BlockUserDialog
-              userId={user.id}
-              open={isBlockConfirmOpen}
-              onOpenChange={setIsBlockConfirmOpen}
-              className="z-[76]"
-              overlayClassName="z-[75]"
-              modal={true}
-            />
-          )}
+          <BlockUserDialog
+            userId={user.id}
+            open={isBlockConfirmOpen}
+            onOpenChange={setIsBlockConfirmOpen}
+            action={user.is_blocked_by_me ? "unblock" : "block"}
+            className="z-[76]"
+            overlayClassName="z-[75]"
+            modal={true}
+          />
         </>
       )}
     </>

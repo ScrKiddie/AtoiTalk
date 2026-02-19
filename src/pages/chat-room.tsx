@@ -2,7 +2,7 @@ import ChatFooter from "@/components/chat/chat-footer";
 import { ChatMessageList } from "@/components/chat/chat-message-list";
 import { ChatRoomHeader } from "@/components/chat/chat-room-header";
 import { SystemMessageBadge } from "@/components/chat/system-message";
-import DeleteMessageDialog from "@/components/modals/delete-message-dialog.tsx";
+import { DeleteMessageDialog } from "@/components/modals/delete-message-dialog.tsx";
 import { SidebarInset } from "@/components/ui/sidebar.tsx";
 import { useChatRoom } from "@/hooks/chat-room/use-chat-room";
 import { RefObject } from "react";
@@ -37,18 +37,15 @@ const ChatRoom = () => {
     isMessagesError,
     isRefetching,
     refetchMessages,
-
-    isJumped,
+    isReadyToDisplay,
     jumpError,
     jumpTargetId,
     failedJumpTargetId,
     isRemoteJumping,
-    returnToMessageId,
     handleRemoteJump,
     handleJumpToMessage,
     handleReturnJump,
     handleScrollToBottom,
-    showScrollButton,
 
     messageRefs,
     highlightedMessageId,
@@ -143,6 +140,7 @@ const ChatRoom = () => {
         isMessagesError={isMessagesError}
         jumpError={jumpError}
         isRefetching={isRefetching}
+        isReadyToDisplay={isReadyToDisplay}
         failedJumpTargetId={failedJumpTargetId}
         jumpTargetId={jumpTargetId}
         handleRemoteJump={handleRemoteJump}
@@ -176,18 +174,8 @@ const ChatRoom = () => {
         partnerProfile={partnerProfile}
         chat={chat || undefined}
         scrollToBottom={handleScrollToBottom}
-        showScrollButton={
-          (showScrollButton || isJumped) &&
-          !((isMessagesLoading || isRefetching || isRemoteJumping) && items.length === 0) &&
-          !((isMessagesError || jumpError) && items.length === 0) &&
-          !isRemoteJumping
-        }
-        showReturnButton={
-          !!returnToMessageId &&
-          !((isMessagesLoading || isRefetching || isRemoteJumping) && items.length === 0) &&
-          !((isMessagesError || jumpError) && items.length === 0) &&
-          !isRemoteJumping
-        }
+        showScrollButton={true}
+        showReturnButton={true}
         onReturnJump={handleReturnJump}
         current={currentUser}
         isEditing={isEditing}
@@ -204,7 +192,6 @@ const ChatRoom = () => {
         textareaRef={textareaRef}
         setReplyTo={setReplyTo}
         onConfirmDelete={() => messageToDelete && handleDeleteMessage(messageToDelete)}
-        setMessageToDelete={setMessageToDelete}
         isLoading={isDeleteSubmitting}
       />
     </SidebarInset>

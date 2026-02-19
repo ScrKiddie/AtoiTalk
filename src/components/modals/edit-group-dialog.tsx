@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useUpdateGroup } from "@/hooks/mutations/use-group";
@@ -20,7 +21,7 @@ import { cn } from "@/lib/utils";
 import { groupDescriptionSchema, groupNameSchema } from "@/lib/validators";
 import { ChatListItem } from "@/types";
 import { AnimatePresence, motion } from "framer-motion";
-import { Camera, Loader2, Trash2, Users } from "lucide-react";
+import { Camera, Trash2, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
@@ -187,8 +188,8 @@ export function EditGroupDialog({ isOpen, onClose, chat }: EditGroupDialogProps)
       <Dialog open={isOpen} onOpenChange={(val) => !isUpdating && onClose(val)}>
         <DialogContent
           size="default"
-          onInteractOutside={(e) => cropModalOpen && e.preventDefault()}
-          onEscapeKeyDown={(e) => cropModalOpen && e.preventDefault()}
+          onInteractOutside={(e) => (cropModalOpen || isUpdating) && e.preventDefault()}
+          onEscapeKeyDown={(e) => (cropModalOpen || isUpdating) && e.preventDefault()}
         >
           <DialogHeader>
             <DialogTitle>Edit Group</DialogTitle>
@@ -323,7 +324,7 @@ export function EditGroupDialog({ isOpen, onClose, chat }: EditGroupDialogProps)
               <span className={isUpdating ? "opacity-0" : ""}>Save Changes</span>
               {isUpdating && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Spinner className="h-4 w-4" />
                 </div>
               )}
             </Button>

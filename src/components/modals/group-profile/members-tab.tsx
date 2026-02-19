@@ -1,4 +1,4 @@
-import { InfiniteUserList } from "@/components/infinite-user-list";
+import { InfiniteList } from "@/components/infinite-list";
 import { MemberItem } from "@/components/modals/group-profile/member-item";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -94,8 +94,8 @@ export const MembersTab = ({
       </div>
 
       <div className="flex-1 min-h-0 -mr-4 pr-3">
-        <InfiniteUserList
-          users={membersList}
+        <InfiniteList
+          items={membersList}
           isLoading={isLoadingMembers}
           isError={isMembersError}
           hasNextPage={!!hasNextPage}
@@ -103,7 +103,7 @@ export const MembersTab = ({
           fetchNextPage={fetchNextPage}
           refetch={refetchMembers}
           skeletonButtonCount={2}
-          renderActions={(member) => (
+          renderItem={(member: any) => (
             <MemberItem
               key={member.id}
               member={member}

@@ -1,4 +1,4 @@
-import { InfiniteGroupList } from "@/components/infinite-group-list";
+import { InfiniteList } from "@/components/infinite-list";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,9 +95,9 @@ export const FindGroupTab = ({
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 bg-muted/10 -mx-6 px-6 mt-4">
-        <InfiniteGroupList
-          groups={groups}
+      <div className="flex-1 min-h-0 -mx-6 px-6 mt-4">
+        <InfiniteList<PublicGroupDTO>
+          items={groups}
           isLoading={isSearching}
           isError={!!isError}
           hasNextPage={!!hasNextPage}
@@ -110,45 +110,45 @@ export const FindGroupTab = ({
           skeletonButtonCount={1}
           skeletonCount={5}
           resetKey={debouncedSearch}
-          renderActions={(group) => {
+          renderItem={(group) => {
             const isCurrentJoining = joiningGroupId === group.id;
 
             return (
               <div
                 key={group.id}
-                className="flex items-center justify-between p-2 hover:bg-muted rounded-md transition-colors gap-2"
+                className="flex items-center justify-between p-2 hover:bg-muted rounded-md transition-colors group gap-2 min-w-0 overflow-hidden"
               >
-                <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden">
+                <div className="flex items-center gap-3 flex-1 w-0 overflow-hidden">
                   <Avatar>
                     <AvatarImage src={group.avatar || undefined} />
                     <AvatarFallback>
                       <Globe className="size-4" />
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex flex-col min-w-0 w-full text-left">
+                  <div className="flex flex-col text-left min-w-0 overflow-hidden">
                     <span className="text-sm font-medium truncate">{group.name}</span>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="truncate max-w-[120px]">
-                        {group.description || "No description"}
-                      </span>
-                    </div>
+                    <span className="text-xs text-muted-foreground truncate">
+                      {group.description || "No description"}
+                    </span>
                   </div>
                 </div>
-                <Button
-                  size="icon"
-                  variant={group.is_member ? "ghost" : "default"}
-                  className="size-8"
-                  onClick={() => handleJoin(group)}
-                  disabled={isCurrentJoining || (isJoining && !!joiningGroupId)}
-                >
-                  {isCurrentJoining ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : group.is_member ? (
-                    <Check className="size-4 text-primary" />
-                  ) : (
-                    <LogIn className="size-4" />
-                  )}
-                </Button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="size-8 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-200"
+                    onClick={() => handleJoin(group)}
+                    disabled={isCurrentJoining || (isJoining && !!joiningGroupId)}
+                  >
+                    {isCurrentJoining ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : group.is_member ? (
+                      <Check className="size-4" />
+                    ) : (
+                      <LogIn className="size-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
             );
           }}
