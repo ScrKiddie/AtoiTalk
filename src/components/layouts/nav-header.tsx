@@ -173,7 +173,7 @@ export function NavHeader() {
                       showBorder={false}
                       resetKey={debouncedSearch}
                       skeletonButtonCount={1}
-                      renderItem={(user: any) => (
+                      renderItem={(user: User) => (
                         <div
                           key={user.id}
                           className="flex items-center justify-between p-2 hover:bg-muted rounded-md transition-colors group gap-2 min-w-0 overflow-hidden"

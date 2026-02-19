@@ -202,7 +202,7 @@ export function UserSelectionDialog({
             skeletonCount={5}
             selectionMode={true}
             resetKey={debouncedSearch}
-            renderItem={(user: any) => {
+            renderItem={(user: User) => {
               const isSelected = selectedUsers.some((u) => u.id === user.id);
               return (
                 <div

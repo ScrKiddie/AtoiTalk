@@ -106,7 +106,7 @@ export function GroupDetailContent({
             fetchNextPage={fetchNextPage}
             refetch={refetchMembers}
             skeletonCount={3}
-            renderItem={(member: any) => (
+            renderItem={(member: GroupMemberDTO) => (
               <div
                 key={member.id}
                 className="flex items-center justify-between p-3 border-b last:border-0 hover:bg-muted/50 transition-colors"

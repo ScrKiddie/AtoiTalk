@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useBlockedUsers } from "@/hooks/queries";
+import { User } from "@/types";
 import { Ban, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -96,7 +97,7 @@ export function BlockedUsersDialog({
                 showBorder={false}
                 resetKey={debouncedBlockedSearch}
                 skeletonButtonCount={1}
-                renderItem={(user: any) => (
+                renderItem={(user: User) => (
                   <div
                     key={user.id}
                     className="flex items-center justify-between p-2 hover:bg-muted rounded-md transition-colors group gap-2 min-w-0 overflow-hidden"

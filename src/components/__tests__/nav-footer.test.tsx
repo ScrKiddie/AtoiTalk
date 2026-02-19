@@ -1,6 +1,6 @@
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { BrowserRouter } from "react-router-dom";
@@ -177,11 +177,10 @@ describe("NavFooter Component", () => {
     await waitFor(() => expect(screen.getByText("Account Settings")).toBeInTheDocument());
 
     const nameInput = screen.getByDisplayValue("Test User");
-    await user.tripleClick(nameInput);
-    await user.keyboard("Updated Name");
+    fireEvent.change(nameInput, { target: { value: "Updated Name" } });
 
     const saveButton = screen.getByRole("button", { name: "Save Changes" });
-    await user.click(saveButton);
+    fireEvent.click(saveButton);
 
     await waitFor(() => {
       expect(mockUpdateProfile).toHaveBeenCalled();

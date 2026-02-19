@@ -103,7 +103,7 @@ export const MembersTab = ({
           fetchNextPage={fetchNextPage}
           refetch={refetchMembers}
           skeletonButtonCount={2}
-          renderItem={(member: any) => (
+          renderItem={(member: GroupMember) => (
             <MemberItem
               key={member.id}
               member={member}

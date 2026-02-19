@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getInitials } from "@/lib/avatar-utils";
 import { adminService } from "@/services/admin.service";
 import { useQuery } from "@tanstack/react-query";
+import { isAxiosError } from "axios";
 import { useState } from "react";
 
 export function ReportAssociatedEntity({
@@ -49,8 +50,10 @@ export function ReportAssociatedEntity({
     retry: false,
   });
 
-  const isUserNotFound = isUserError && (userError as any)?.response?.status === 404;
-  const isGroupNotFound = isGroupError && (groupError as any)?.response?.status === 404;
+  const isUserNotFound =
+    isUserError && isAxiosError(userError) && userError.response?.status === 404;
+  const isGroupNotFound =
+    isGroupError && isAxiosError(groupError) && groupError.response?.status === 404;
 
   if (isDeleted || isUserNotFound || isGroupNotFound) {
     return (
