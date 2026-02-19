@@ -25,6 +25,7 @@ export function ChatSearchInput({ onSearch, initialValue }: ChatSearchInputProps
           className="pl-9 h-9 bg-sidebar-accent/50 border-sidebar-border"
           value={value}
           onChange={handleChange}
+          maxLength={100}
         />
       </div>
     </div>

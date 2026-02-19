@@ -108,6 +108,7 @@ export function ChatInputArea({
         className="min-h-[20px] max-h-[140px] !px-2 !py-2 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 resize-none px-0 shadow-none scrollbar-thin"
         rows={1}
         disabled={disabled}
+        maxLength={4000}
       />
 
       <Button

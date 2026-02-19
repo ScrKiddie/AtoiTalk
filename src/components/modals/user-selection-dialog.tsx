@@ -152,6 +152,7 @@ export function UserSelectionDialog({
               onChange={(e) => setSearch(e.target.value)}
               autoFocus
               disabled={isSubmitting}
+              maxLength={100}
             />
           </div>
 

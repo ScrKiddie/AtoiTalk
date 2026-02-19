@@ -79,6 +79,7 @@ export function BlockedUsersDialog({
                 value={blockedSearch}
                 onChange={(e) => setBlockedSearch(e.target.value)}
                 disabled={!isLoadingBlocked && blockedUsers.length === 0 && !blockedSearch}
+                maxLength={100}
               />
             </div>
             <div className="flex-1 overflow-hidden">

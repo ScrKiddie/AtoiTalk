@@ -147,6 +147,7 @@ export default function AdminUsers() {
             value={search}
             onChange={(e) => handleSearch(e.target.value)}
             className="pl-9"
+            maxLength={100}
           />
         </div>
         <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v)}>

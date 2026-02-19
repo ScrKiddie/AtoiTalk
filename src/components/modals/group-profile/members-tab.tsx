@@ -83,6 +83,7 @@ export const MembersTab = ({
               className="pl-8"
               value={memberSearch}
               onChange={(e) => setMemberSearch(e.target.value)}
+              maxLength={100}
             />
           </div>
           {(chat.my_role === "owner" || chat.my_role === "admin") && (

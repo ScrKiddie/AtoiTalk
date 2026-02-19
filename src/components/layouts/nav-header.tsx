@@ -157,6 +157,7 @@ export function NavHeader() {
                       onChange={(e) => setSearch(e.target.value)}
                       autoFocus
                       disabled={!!creatingChatId}
+                      maxLength={100}
                     />
                   </div>
                   <div className="flex-1 min-h-0 -mr-6 pr-6">

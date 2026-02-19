@@ -91,6 +91,7 @@ export const FindGroupTab = ({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             autoFocus={activeTab === "find"}
+            maxLength={100}
           />
         </div>
       </div>

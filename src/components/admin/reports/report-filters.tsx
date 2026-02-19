@@ -41,6 +41,7 @@ export function ReportFilters({
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           className="pl-9"
+          maxLength={100}
         />
       </div>
       <Select value={statusFilter} onValueChange={onStatusChange}>
