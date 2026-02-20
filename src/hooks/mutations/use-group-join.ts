@@ -1,3 +1,4 @@
+import { errorLog } from "@/lib/logger";
 import { toast } from "@/lib/toast";
 import { chatService, messageService } from "@/services";
 import { ChatListItem, PaginatedResponse, PublicGroupDTO } from "@/types";
@@ -25,7 +26,7 @@ export function useJoinGroup() {
             staleTime: 1000 * 30,
           });
         } catch (error) {
-          console.error("Failed to prefetch messages for joined group:", error);
+          errorLog("Failed to prefetch messages for joined group:", error);
         }
       }
       return newChat;

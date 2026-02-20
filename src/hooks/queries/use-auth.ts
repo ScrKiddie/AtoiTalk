@@ -1,3 +1,4 @@
+import { errorLog } from "@/lib/logger";
 import { authService } from "@/services";
 import { useAuthStore, useChatStore, useUIStore } from "@/store";
 import type {
@@ -91,7 +92,7 @@ export function useLogout() {
     try {
       await authService.logout();
     } catch (error) {
-      console.error("Logout failed:", error);
+      errorLog("Logout failed:", error);
     } finally {
       logout();
       queryClient.clear();

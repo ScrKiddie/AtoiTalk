@@ -1,3 +1,4 @@
+import { debugLog, errorLog } from "@/lib/logger";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const MAX_RECONNECT_ATTEMPTS = 10;
@@ -20,20 +21,27 @@ export const useConnection = (
   const isFirstConnectionRef = useRef(true);
 
   const connect = useCallback(() => {
-    if (!token) return;
+    if (!token) {
+      debugLog("WebSocket connect skipped: no token");
+      return;
+    }
     if (
       wsRef.current?.readyState === WebSocket.OPEN ||
       wsRef.current?.readyState === WebSocket.CONNECTING
-    )
+    ) {
+      debugLog("WebSocket connect skipped: socket already active", wsRef.current.readyState);
       return;
+    }
 
     const wsUrl = new URL(url);
     wsUrl.searchParams.append("token", token);
+    debugLog("WebSocket connecting", { host: wsUrl.host, path: wsUrl.pathname });
 
     const ws = new WebSocket(wsUrl.toString());
     wsRef.current = ws;
 
     ws.onopen = () => {
+      debugLog("WebSocket connected");
       setIsConnected(true);
       isFirstConnectionRef.current = false;
       reconnectAttemptRef.current = 0;
@@ -42,9 +50,14 @@ export const useConnection = (
 
     ws.onmessage = onMessage;
 
-    ws.onerror = (error) => console.error("WS Error:", error);
+    ws.onerror = (error) => errorLog("WS Error:", error);
 
-    ws.onclose = () => {
+    ws.onclose = (event) => {
+      debugLog("WebSocket closed", {
+        code: event.code,
+        reason: event.reason,
+        wasClean: event.wasClean,
+      });
       setIsConnected(false);
       wsRef.current = null;
 
@@ -55,16 +68,27 @@ export const useConnection = (
       ) {
         const backoffMs = getBackoffMs(reconnectAttemptRef.current);
         reconnectAttemptRef.current += 1;
+        debugLog("WebSocket scheduling reconnect", {
+          attempt: reconnectAttemptRef.current,
+          backoffMs,
+        });
 
         reconnectTimeoutRef.current = setTimeout(() => {
           connect();
         }, backoffMs);
+      } else if (isIntentionalCloseRef.current) {
+        debugLog("WebSocket reconnect skipped: intentional close");
+      } else if (reconnectAttemptRef.current >= MAX_RECONNECT_ATTEMPTS) {
+        debugLog("WebSocket reconnect stopped: max attempts reached");
       }
     };
   }, [url, token, onOpen, onMessage, wsRef]);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      debugLog("WebSocket effect skipped: no token");
+      return;
+    }
 
     isIntentionalCloseRef.current = false;
     isFirstConnectionRef.current = true;
@@ -79,6 +103,7 @@ export const useConnection = (
         reconnectTimeoutRef.current = null;
       }
       if (wsRef.current) {
+        debugLog("WebSocket cleanup close");
         wsRef.current.close();
         wsRef.current = null;
         setIsConnected(false);

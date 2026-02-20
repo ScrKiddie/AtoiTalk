@@ -1,3 +1,4 @@
+import { errorLog } from "@/lib/logger";
 import { mediaService } from "@/services/media.service";
 import { Message, PaginatedResponse } from "@/types";
 import { InfiniteData, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -36,7 +37,7 @@ export const useRefreshMedia = (chatId: string) => {
       );
     },
     onError: (error) => {
-      console.error("Failed to refresh media URL", error);
+      errorLog("Failed to refresh media URL", error);
     },
   });
 };

@@ -3,6 +3,7 @@ import { MailPlus, MessageSquare, Search } from "lucide-react";
 import { InfiniteList } from "@/components/infinite-list";
 import Logo from "@/components/logo.tsx";
 import { BlockUserDialog } from "@/components/modals/block-user-dialog";
+import { errorLog } from "@/lib/logger";
 
 import { useTheme } from "@/components/providers/theme-provider.tsx";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -91,7 +92,7 @@ export function NavHeader() {
         setDebouncedSearch("");
       }, 500);
     } catch (error) {
-      console.error("Failed to create chat", error);
+      errorLog("Failed to create chat", error);
       toast.error("Failed to start conversation");
       setCreatingChatId(null);
     }

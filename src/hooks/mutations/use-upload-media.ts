@@ -1,3 +1,4 @@
+import { errorLog } from "@/lib/logger";
 import { mediaService } from "@/services/media.service";
 import { useMutation } from "@tanstack/react-query";
 
@@ -20,7 +21,7 @@ export const useUploadMedia = () => {
       ) {
         return;
       }
-      console.error("Upload failed in mutation:", error);
+      errorLog("Upload failed in mutation:", error);
     },
   });
 };

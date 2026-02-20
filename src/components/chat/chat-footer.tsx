@@ -8,6 +8,7 @@ import { useWebSocketContext } from "@/context/websocket-context";
 import { useChatUpload } from "@/hooks/chat-room/use-chat-upload";
 import { useRefreshMedia } from "@/hooks/mutations/use-refresh-media";
 import { useUserById } from "@/hooks/queries";
+import { errorLog } from "@/lib/logger";
 import { toast } from "@/lib/toast";
 import { useUIStore } from "@/store";
 import { ChatListItem, EditMessage, EditMessageRequest, Media, Message, User } from "@/types";
@@ -156,7 +157,7 @@ const ChatFooter = ({
           ) ?? null,
       });
     } catch (error) {
-      console.error("Failed to refresh media in edit mode", error);
+      errorLog("Failed to refresh media in edit mode", error);
     }
   };
 
@@ -214,7 +215,7 @@ const ChatFooter = ({
         setAttachments([]);
         setAttachmentMode(false);
       } catch (error) {
-        console.error("Failed to edit message", error);
+        errorLog("Failed to edit message", error);
       }
       return;
     }

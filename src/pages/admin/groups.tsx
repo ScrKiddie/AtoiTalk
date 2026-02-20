@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { LoadingModal } from "@/components/ui/loading-modal";
 import { useAdminGroups } from "@/hooks/admin/use-admin-groups";
 import { useGroupActions } from "@/hooks/admin/use-group-actions";
+import { errorLog } from "@/lib/logger";
 import { toast } from "@/lib/toast";
 import { adminService } from "@/services/admin.service";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -76,7 +77,7 @@ export default function AdminGroups() {
       setDetailOpen(true);
     } catch (error) {
       toast.error("Failed to load group details");
-      console.error(error);
+      errorLog(error);
     } finally {
       setIsLoadingDetail(false);
     }

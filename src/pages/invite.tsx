@@ -1,6 +1,7 @@
 import Logo from "@/components/logo";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { errorLog } from "@/lib/logger";
 import { toast } from "@/lib/toast";
 import { chatService } from "@/services";
 import { useAuthStore } from "@/store";
@@ -34,7 +35,7 @@ export default function InvitePage() {
         setGroup(data);
       } catch (err: unknown) {
         const error = err as { response?: { data?: { error?: string } } };
-        console.error("Failed to fetch group preview:", err);
+        errorLog("Failed to fetch group preview:", err);
         setError(error.response?.data?.error || "This invite link is invalid or has expired.");
       } finally {
         setIsLoading(false);
@@ -61,7 +62,7 @@ export default function InvitePage() {
       navigate(`/chat/${data.id}`);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { error?: string } } };
-      console.error("Failed to join group:", err);
+      errorLog("Failed to join group:", err);
       toast.error(error.response?.data?.error || "Failed to join group");
 
       if (error.response?.data?.error?.includes("already a member")) {

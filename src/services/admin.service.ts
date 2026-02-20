@@ -1,4 +1,5 @@
 import { api } from "@/lib/axios";
+import type { Media } from "@/types";
 
 export interface DashboardStats {
   active_reports: number;
@@ -94,8 +95,6 @@ export interface ReportListResponse {
   created_at: string;
 }
 
-import { Media } from "@/types";
-
 export interface EvidenceSnapshot {
   attachments?: (string | Media)[];
   data?: {
@@ -145,9 +144,7 @@ export interface PaginatedResponse<T> {
   meta: PaginationMeta;
 }
 
-/**
- * Admin Service - handles admin-related API calls
- */
+/** API calls for admin dashboard, moderation, and reporting */
 export const adminService = {
   /**
    * Get dashboard statistics

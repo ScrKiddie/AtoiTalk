@@ -1,3 +1,4 @@
+import { errorLog } from "@/lib/logger";
 import { toast } from "@/lib/toast";
 import { userService } from "@/services/user.service";
 import { useChatStore } from "@/store";
@@ -81,7 +82,7 @@ export const useUnblockUser = () => {
 
         queryClient.setQueryData<User>(["user", userId], freshUser);
       } catch (err) {
-        console.error("Failed to fetch fresh user data after unblock", err);
+        errorLog("Failed to fetch fresh user data after unblock", err);
 
         queryClient.setQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>(
           { queryKey: ["chats"] },

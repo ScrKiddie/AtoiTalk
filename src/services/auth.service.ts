@@ -11,9 +11,7 @@ import type {
   ResetPasswordRequest,
 } from "@/types";
 
-/**
- * Auth Service - handles authentication API calls
- */
+/** API calls for authentication and account lifecycle flows */
 export const authService = {
   /**
    * Login with email and password

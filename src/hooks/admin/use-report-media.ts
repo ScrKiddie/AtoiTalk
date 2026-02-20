@@ -1,3 +1,4 @@
+import { errorLog } from "@/lib/logger";
 import { toast } from "@/lib/toast";
 import { ReportDetailResponse } from "@/services/admin.service";
 import { mediaService } from "@/services/media.service";
@@ -120,7 +121,7 @@ export function useReportMedia(
 
       return newUrl;
     } catch (error) {
-      console.error("Failed to refresh attachment", error);
+      errorLog("Failed to refresh attachment", error);
       throw error;
     }
   };
@@ -152,7 +153,7 @@ export function useReportMedia(
     try {
       await downloadFile(currentUrl);
     } catch (error) {
-      console.error("Download failed, attempting refresh...", error);
+      errorLog("Download failed, attempting refresh...", error);
 
       try {
         const newUrl = await handleAttachmentRefresh(file.id);
@@ -162,7 +163,7 @@ export function useReportMedia(
           throw new Error("Failed to refresh URL");
         }
       } catch (retryError) {
-        console.error("Download failed after refresh", retryError);
+        errorLog("Download failed after refresh", retryError);
         if (retryError instanceof Error && retryError.message === "File not found") {
           toast.error("File not found (might have been deleted by the server).", {
             id: "download-failed",

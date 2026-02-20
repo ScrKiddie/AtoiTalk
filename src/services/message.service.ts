@@ -8,9 +8,7 @@ import type {
   SendMessageRequest,
 } from "@/types";
 
-/**
- * Message Service - handles message-related API calls
- */
+/** API calls for message CRUD inside chats */
 export const messageService = {
   /**
    * Get messages from a chat with cursor-based pagination
@@ -41,6 +39,7 @@ export const messageService = {
   async deleteMessage(messageId: string): Promise<void> {
     await api.delete(`/api/messages/${messageId}`);
   },
+
   /**
    * Edit a message
    */

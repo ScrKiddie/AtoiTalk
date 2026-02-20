@@ -2,6 +2,7 @@ import { useEditMessage } from "@/hooks/mutations/use-edit-message";
 import { useMarkAsRead } from "@/hooks/mutations/use-mark-read";
 import { useUploadMedia } from "@/hooks/mutations/use-upload-media";
 import { useCreatePrivateChat, useDeleteMessage, useSendMessage } from "@/hooks/queries";
+import { debugLog } from "@/lib/logger";
 import { toast } from "@/lib/toast";
 import { EditMessageRequest, Media, Message, MessageType } from "@/types";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -136,7 +137,15 @@ export const useChatActions = ({
   };
 
   const handleSendMessage = async (text: string, currentAttachments: Media[]) => {
-    if ((!currentChatId && !isVirtual) || (!text.trim() && currentAttachments.length === 0)) return;
+    if ((!currentChatId && !isVirtual) || (!text.trim() && currentAttachments.length === 0)) {
+      debugLog("Send message skipped", {
+        currentChatId,
+        isVirtual,
+        hasText: Boolean(text.trim()),
+        attachmentCount: currentAttachments.length,
+      });
+      return;
+    }
 
     const attachmentIds = currentAttachments.map((att) => att.id);
 
@@ -152,6 +161,17 @@ export const useChatActions = ({
     if (text.trim() && type !== "text") {
       type = "text";
     }
+
+    const targetChatId = createdChatId || currentChatId;
+    debugLog("Send message requested", {
+      targetChatId,
+      isVirtual,
+      targetUserId,
+      contentLength: text.trim().length,
+      attachmentCount: attachmentIds.length,
+      replyToId: replyTo?.id ?? null,
+      type,
+    });
 
     const payload = {
       content: text.trim(),
@@ -169,30 +189,32 @@ export const useChatActions = ({
       scrollToBottom();
     };
 
-    const targetChatId = createdChatId || currentChatId;
-
     if (isVirtual && !targetChatId && targetUserId) {
       createPrivateChat(
         { target_user_id: targetUserId },
         {
           onSuccess: (newChat) => {
+            debugLog("Private chat created", { newChatId: newChat.id, targetUserId });
             setCreatedChatId(newChat.id);
 
             sendMessage(
               { ...payload, chat_id: newChat.id },
               {
                 onSuccess: () => {
+                  debugLog("Message sent after chat creation", { newChatId: newChat.id });
                   setCreatedChatId(null);
                   onSuccess();
                   navigate(`/chat/${newChat.id}`, { replace: true });
                 },
-                onError: () => {
+                onError: (error) => {
+                  debugLog("Send message failed after chat creation", error);
                   toast.error("Failed to send message");
                 },
               }
             );
           },
-          onError: () => {
+          onError: (error) => {
+            debugLog("Create private chat failed", error);
             toast.error("Failed to create chat");
           },
         }
@@ -206,9 +228,13 @@ export const useChatActions = ({
               setCreatedChatId(null);
               navigate(`/chat/${targetChatId}`, { replace: true });
             }
+            debugLog("Message sent", { chatId: targetChatId });
             onSuccess();
           },
-          onError: () => toast.error("Failed to send message"),
+          onError: (error) => {
+            debugLog("Send message failed", error);
+            toast.error("Failed to send message");
+          },
         }
       );
     }
@@ -216,17 +242,20 @@ export const useChatActions = ({
 
   const handleDeleteMessage = (id: string) => {
     if (!currentChatId) return;
+    debugLog("Delete message requested", { messageId: id, chatId: currentChatId });
     setIsDeleteSubmitting(true);
     deleteMessageMutation(
       { messageId: id, chatId: currentChatId },
       {
         onSuccess: () => {
+          debugLog("Delete message success", { messageId: id, chatId: currentChatId });
           toast.success("Message deleted");
           setShowDeleteModal(false);
           setMessageToDelete(null);
           setIsDeleteSubmitting(false);
         },
-        onError: () => {
+        onError: (error) => {
+          debugLog("Delete message failed", error);
           toast.error("Failed to delete message");
           setIsDeleteSubmitting(false);
         },
@@ -236,8 +265,17 @@ export const useChatActions = ({
 
   const handleEditMessage = async (text: string, currentAttachments: Media[]) => {
     if (!editMessage || !currentChatId) return;
+    debugLog("Edit message requested", {
+      messageId: editMessage?.id,
+      chatId: currentChatId,
+      contentLength: text.trim().length,
+      attachmentCount: currentAttachments.length,
+    });
 
     if (!text.trim() && currentAttachments.length === 0) {
+      debugLog("Edit message skipped: empty content and no attachments", {
+        messageId: editMessage.id,
+      });
       return;
     }
 
@@ -251,6 +289,7 @@ export const useChatActions = ({
       JSON.stringify(editMessage.attachments?.map((a) => a.id)) ===
         JSON.stringify(payload.attachment_ids)
     ) {
+      debugLog("Edit message skipped: no effective changes", { messageId: editMessage.id });
       setEditMessage(null);
       setNewMessageText("");
       setAttachments([]);
@@ -269,7 +308,9 @@ export const useChatActions = ({
       setNewMessageText("");
       setAttachments([]);
       setAttachmentMode(false);
-    } catch {
+      debugLog("Edit message success", { messageId: editMessage.id, chatId: currentChatId });
+    } catch (error) {
+      debugLog("Edit message failed", error);
       toast.error("Failed to edit message");
     }
   };

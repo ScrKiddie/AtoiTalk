@@ -1,3 +1,4 @@
+import { errorLog } from "@/lib/logger";
 import { userService } from "@/services/user.service";
 import { useAuthStore } from "@/store";
 import {
@@ -170,7 +171,7 @@ export const useUserEvents = (
           queryClient.setQueriesData<User>({ queryKey: ["user", blocker_id] }, freshUser);
         })
         .catch((err: unknown) => {
-          console.error("Failed to sync block data", err);
+          errorLog("Failed to sync block data", err);
 
           queryClient.invalidateQueries({ queryKey: ["chats"] });
           queryClient.invalidateQueries({ queryKey: ["user", blocker_id] });
@@ -212,7 +213,7 @@ export const useUserEvents = (
           queryClient.setQueriesData<User>({ queryKey: ["user", blocker_id] }, freshUser);
         })
         .catch((err: unknown) => {
-          console.error("Failed to sync unblock data", err);
+          errorLog("Failed to sync unblock data", err);
 
           queryClient.invalidateQueries({ queryKey: ["chats"] });
           queryClient.invalidateQueries({ queryKey: ["user", blocker_id] });

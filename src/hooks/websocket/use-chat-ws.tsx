@@ -1,3 +1,4 @@
+import { debugLog, errorLog } from "@/lib/logger";
 import { useAuthStore, useChatStore } from "@/store";
 import { Message } from "@/types";
 import { useCallback, useRef } from "react";
@@ -41,7 +42,7 @@ export const useChatWebSocket = (url: string) => {
     (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data);
-        console.log("WebSocket message:", data);
+        debugLog("WebSocket message:", data);
 
         switch (data.type) {
           case "message.new":
@@ -97,7 +98,7 @@ export const useChatWebSocket = (url: string) => {
             break;
         }
       } catch (err) {
-        console.error("WS Error:", err);
+        errorLog("WS Error:", err);
       }
     },
     [

@@ -1,9 +1,7 @@
 import api from "@/lib/axios";
 import type { ApiResponse, PaginatedResponse, SearchUsersParams, User } from "@/types";
 
-/**
- * User Service - handles user-related API calls
- */
+/** API calls for user profile, lookup, and block lists */
 export const userService = {
   /**
    * Get current logged-in user

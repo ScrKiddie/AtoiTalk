@@ -1,4 +1,5 @@
 import { CaptchaHandle } from "@/components/auth/captcha";
+import { debugLog, errorLog } from "@/lib/logger";
 import { toast } from "@/lib/toast";
 import { Media } from "@/types";
 import React, { useRef, useState } from "react";
@@ -99,12 +100,12 @@ export function useChatUpload({ uploadMedia, setAttachments, attachments }: UseC
       }
     } catch (error) {
       if (signal.aborted) {
-        console.log("Upload aborted for", file.name);
+        debugLog("Upload aborted for", file.name);
         setIsSolvingCaptcha(false);
         return;
       }
 
-      console.error("File upload error:", error);
+      errorLog("File upload error:", error);
 
       setUploadingFiles((prev) =>
         prev.filter(

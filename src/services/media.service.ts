@@ -1,9 +1,7 @@
 import api from "@/lib/axios";
 import type { ApiResponse, Media } from "@/types";
 
-/**
- * Media Service - handles media upload API calls
- */
+/** API calls for media upload and URL refresh */
 export const mediaService = {
   /**
    * Upload a media file (image, video, file, audio)

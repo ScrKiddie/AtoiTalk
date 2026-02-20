@@ -1,6 +1,7 @@
 import AttachmentCard from "@/components/attachment-card";
 import { GlobalLightbox } from "@/components/ui/lightbox";
 import { useRefreshMedia } from "@/hooks/mutations/use-refresh-media";
+import { errorLog } from "@/lib/logger";
 import { toast } from "@/lib/toast";
 import { Media, Message } from "@/types";
 import React, { useState } from "react";
@@ -75,7 +76,7 @@ export const MessageAttachments = ({ message, isCurrentUser }: MessageAttachment
               try {
                 await downloadFile(currentUrl);
               } catch (error) {
-                console.error("Download failed, attempting refresh...", error);
+                errorLog("Download failed, attempting refresh...", error);
 
                 try {
                   const { newUrl } = await refreshMedia({
@@ -86,7 +87,7 @@ export const MessageAttachments = ({ message, isCurrentUser }: MessageAttachment
                   currentUrl = newUrl;
                   await downloadFile(newUrl);
                 } catch (retryError) {
-                  console.error("Download failed after refresh", retryError);
+                  errorLog("Download failed after refresh", retryError);
                   if (retryError instanceof Error && retryError.message === "File not found") {
                     toast.error("File not found (might have been deleted by the server).", {
                       id: "download-failed",

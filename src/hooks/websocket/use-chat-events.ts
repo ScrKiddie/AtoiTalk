@@ -1,3 +1,4 @@
+import { errorLog } from "@/lib/logger";
 import { useChatStore } from "@/store";
 import { ChatListItem, PaginatedResponse } from "@/types";
 import { InfiniteData, useQueryClient } from "@tanstack/react-query";
@@ -147,7 +148,7 @@ export const useChatEvents = (currentUser: { id: string } | null) => {
         ((data.payload as Record<string, unknown>)?.chat_id as string | undefined);
 
       if (!chatId) {
-        console.error("chat.delete: No chat_id found in payload", data);
+        errorLog("chat.delete: No chat_id found in payload", data);
         return;
       }
 

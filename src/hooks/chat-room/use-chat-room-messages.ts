@@ -1,6 +1,7 @@
 import { useVirtuaChat } from "@/hooks/chat-room/use-virtua-chat";
 import { useMessages, useJumpToMessage as useQueryJump } from "@/hooks/queries";
 import { formatMessageDateLabel } from "@/lib/date-utils";
+import { debugLog, errorLog } from "@/lib/logger";
 import { ChatListItem, Message } from "@/types";
 import { AxiosError } from "axios";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -145,11 +146,14 @@ export const useChatMessages = ({
   const handleFetchNextPage = useCallback(async () => {
     setIsErrorNextPage(false);
     try {
+      debugLog("Fetch next page");
       const result = await fetchNextPage();
       if (result.isError) {
+        debugLog("Fetch next page returned error");
         setIsErrorNextPage(true);
       }
     } catch {
+      debugLog("Fetch next page threw");
       setIsErrorNextPage(true);
     }
   }, [fetchNextPage]);
@@ -157,11 +161,14 @@ export const useChatMessages = ({
   const handleFetchPreviousPage = useCallback(async () => {
     setIsErrorPreviousPage(false);
     try {
+      debugLog("Fetch previous page");
       const result = await fetchPreviousPage();
       if (result.isError) {
+        debugLog("Fetch previous page returned error");
         setIsErrorPreviousPage(true);
       }
     } catch {
+      debugLog("Fetch previous page threw");
       setIsErrorPreviousPage(true);
     }
   }, [fetchPreviousPage]);
@@ -230,6 +237,7 @@ export const useChatMessages = ({
 
   const handleRemoteJump = useCallback(
     async (targetId: string) => {
+      debugLog("Remote jump requested", { targetId, currentChatId });
       setIsRemoteJumping(true);
       setJumpError(false);
       setFailedJumpTargetId(null);
@@ -237,18 +245,22 @@ export const useChatMessages = ({
       try {
         const success = await jumpToMessage(targetId);
         if (!success) {
+          debugLog("Remote jump not found after fetch", { targetId, currentChatId });
           setJumpError(true);
           setFailedJumpTargetId(targetId);
+        } else {
+          debugLog("Remote jump success", { targetId, currentChatId });
         }
       } catch (error) {
-        console.error("Jump failed:", error);
+        errorLog("Jump failed:", error);
+        debugLog("Remote jump failed", { targetId, currentChatId });
         setJumpError(true);
         setFailedJumpTargetId(targetId);
       } finally {
         setIsRemoteJumping(false);
       }
     },
-    [jumpToMessage]
+    [jumpToMessage, currentChatId]
   );
 
   const handleJumpToMessage = useCallback(
@@ -258,7 +270,16 @@ export const useChatMessages = ({
       }
 
       if (!scrollToMessage(targetId)) {
+        debugLog("Local jump miss, fallback to remote", {
+          targetId,
+          fromMessageId: fromMessageId ?? null,
+        });
         handleRemoteJump(targetId);
+      } else {
+        debugLog("Local jump success", {
+          targetId,
+          fromMessageId: fromMessageId ?? null,
+        });
       }
     },
     [scrollToMessage, handleRemoteJump, isJumped, items.length]

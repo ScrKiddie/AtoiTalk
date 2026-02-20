@@ -1,3 +1,4 @@
+import { errorLog } from "@/lib/logger";
 import { toast } from "@/lib/toast";
 import { chatService } from "@/services";
 import { useChatStore } from "@/store";
@@ -65,7 +66,7 @@ export const useCreateGroup = () => {
       return newGroup;
     },
     onError: (error) => {
-      console.error("Failed to create group:", error);
+      errorLog("Failed to create group:", error);
       toast.error("Failed to create group");
     },
   });
@@ -103,7 +104,7 @@ export const useUpdateGroup = () => {
       toast.success("Group updated successfully");
     },
     onError: (error) => {
-      console.error("Failed to update group:", error);
+      errorLog("Failed to update group:", error);
       toast.error("Failed to update group");
     },
   });
@@ -169,7 +170,7 @@ export const useLeaveGroup = (callback?: (groupId: string) => void) => {
       toast.success(`Left "${groupName}"`);
     },
     onError: (error) => {
-      console.error("Failed to leave group:", error);
+      errorLog("Failed to leave group:", error);
       toast.error("Failed to leave group");
     },
   });
@@ -222,7 +223,7 @@ export const useDeleteGroup = () => {
     },
     onError: (error, { groupId }) => {
       useChatStore.getState().removeDeletedChatId(groupId);
-      console.error("Failed to delete group:", error);
+      errorLog("Failed to delete group:", error);
       toast.error("Failed to delete group");
     },
   });
@@ -273,7 +274,7 @@ export const useAddGroupMember = () => {
       toast.success("Members added successfully");
     },
     onError: (error) => {
-      console.error("Failed to add members:", error);
+      errorLog("Failed to add members:", error);
       toast.error("Failed to add members");
     },
   });
@@ -325,7 +326,7 @@ export const useKickGroupMember = () => {
       toast.success("Member removed successfully");
     },
     onError: (error) => {
-      console.error("Failed to remove member:", error);
+      errorLog("Failed to remove member:", error);
       toast.error("Failed to remove member");
     },
   });
@@ -357,7 +358,7 @@ export const useUpdateMemberRole = () => {
       toast.success("Role updated successfully");
     },
     onError: (error) => {
-      console.error("Failed to update role:", error);
+      errorLog("Failed to update role:", error);
       toast.error("Failed to update role");
     },
   });
@@ -392,7 +393,7 @@ export const useTransferOwnership = () => {
       toast.success("Ownership transferred successfully");
     },
     onError: (error) => {
-      console.error("Failed to transfer ownership:", error);
+      errorLog("Failed to transfer ownership:", error);
       toast.error("Failed to transfer ownership");
     },
   });
@@ -426,7 +427,7 @@ export const useResetInviteCode = () => {
       toast.success("Invite link has been reset");
     },
     onError: (error) => {
-      console.error("Failed to reset invite code:", error);
+      errorLog("Failed to reset invite code:", error);
       toast.error("Failed to reset invite link");
     },
   });

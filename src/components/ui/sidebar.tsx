@@ -7,6 +7,7 @@ import * as React from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
@@ -341,8 +342,6 @@ function SidebarSeparator({ className, ...props }: React.ComponentProps<typeof S
     />
   );
 }
-
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 function SidebarContent({
   className,

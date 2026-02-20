@@ -1,4 +1,5 @@
 import { useChat, useChats, useUserById } from "@/hooks/queries";
+import { debugLog } from "@/lib/logger";
 import { useAuthStore, useChatStore } from "@/store";
 import { ChatListItem, User } from "@/types";
 import { useQueryClient } from "@tanstack/react-query";
@@ -18,6 +19,7 @@ export const useChatData = () => {
 
   useEffect(() => {
     if (chatId && !isValidUUID(chatId)) {
+      debugLog("Invalid chat id, redirecting", { chatId });
       navigate("/", { replace: true });
     }
   }, [chatId, navigate]);
@@ -44,6 +46,7 @@ export const useChatData = () => {
   useEffect(() => {
     const handleKicked = (e: CustomEvent<{ chatId: string }>) => {
       if (e.detail.chatId === currentChatId) {
+        debugLog("Kicked from active chat, redirecting", { chatId: currentChatId });
         setActiveChatId(null);
         navigate("/", { replace: true });
       }
@@ -82,6 +85,7 @@ export const useChatData = () => {
     if (initialUser && partnerId) {
       const existing = queryClient.getQueryData(["user", partnerId]);
       if (!existing) {
+        debugLog("Seeding partner profile from navigation state", { partnerId });
         queryClient.setQueryData(["user", partnerId], initialUser);
       }
     }
@@ -103,6 +107,7 @@ export const useChatData = () => {
         .flatMap((p) => p.data)
         .find((c) => c.type === "private" && c.other_user_id === targetUserId);
       if (existingChat) {
+        debugLog("Virtual chat resolved to existing chat", { chatId: existingChat.id });
         navigate(`/chat/${existingChat.id}`, { replace: true });
       }
     }

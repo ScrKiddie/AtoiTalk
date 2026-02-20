@@ -1,3 +1,4 @@
+import { errorLog } from "@/lib/logger";
 import { toast } from "@/lib/toast";
 import chatService from "@/services/chat.service";
 import { ApiError, ChatListItem, PaginatedResponse } from "@/types";
@@ -29,7 +30,7 @@ export const useHideChat = () => {
       toast.success("Chat deleted successfully");
     },
     onError: (error) => {
-      console.error("Failed to hide chat:", error);
+      errorLog("Failed to hide chat:", error);
       const axiosError = error as AxiosError<ApiError>;
       toast.error(axiosError.response?.data?.error || "Failed to delete chat");
     },

@@ -2,9 +2,7 @@ import { api } from "@/lib/axios";
 import { CreateReportRequest, ReportResponse } from "@/types";
 import { ApiResponse } from "@/types/api";
 
-/**
- * Report Service - handles report-related API calls
- */
+/** API calls for creating and moderating reports */
 export const reportService = {
   /**
    * Create a new report

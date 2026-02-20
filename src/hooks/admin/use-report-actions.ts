@@ -1,4 +1,5 @@
 import { useDeleteReport } from "@/hooks/mutations/use-delete-report";
+import { errorLog } from "@/lib/logger";
 import { toast } from "@/lib/toast";
 import { ReportDetailResponse, ReportListResponse, adminService } from "@/services/admin.service";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -61,7 +62,7 @@ export function useReportActions() {
       setDetailOpen(true);
     } catch (error) {
       toast.error("Failed to load report details");
-      console.error(error);
+      errorLog(error);
     } finally {
       setIsFetchingDetail(false);
     }

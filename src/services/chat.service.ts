@@ -11,9 +11,7 @@ import type {
   PublicGroupDTO,
 } from "@/types";
 
-/**
- * Chat Service - handles chat-related API calls
- */
+/** API calls for chats, groups, and member management */
 export const chatService = {
   /**
    * Get chat list with cursor-based pagination
@@ -152,6 +150,9 @@ export const chatService = {
     return response.data;
   },
 
+  /**
+   * Reset group invite code and return the latest code payload
+   */
   async resetGroupInviteCode(groupId: string): Promise<{ code: string; expires_at: string }> {
     const response = await api.put<
       ApiResponse<{ invite_code?: string; code?: string; expires_at: string }>
@@ -163,6 +164,9 @@ export const chatService = {
     };
   },
 
+  /**
+   * Get public preview metadata from an invite code
+   */
   async getGroupPreview(inviteCode: string, signal?: AbortSignal): Promise<ChatListItem> {
     const response = await api.get<ApiResponse<ChatListItem>>(
       `/api/chats/group/invite/${inviteCode}`,
@@ -171,6 +175,9 @@ export const chatService = {
     return response.data.data;
   },
 
+  /**
+   * Join a group by invite code
+   */
   async joinGroupByInvite(inviteCode: string): Promise<ChatListItem> {
     const response = await api.post<ApiResponse<ChatListItem>>("/api/chats/group/join/invite", {
       invite_code: inviteCode,
@@ -178,6 +185,9 @@ export const chatService = {
     return response.data.data;
   },
 
+  /**
+   * Search public groups with cursor pagination
+   */
   async searchPublicGroups(
     params: { query?: string; cursor?: string; limit?: number } = {},
     signal?: AbortSignal
@@ -189,6 +199,9 @@ export const chatService = {
     return response.data;
   },
 
+  /**
+   * Join a public group by group ID
+   */
   async joinGroup(groupId: string): Promise<ChatListItem | null> {
     const response = await api.post<ApiResponse<ChatListItem>>(`/api/chats/group/${groupId}/join`);
 

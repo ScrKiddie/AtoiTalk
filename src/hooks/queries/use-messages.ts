@@ -1,3 +1,4 @@
+import { debugLog, errorLog } from "@/lib/logger";
 import { messageService } from "@/services";
 import { useChatStore } from "@/store";
 import type {
@@ -27,6 +28,12 @@ export function useMessages(chatId: string | null, options?: { enabled?: boolean
         }
       }
 
+      debugLog("Fetching messages page", {
+        chatId,
+        pageParam: pageParam ?? null,
+        direction: direction ?? null,
+        params: finalParams,
+      });
       return messageService.getMessages(chatId!, finalParams, signal);
     },
     initialPageParam: undefined as string | undefined,
@@ -60,7 +67,10 @@ export function useJumpToMessage(chatId: string | null) {
 
   const jumpToMessage = useCallback(
     async (targetMessageId: string): Promise<boolean> => {
-      if (!chatId) return false;
+      if (!chatId) {
+        debugLog("Jump to message skipped: chatId is null", { targetMessageId });
+        return false;
+      }
 
       const currentData = queryClient.getQueryData<InfiniteData<PaginatedResponse<Message>>>([
         "messages",
@@ -70,6 +80,7 @@ export function useJumpToMessage(chatId: string | null) {
       const inCache = currentMessages.some((m) => m.id === targetMessageId);
 
       if (inCache) {
+        debugLog("Jump to message cache hit", { chatId, targetMessageId });
         setJumpTargetId(targetMessageId);
         setJumpTimestamp(Date.now());
 
@@ -83,9 +94,19 @@ export function useJumpToMessage(chatId: string | null) {
 
       let attempts = 0;
       const maxAttempts = 3;
+      debugLog("Jump to message cache miss, requesting around target", {
+        chatId,
+        targetMessageId,
+        maxAttempts,
+      });
 
       while (attempts < maxAttempts) {
         try {
+          debugLog("Jump to message attempt", {
+            chatId,
+            targetMessageId,
+            attempt: attempts + 1,
+          });
           const jumpData = await messageService.getMessages(chatId, {
             around_message_id: targetMessageId,
             limit: 30,
@@ -99,12 +120,19 @@ export function useJumpToMessage(chatId: string | null) {
           setIsJumped(true);
           setJumpTargetId(targetMessageId);
           setJumpTimestamp(Date.now());
+          debugLog("Jump to message success", { chatId, targetMessageId, attempt: attempts + 1 });
           return true;
         } catch (error) {
           attempts++;
-          console.error(`[JumpToMessage] Attempt ${attempts} failed:`, error);
+          errorLog(`Jump to message attempt ${attempts} failed:`, error);
+          debugLog("Jump to message attempt failed", {
+            chatId,
+            targetMessageId,
+            attempt: attempts,
+          });
 
           if (attempts >= maxAttempts) {
+            debugLog("Jump to message failed after max attempts", { chatId, targetMessageId });
             return false;
           }
 
@@ -117,8 +145,8 @@ export function useJumpToMessage(chatId: string | null) {
   );
 
   const returnToLatest = useCallback(() => {
-    console.log("[useJumpToMessage] returnToLatest called. chatId:", chatId);
     if (!chatId) return;
+    debugLog("Return to latest triggered", { chatId });
 
     queryClient.removeQueries({ queryKey: ["messages", chatId] });
 

@@ -1,9 +1,7 @@
 import api from "@/lib/axios";
 import type { SendOTPRequest } from "@/types";
 
-/**
- * OTP Service - handles OTP API calls
- */
+/** API calls for OTP delivery */
 export const otpService = {
   /**
    * Send OTP to email for verification

@@ -1,17 +1,25 @@
 import { AppSidebar } from "@/components/layouts/app-sidebar.tsx";
+import { BannedUserDialog } from "@/components/modals/banned-user-dialog";
+import { UserProfileDialog } from "@/components/modals/user-profile-dialog";
 import { ModeToggle } from "@/components/mode-toggle.tsx";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import ProtectedRoute from "@/components/routes/protected-route";
 import PublicRoute from "@/components/routes/public-route";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar.tsx";
+import { Toaster } from "@/components/ui/sonner";
 import { WebSocketProvider } from "@/context/websocket-context";
+import { queryClient } from "@/lib/query-client";
 import ChatRoom from "@/pages/chat-room.tsx";
 import ForgotPassword from "@/pages/forgot-password";
 import InvitePage from "@/pages/invite";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
+import { adminService } from "@/services";
+import { useAuthStore, useUIStore } from "@/store";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import { AnimatePresence } from "motion/react";
-import { Suspense, lazy, useEffect, useRef } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import {
   Navigate,
   Route,
@@ -159,18 +167,6 @@ const AnimatedRoutes = () => {
     </WebSocketProvider>
   );
 };
-
-import { LoadingScreen } from "@/components/ui/loading-screen";
-import { queryClient } from "@/lib/query-client";
-import { adminService } from "@/services";
-import { useAuthStore, useUIStore } from "@/store";
-import { useState } from "react";
-
-import { GoogleOAuthProvider } from "@react-oauth/google";
-
-import { BannedUserDialog } from "@/components/modals/banned-user-dialog";
-import { UserProfileDialog } from "@/components/modals/user-profile-dialog";
-import { Toaster } from "@/components/ui/sonner";
 
 function App() {
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID_HERE";
