@@ -208,6 +208,15 @@ export const useVirtuaChat = ({
     }
   }, [items.length, currentChatId]);
 
+  const prevIsJumpingRef = useRef(isJumping);
+
+  useEffect(() => {
+    if (isJumping && !prevIsJumpingRef.current) {
+      setIsReadyToDisplay(false);
+    }
+    prevIsJumpingRef.current = isJumping;
+  }, [isJumping]);
+
   useEffect(() => {
     if (
       currentChatId &&
@@ -225,8 +234,10 @@ export const useVirtuaChat = ({
           }, 100);
         });
       });
-    } else if (isJumping && items.length > 0) {
-      setIsReadyToDisplay(true);
+    } else if (isJumping && items.length > 0 && currentChatId) {
+      if (initialScrollDone.current !== currentChatId) {
+        initialScrollDone.current = currentChatId;
+      }
     }
   }, [currentChatId, items.length, isJumping]);
 
@@ -261,6 +272,14 @@ export const useVirtuaChat = ({
         timeoutRef.current = setTimeout(() => {
           setInternalHighlightedId(null);
         }, 1000);
+
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              setIsReadyToDisplay(true);
+            }, 100);
+          });
+        });
         return true;
       }
       return false;
