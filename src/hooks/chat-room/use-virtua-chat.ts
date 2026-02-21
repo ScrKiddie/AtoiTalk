@@ -55,8 +55,12 @@ export const useVirtuaChat = ({
   }, []);
 
   useEffect(() => {
-    setShifting(isFetchingNextPage);
-  }, [isFetchingNextPage]);
+    if (!isJumping) {
+      setShifting(isFetchingNextPage);
+    } else {
+      setShifting(false);
+    }
+  }, [isFetchingNextPage, isJumping]);
 
   useEffect(() => {
     setActiveStickyDate(null);
@@ -107,7 +111,12 @@ export const useVirtuaChat = ({
   const fetchedTopCountRef = useRef(-1);
   const fetchedBottomCountRef = useRef(-1);
   const topThresholdArmedRef = useRef(true);
-  const bottomThresholdArmedRef = useRef(true);
+  const blockTopAutoFetchUntilRearmedRef = useRef(false);
+
+  useEffect(() => {
+    blockTopAutoFetchUntilRearmedRef.current = false;
+    topThresholdArmedRef.current = true;
+  }, [currentChatId]);
 
   const itemCount = items.length;
   const topItemId = items.length > 0 ? items[0].id : null;
@@ -118,14 +127,14 @@ export const useVirtuaChat = ({
     if (fetchedBottomCountRef.current !== -1) {
       fetchedBottomCountRef.current = -1;
     }
+
+    if (!blockTopAutoFetchUntilRearmedRef.current) return;
+
     const ref = virtualizerRef.current;
     if (!ref) return;
 
     const offset = ref.scrollOffset;
     topThresholdArmedRef.current = offset > 200;
-
-    const atBottom = offset >= ref.scrollSize - ref.viewportSize - 200;
-    bottomThresholdArmedRef.current = !atBottom;
   }, [itemCount, topItemId]);
 
   const scrollToBottom = useCallback(() => {
@@ -180,34 +189,23 @@ export const useVirtuaChat = ({
       const isNearTop = offset <= 200;
       if (!isNearTop) {
         topThresholdArmedRef.current = true;
+        blockTopAutoFetchUntilRearmedRef.current = false;
       }
 
-      if (!atBottom) {
-        bottomThresholdArmedRef.current = true;
-      }
+      const topFetchBlocked =
+        blockTopAutoFetchUntilRearmedRef.current && !topThresholdArmedRef.current;
 
-      if (
-        isNearTop &&
-        topThresholdArmedRef.current &&
-        hasNextPage &&
-        !isFetchingNextPage &&
-        !isErrorNextPage
-      ) {
-        topThresholdArmedRef.current = false;
+      if (!topFetchBlocked && isNearTop && hasNextPage && !isFetchingNextPage && !isErrorNextPage) {
+        if (blockTopAutoFetchUntilRearmedRef.current) {
+          topThresholdArmedRef.current = false;
+        }
         if (fetchedTopCountRef.current < items.length) {
           fetchedTopCountRef.current = items.length;
           fetchNextPage();
         }
       }
 
-      if (
-        atBottom &&
-        bottomThresholdArmedRef.current &&
-        hasPreviousPage &&
-        !isFetchingPreviousPage &&
-        !isErrorPreviousPage
-      ) {
-        bottomThresholdArmedRef.current = false;
+      if (atBottom && hasPreviousPage && !isFetchingPreviousPage && !isErrorPreviousPage) {
         if (fetchedBottomCountRef.current < items.length) {
           fetchedBottomCountRef.current = items.length;
           fetchPreviousPage();
@@ -243,6 +241,13 @@ export const useVirtuaChat = ({
     if (isJumping && !prevIsJumpingRef.current) {
       setIsReadyToDisplay(false);
     }
+
+    if (!isJumping && prevIsJumpingRef.current) {
+      blockTopAutoFetchUntilRearmedRef.current = true;
+      const ref = virtualizerRef.current;
+      topThresholdArmedRef.current = !!ref && ref.scrollOffset > 200;
+    }
+
     prevIsJumpingRef.current = isJumping;
   }, [isJumping]);
 
