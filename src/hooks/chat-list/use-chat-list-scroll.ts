@@ -4,6 +4,7 @@ interface UseChatListScrollProps {
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
   isError: boolean;
+  isFetchedAfterMount?: boolean;
   fetchNextPage: () => void;
 }
 
@@ -11,6 +12,7 @@ export const useChatListScroll = ({
   hasNextPage,
   isFetchingNextPage,
   isError,
+  isFetchedAfterMount = true,
   fetchNextPage,
 }: UseChatListScrollProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -57,13 +59,15 @@ export const useChatListScroll = ({
   );
 
   useEffect(() => {
+    if (!isFetchedAfterMount) return;
+
     if (!isFetchingNextPage && hasNextPage && !isError && scrollRef.current) {
       const { scrollHeight, clientHeight } = scrollRef.current;
       if (scrollHeight <= clientHeight) {
         fetchNextPage();
       }
     }
-  }, [isFetchingNextPage, hasNextPage, isError, fetchNextPage, scrollRef]);
+  }, [isFetchedAfterMount, isFetchingNextPage, hasNextPage, isError, fetchNextPage, scrollRef]);
 
   const handleWheel = useCallback(
     (e: React.WheelEvent<HTMLDivElement>) => {

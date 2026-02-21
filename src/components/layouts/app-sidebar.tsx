@@ -14,8 +14,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user: currentUser } = useAuthStore();
   const setGlobalLoading = useUIStore((state) => state.setGlobalLoading);
 
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage, isError, refetch } =
-    useChats({ query: searchQuery });
+  const {
+    data,
+    isLoading,
+    isFetchedAfterMount,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isError,
+    refetch,
+  } = useChats({ query: searchQuery });
 
   const chats =
     data?.pages.flatMap((page) => page.data).filter((chat) => chat.last_message !== null) || [];
@@ -24,6 +32,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     hasNextPage: hasNextPage ?? false,
     isFetchingNextPage: isFetchingNextPage ?? false,
     isError: isError ?? false,
+    isFetchedAfterMount,
     fetchNextPage,
   });
 
