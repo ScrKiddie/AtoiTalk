@@ -55,12 +55,8 @@ export const useVirtuaChat = ({
   }, []);
 
   useEffect(() => {
-    if (!isJumping) {
-      setShifting(isFetchingNextPage);
-    } else {
-      setShifting(false);
-    }
-  }, [isFetchingNextPage, isJumping]);
+    setShifting(isFetchingNextPage);
+  }, [isFetchingNextPage]);
 
   useEffect(() => {
     setActiveStickyDate(null);
@@ -110,6 +106,8 @@ export const useVirtuaChat = ({
 
   const fetchedTopCountRef = useRef(-1);
   const fetchedBottomCountRef = useRef(-1);
+  const topThresholdArmedRef = useRef(true);
+  const bottomThresholdArmedRef = useRef(true);
 
   const itemCount = items.length;
   const topItemId = items.length > 0 ? items[0].id : null;
@@ -120,6 +118,14 @@ export const useVirtuaChat = ({
     if (fetchedBottomCountRef.current !== -1) {
       fetchedBottomCountRef.current = -1;
     }
+    const ref = virtualizerRef.current;
+    if (!ref) return;
+
+    const offset = ref.scrollOffset;
+    topThresholdArmedRef.current = offset > 200;
+
+    const atBottom = offset >= ref.scrollSize - ref.viewportSize - 200;
+    bottomThresholdArmedRef.current = !atBottom;
   }, [itemCount, topItemId]);
 
   const scrollToBottom = useCallback(() => {
@@ -171,14 +177,37 @@ export const useVirtuaChat = ({
 
       wasAtBottomRef.current = atBottom && !hasPreviousPage;
 
-      if (offset <= 200 && hasNextPage && !isFetchingNextPage && !isErrorNextPage) {
+      const isNearTop = offset <= 200;
+      if (!isNearTop) {
+        topThresholdArmedRef.current = true;
+      }
+
+      if (!atBottom) {
+        bottomThresholdArmedRef.current = true;
+      }
+
+      if (
+        isNearTop &&
+        topThresholdArmedRef.current &&
+        hasNextPage &&
+        !isFetchingNextPage &&
+        !isErrorNextPage
+      ) {
+        topThresholdArmedRef.current = false;
         if (fetchedTopCountRef.current < items.length) {
           fetchedTopCountRef.current = items.length;
           fetchNextPage();
         }
       }
 
-      if (atBottom && hasPreviousPage && !isFetchingPreviousPage && !isErrorPreviousPage) {
+      if (
+        atBottom &&
+        bottomThresholdArmedRef.current &&
+        hasPreviousPage &&
+        !isFetchingPreviousPage &&
+        !isErrorPreviousPage
+      ) {
+        bottomThresholdArmedRef.current = false;
         if (fetchedBottomCountRef.current < items.length) {
           fetchedBottomCountRef.current = items.length;
           fetchPreviousPage();

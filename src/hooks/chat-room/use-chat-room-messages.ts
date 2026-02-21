@@ -225,12 +225,14 @@ export const useChatMessages = ({
   }, [isMessagesError]);
 
   const [returnStack, setReturnStack] = useState<string[]>([]);
+  const pendingReturnExitTargetRef = useRef<string | null>(null);
   const prevChatIdRef = useRef(currentChatId);
 
   useEffect(() => {
     if (currentChatId !== prevChatIdRef.current) {
       prevChatIdRef.current = currentChatId;
       setReturnStack([]);
+      pendingReturnExitTargetRef.current = null;
       if (isJumped) returnToLatest();
     }
   }, [currentChatId, isJumped, returnToLatest]);
@@ -248,14 +250,17 @@ export const useChatMessages = ({
           debugLog("Remote jump not found after fetch", { targetId, currentChatId });
           setJumpError(true);
           setFailedJumpTargetId(targetId);
+          return false;
         } else {
           debugLog("Remote jump success", { targetId, currentChatId });
+          return true;
         }
       } catch (error) {
         errorLog("Jump failed:", error);
         debugLog("Remote jump failed", { targetId, currentChatId });
         setJumpError(true);
         setFailedJumpTargetId(targetId);
+        return false;
       } finally {
         setIsRemoteJumping(false);
       }
@@ -301,13 +306,31 @@ export const useChatMessages = ({
       const lastSourceId = returnStack[returnStack.length - 1];
       setReturnStack((prev) => prev.slice(0, -1));
 
-      if (!scrollToMessage(lastSourceId)) {
-        handleRemoteJump(lastSourceId);
+      if (scrollToMessage(lastSourceId)) {
+        pendingReturnExitTargetRef.current = null;
+        clearJumpState();
+      } else {
+        pendingReturnExitTargetRef.current = lastSourceId;
+        void handleRemoteJump(lastSourceId).then((success) => {
+          if (!success && pendingReturnExitTargetRef.current === lastSourceId) {
+            pendingReturnExitTargetRef.current = null;
+          }
+        });
       }
     } else {
+      pendingReturnExitTargetRef.current = null;
       returnToLatest();
     }
-  }, [returnStack, scrollToMessage, handleRemoteJump, returnToLatest]);
+  }, [returnStack, scrollToMessage, handleRemoteJump, returnToLatest, clearJumpState]);
+
+  useEffect(() => {
+    const pendingTarget = pendingReturnExitTargetRef.current;
+    if (!pendingTarget) return;
+    if (highlightedMessageId !== pendingTarget) return;
+
+    clearJumpState();
+    pendingReturnExitTargetRef.current = null;
+  }, [highlightedMessageId, clearJumpState]);
 
   useEffect(() => {
     if (isJumped && !hasPreviousPage && !isRemoteJumping) {
