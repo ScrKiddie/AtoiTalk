@@ -5,7 +5,7 @@ export interface CreateReportRequest {
   reason: string;
   description?: string;
   message_id?: string;
-  group_id?: string;
+  chat_id?: string;
   target_user_id?: string;
 }
 

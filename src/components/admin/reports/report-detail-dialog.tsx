@@ -205,7 +205,11 @@ export function ReportDetailDialog({
 
                     {reportDetail.evidence_snapshot?.chat_type === "group" && (
                       <ReportAssociatedEntity
-                        id={reportDetail.evidence_snapshot?.group_id || ""}
+                        id={
+                          reportDetail.evidence_snapshot?.chat_id ||
+                          reportDetail.evidence_snapshot?.group_id ||
+                          ""
+                        }
                         type="group"
                         isDeleted={false}
                         label="Context: Group Chat"
@@ -228,7 +232,11 @@ export function ReportDetailDialog({
 
                 {reportDetail.target_type === "group" && (
                   <ReportAssociatedEntity
-                    id={reportDetail.target_id || ""}
+                    id={
+                      reportDetail.evidence_snapshot?.chat_id ||
+                      reportDetail.evidence_snapshot?.group_id ||
+                      ""
+                    }
                     type="group"
                     isDeleted={reportDetail.target_is_deleted}
                     label="Reported Group"

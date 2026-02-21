@@ -101,6 +101,7 @@ export interface EvidenceSnapshot {
     attachments?: (string | Media)[];
   };
   sender_id?: string;
+  chat_id?: string;
   group_id?: string;
   chat_type?: string;
   content?: string;

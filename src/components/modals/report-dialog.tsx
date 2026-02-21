@@ -79,7 +79,7 @@ export function ReportDialog({
     };
 
     if (targetType === "message") payload.message_id = targetId;
-    if (targetType === "group") payload.group_id = targetId;
+    if (targetType === "group") payload.chat_id = targetId;
     if (targetType === "user") payload.target_user_id = targetId;
 
     report(payload, {
