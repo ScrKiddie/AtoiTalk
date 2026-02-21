@@ -71,7 +71,7 @@ export function ReportAssociatedEntity({
   if (type === "user") {
     if (userLoading) return <Skeleton className="h-24 w-full" />;
 
-    const isUserBanned = isBanned !== undefined ? isBanned : user.is_banned;
+    const isUserBanned = isBanned !== undefined ? isBanned : user?.is_banned;
 
     return (
       <div className="border rounded-md p-4 ">
@@ -102,14 +102,14 @@ export function ReportAssociatedEntity({
         </div>
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={user.avatar || undefined} alt={user.full_name} />
-            <AvatarFallback>{getInitials(user.full_name)}</AvatarFallback>
+            <AvatarImage src={user?.avatar || undefined} alt={user?.full_name} />
+            <AvatarFallback>{getInitials(user?.full_name || "Unknown")}</AvatarFallback>
           </Avatar>
           <div>
-            <p className="font-medium text-sm">{user.full_name}</p>
+            <p className="font-medium text-sm">{user?.full_name || "Unknown User"}</p>
             <div className="flex items-center gap-2">
-              <p className="text-xs text-muted-foreground">@{user.username}</p>
-              {user.is_banned && (
+              <p className="text-xs text-muted-foreground">@{user?.username}</p>
+              {user?.is_banned && (
                 <Badge variant="destructive" className="h-5 text-[10px] px-1">
                   Banned
                 </Badge>
@@ -136,12 +136,12 @@ export function ReportAssociatedEntity({
         </div>
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={group.avatar || undefined} alt={group.name} />
-            <AvatarFallback>{getInitials(group.name)}</AvatarFallback>
+            <AvatarImage src={group?.avatar || undefined} alt={group?.name} />
+            <AvatarFallback>{getInitials(group?.name || "Group")}</AvatarFallback>
           </Avatar>
           <div>
-            <p className="font-medium text-sm">{group.name}</p>
-            <p className="text-xs text-muted-foreground">{group.member_count} members</p>
+            <p className="font-medium text-sm">{group?.name || "Unknown Group"}</p>
+            <p className="text-xs text-muted-foreground">{group?.member_count || 0} members</p>
           </div>
         </div>
 

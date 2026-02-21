@@ -3,15 +3,10 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { AnimatePresence, motion } from "motion/react";
-import { Control } from "react-hook-form";
+import { Control, FieldValues, Path } from "react-hook-form";
 
-interface OtpFormValues {
-  email: string;
-  code: string;
-}
-
-interface OtpInputProps {
-  control: Control<OtpFormValues>;
+interface OtpInputProps<T extends FieldValues> {
+  control: Control<T>;
   isSendingOTP: boolean;
   isCaptchaSolving: boolean;
   captchaToken: string | null;
@@ -24,18 +19,18 @@ const errorVariants = {
   exit: { opacity: 0, y: -5, height: 0, marginTop: 0 },
 };
 
-export const OtpInput = ({
+export const OtpInput = <T extends FieldValues>({
   control,
   isSendingOTP,
   isCaptchaSolving,
   captchaToken,
   onResend,
-}: OtpInputProps) => {
+}: OtpInputProps<T>) => {
   return (
     <>
       <FormField
         control={control}
-        name="email"
+        name={"email" as Path<T>}
         render={({ field, fieldState }) => (
           <FormItem className="space-y-0">
             <FormLabel>Email</FormLabel>
@@ -84,7 +79,7 @@ export const OtpInput = ({
       />
       <FormField
         control={control}
-        name="code"
+        name={"code" as Path<T>}
         render={({ field, fieldState }) => (
           <FormItem className="space-y-0">
             <FormLabel>OTP Code</FormLabel>
