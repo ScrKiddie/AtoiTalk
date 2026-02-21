@@ -16,7 +16,7 @@ import GoogleCallback from "@/pages/google-callback";
 import InvitePage from "@/pages/invite";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
-import { adminService } from "@/services";
+import { adminService, userService } from "@/services";
 import { useAuthStore, useUIStore } from "@/store";
 import { AnimatePresence } from "motion/react";
 import { Suspense, lazy, useEffect, useRef, useState } from "react";
@@ -35,9 +35,14 @@ const AdminUsers = lazy(() => import("@/pages/admin/users"));
 const AdminGroups = lazy(() => import("@/pages/admin/groups"));
 const AdminReports = lazy(() => import("@/pages/admin/reports"));
 const ProtectedAdminRoute = lazy(() => {
-  const dataPromise = queryClient.ensureQueryData({
+  const statsPromise = queryClient.ensureQueryData({
     queryKey: ["admin-stats"],
     queryFn: adminService.getDashboardStats,
+  });
+
+  const userPromise = queryClient.ensureQueryData({
+    queryKey: ["user", "current"],
+    queryFn: () => userService.getCurrentUser(),
   });
 
   const preloadChunks = Promise.all([
@@ -51,7 +56,8 @@ const ProtectedAdminRoute = lazy(() => {
   return Promise.all([
     import("@/components/routes/protected-admin-route"),
     new Promise((resolve) => setTimeout(resolve, 1500)),
-    dataPromise.catch(() => null),
+    statsPromise.catch(() => null),
+    userPromise.catch(() => null),
     preloadChunks,
   ]).then(([module]) => module);
 });
@@ -125,9 +131,7 @@ const AnimatedRoutes = () => {
           <Route
             path="/admin/*"
             element={
-              <Suspense
-                fallback={<LoadingScreen isLoading={true} message="Initializing AtoiTalk" />}
-              >
+              <Suspense fallback={null}>
                 <ProtectedAdminRoute />
               </Suspense>
             }

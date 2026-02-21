@@ -1,5 +1,6 @@
 import { DeleteAccountDialog } from "@/components/modals/delete-account-dialog";
 import { useCurrentUser, useLogout } from "@/hooks/queries";
+import { queryClient } from "@/lib/query-client";
 import { toast } from "@/lib/toast";
 import { useUIStore } from "@/store";
 import { useNavigate } from "react-router-dom";
@@ -150,9 +151,17 @@ export function NavFooter({
                       <DropdownMenuItem
                         onSelect={() => {
                           setOpenMobile(false);
-                          setTimeout(() => {
-                            navigate("/admin/dashboard");
-                          }, 300);
+
+                          const hasCachedData = queryClient.getQueryData(["admin-stats"]);
+
+                          if (!hasCachedData) {
+                            setGlobalLoading(true, "Initializing AtoiTalk");
+                            setTimeout(() => {
+                              navigate("/admin/dashboard");
+                            }, 300);
+                          } else {
+                            setTimeout(() => navigate("/admin/dashboard"), 150);
+                          }
                         }}
                       >
                         <LayoutDashboard className="h-4 w-4" />

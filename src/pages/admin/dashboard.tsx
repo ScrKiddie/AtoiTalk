@@ -2,8 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { adminService } from "@/services";
+import { useUIStore } from "@/store";
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, Flag, MessageSquare, RotateCcw, Users, UsersRound } from "lucide-react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function AdminDashboard() {
@@ -18,6 +20,18 @@ export default function AdminDashboard() {
     queryKey: ["admin-stats"],
     queryFn: adminService.getDashboardStats,
   });
+
+  const setGlobalLoading = useUIStore((state) => state.setGlobalLoading);
+
+  useEffect(() => {
+    if (!isLoading) {
+      const timer = setTimeout(() => {
+        setGlobalLoading(false);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+    return () => setGlobalLoading(false);
+  }, [isLoading, setGlobalLoading]);
 
   const cards = [
     {
