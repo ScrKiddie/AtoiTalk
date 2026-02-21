@@ -5,6 +5,7 @@ import type {
   ChangeEmailRequest,
   ChangePasswordRequest,
   DeleteAccountRequest,
+  GoogleInitResponse,
   GoogleLoginRequest,
   LoginRequest,
   RegisterUserRequest,
@@ -30,7 +31,15 @@ export const authService = {
   },
 
   /**
-   * Login with Google OAuth
+   * Initialize Google OAuth flow
+   */
+  async initGoogleAuth(): Promise<GoogleInitResponse> {
+    const response = await api.get<ApiResponse<GoogleInitResponse>>("/api/auth/google/init");
+    return response.data.data;
+  },
+
+  /**
+   * Login with Google OAuth callback
    */
   async googleLogin(data: GoogleLoginRequest): Promise<AuthResponse> {
     const response = await api.post<ApiResponse<AuthResponse>>("/api/auth/google", data);

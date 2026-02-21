@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
-import { useRegister, useSendOTP, useGoogleLogin as useServerGoogleLogin } from "@/hooks/queries";
+import { useInitGoogleAuth, useRegister, useSendOTP } from "@/hooks/queries";
 import { formatBanMessage } from "@/lib/date-utils";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -28,7 +28,6 @@ import {
 import { useAuthStore, useUIStore } from "@/store";
 import { ApiError } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useGoogleLogin } from "@react-oauth/google";
 import { AxiosError } from "axios";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
@@ -42,11 +41,10 @@ export default function Register() {
 
   const { mutate: register, isPending: isRegisterPending } = useRegister();
   const { mutate: sendOTP, isPending: isSendingOTP } = useSendOTP();
-  const { isPending: isGooglePending, mutate: mutateGoogleLogin } = useServerGoogleLogin();
+  const { mutate: initGoogleAuth, isPending: isGoogleInitPending } = useInitGoogleAuth();
 
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [isCaptchaSolving, setIsCaptchaSolving] = useState(true);
-  const [isGooglePopupOpen, setIsGooglePopupOpen] = useState(false);
   const captchaRef = useRef<CaptchaHandle>(null);
   const isSendingOTPRef = useRef(false);
 
@@ -79,47 +77,16 @@ export default function Register() {
     if (email) form.setValue("email", email);
   }, [code, email, form]);
 
-  useEffect(() => {
-    if (!isGooglePopupOpen) return;
-    let timeoutId: NodeJS.Timeout;
-    const handleFocus = () => {
-      timeoutId = setTimeout(() => setIsGooglePopupOpen(false), 1000);
-    };
-    window.addEventListener("focus", handleFocus);
-    return () => {
-      window.removeEventListener("focus", handleFocus);
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, [isGooglePopupOpen]);
-
-  const googleLogin = useGoogleLogin({
-    onSuccess: (response) => {
-      setIsGooglePopupOpen(false);
-      if (response.code) {
-        mutateGoogleLogin(
-          { code: response.code },
-          {
-            onSuccess: () => navigate("/"),
-            onError: (error: AxiosError<ApiError, unknown>) => {
-              const msg = error.response?.data?.error || "Google login failed";
-              toast.error(formatBanMessage(msg));
-            },
-          }
-        );
-      } else {
-        toast.error("Failed to get Google authorization code");
-      }
-    },
-    onError: () => {
-      setIsGooglePopupOpen(false);
-      toast.error("Google login failed");
-    },
-    flow: "auth-code",
-  });
-
   const handleGoogleClick = () => {
-    setIsGooglePopupOpen(true);
-    googleLogin();
+    initGoogleAuth(undefined, {
+      onSuccess: (data) => {
+        window.location.href = data.auth_url;
+      },
+      onError: (error) => {
+        const msg = error.response?.data?.error || "Failed to initialize Google login";
+        toast.error(msg);
+      },
+    });
   };
 
   const onResend = async () => {
@@ -321,13 +288,7 @@ export default function Register() {
           <Button
             type="submit"
             className="w-full relative"
-            disabled={
-              isRegisterPending ||
-              isCaptchaSolving ||
-              !captchaToken ||
-              isGooglePending ||
-              isGooglePopupOpen
-            }
+            disabled={isRegisterPending || isCaptchaSolving || !captchaToken || isGoogleInitPending}
           >
             <span className={isRegisterPending || isCaptchaSolving ? "opacity-0" : ""}>
               Register
@@ -351,15 +312,10 @@ export default function Register() {
         variant="outline"
         className="w-full relative gap-2"
         onClick={handleGoogleClick}
-        disabled={isGooglePending || isGooglePopupOpen || isRegisterPending}
+        disabled={isGoogleInitPending || isRegisterPending}
         type="button"
       >
-        <span
-          className={cn(
-            "flex items-center gap-2",
-            isGooglePending || isGooglePopupOpen ? "opacity-0" : ""
-          )}
-        >
+        <span className={cn("flex items-center gap-2", isGoogleInitPending ? "opacity-0" : "")}>
           <svg
             className="h-4 w-4"
             aria-hidden="true"
@@ -377,7 +333,7 @@ export default function Register() {
           </svg>
           Register with Google
         </span>
-        {(isGooglePending || isGooglePopupOpen) && (
+        {isGoogleInitPending && (
           <div className="absolute inset-0 flex items-center justify-center">
             <Spinner className="size-4" />
           </div>

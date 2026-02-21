@@ -46,10 +46,10 @@ export function useUpdateProfile() {
 
 export function useSearchUsers(
   query: string,
-  options?: { enabled?: boolean; excludeGroupId?: string }
+  options?: { enabled?: boolean; excludeChatId?: string }
 ) {
   return useInfiniteQuery({
-    queryKey: ["users", "search", query, options?.excludeGroupId],
+    queryKey: ["users", "search", query, options?.excludeChatId],
     queryFn: ({ pageParam, signal }) =>
       userService.searchUsers(
         {
@@ -57,7 +57,7 @@ export function useSearchUsers(
           cursor: pageParam as string | undefined,
           limit: 20,
           include_chat_id: true,
-          exclude_group_id: options?.excludeGroupId,
+          exclude_chat_id: options?.excludeChatId,
         },
         signal
       ),

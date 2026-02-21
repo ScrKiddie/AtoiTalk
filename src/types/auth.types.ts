@@ -26,6 +26,16 @@ export interface RegisterUserRequest {
  */
 export interface GoogleLoginRequest {
   code: string;
+  state: string;
+}
+
+/**
+ * Google init request response payload
+ */
+export interface GoogleInitResponse {
+  auth_url: string;
+  state: string;
+  expires_in_seconds: number;
 }
 
 /**

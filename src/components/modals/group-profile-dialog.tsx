@@ -86,7 +86,7 @@ export function GroupProfileDialog({
   const handleDeleteGroup = () => {
     setActiveChatId(null);
     deleteGroup(
-      { groupId: chat.id, name: chat.name },
+      { chatId: chat.id, name: chat.name },
       {
         onSuccess: () => {
           onClose(false);

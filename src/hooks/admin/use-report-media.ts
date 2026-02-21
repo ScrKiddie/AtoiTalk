@@ -4,6 +4,7 @@ import { ReportDetailResponse } from "@/services/admin.service";
 import { mediaService } from "@/services/media.service";
 import { Media } from "@/types";
 import { useQueryClient } from "@tanstack/react-query";
+import { isAxiosError } from "axios";
 import { useMemo } from "react";
 
 export function useReportMedia(
@@ -121,6 +122,9 @@ export function useReportMedia(
 
       return newUrl;
     } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 403) {
+        toast.error("Attachment has been deleted");
+      }
       errorLog("Failed to refresh attachment", error);
       throw error;
     }

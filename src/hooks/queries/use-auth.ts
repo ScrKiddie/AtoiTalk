@@ -7,6 +7,7 @@ import type {
   ChangeEmailRequest,
   ChangePasswordRequest,
   DeleteAccountRequest,
+  GoogleInitResponse,
   GoogleLoginRequest,
   LoginRequest,
   RegisterUserRequest,
@@ -45,6 +46,13 @@ export function useGoogleLogin() {
       useUIStore.getState().setGlobalLoading(true, "Logging In");
       setCredentials(response.token, response.user);
     },
+  });
+}
+
+export function useInitGoogleAuth() {
+  return useMutation<GoogleInitResponse, AxiosError<ApiError, unknown>, void>({
+    mutationFn: () => authService.initGoogleAuth(),
+    retry: false,
   });
 }
 

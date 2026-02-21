@@ -74,6 +74,20 @@ describe("authService", () => {
     });
   });
 
+  describe("initGoogleAuth", () => {
+    it("calls GET /api/auth/google/init", async () => {
+      const mockResponse = {
+        data: { data: { auth_url: "url", state: "state", expires_in_seconds: 300 } },
+      };
+      mockApi.get.mockResolvedValue(mockResponse);
+
+      const result = await authService.initGoogleAuth();
+
+      expect(mockApi.get).toHaveBeenCalledWith("/api/auth/google/init");
+      expect(result).toEqual({ auth_url: "url", state: "state", expires_in_seconds: 300 });
+    });
+  });
+
   describe("googleLogin", () => {
     it("calls POST /api/auth/google", async () => {
       const mockResponse = {
@@ -81,9 +95,12 @@ describe("authService", () => {
       };
       mockApi.post.mockResolvedValue(mockResponse);
 
-      const result = await authService.googleLogin({ credential: "google-cred" });
+      const result = await authService.googleLogin({ code: "code123", state: "state123" });
 
-      expect(mockApi.post).toHaveBeenCalledWith("/api/auth/google", { credential: "google-cred" });
+      expect(mockApi.post).toHaveBeenCalledWith("/api/auth/google", {
+        code: "code123",
+        state: "state123",
+      });
       expect(result).toEqual({ token: "google-jwt", user: { id: "u3" } });
     });
   });

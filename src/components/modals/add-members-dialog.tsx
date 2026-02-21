@@ -21,7 +21,7 @@ export function AddMembersDialog({
 
   const handleAddMembers = (users: User[]) => {
     addMembers(
-      { groupId, userIds: users.map((u) => u.id) },
+      { chatId: groupId, userIds: users.map((u) => u.id) },
       {
         onSuccess: () => {
           queryClient.removeQueries({ queryKey: ["users", "search"] });
@@ -65,7 +65,7 @@ export function AddMembersDialog({
       existingMemberIds={existingMemberIds}
       isSubmitting={isPending}
       confirmLabel="Add"
-      excludeGroupId={groupId}
+      excludeChatId={groupId}
     />
   );
 }

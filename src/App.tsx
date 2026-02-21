@@ -12,12 +12,12 @@ import { WebSocketProvider } from "@/context/websocket-context";
 import { queryClient } from "@/lib/query-client";
 import ChatRoom from "@/pages/chat-room.tsx";
 import ForgotPassword from "@/pages/forgot-password";
+import GoogleCallback from "@/pages/google-callback";
 import InvitePage from "@/pages/invite";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import { adminService } from "@/services";
 import { useAuthStore, useUIStore } from "@/store";
-import { GoogleOAuthProvider } from "@react-oauth/google";
 import { AnimatePresence } from "motion/react";
 import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import {
@@ -141,6 +141,8 @@ const AnimatedRoutes = () => {
             </Route>
           </Route>
 
+          <Route path="/auth/google/callback" element={<GoogleCallback />} />
+
           <Route element={<PublicRoute />}>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -169,12 +171,14 @@ const AnimatedRoutes = () => {
 };
 
 function App() {
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID_HERE";
-
   const [showSplash, setShowSplash] = useState(() => {
     const path = window.location.pathname;
     const isAuthPage =
-      path === "/login" || path === "/register" || path === "/verify" || path === "/forgot";
+      path === "/login" ||
+      path === "/register" ||
+      path === "/verify" ||
+      path === "/forgot" ||
+      path === "/auth/google/callback";
 
     if (isAuthPage && useAuthStore.getState().isAuthenticated) {
       return true;
@@ -194,20 +198,18 @@ function App() {
   const loadingMessage = useUIStore((state) => state.loadingMessage);
 
   return (
-    <GoogleOAuthProvider clientId={googleClientId}>
-      <ThemeProvider>
-        <LoadingScreen
-          isLoading={showSplash || globalLoading}
-          message={globalLoading ? loadingMessage || "Loading" : "Initializing AtoiTalk"}
-        />
-        <Router>
-          <UserProfileDialog />
-          <BannedUserDialog />
-          <AnimatedRoutes />
-          <Toaster position="top-center" />
-        </Router>
-      </ThemeProvider>
-    </GoogleOAuthProvider>
+    <ThemeProvider>
+      <LoadingScreen
+        isLoading={showSplash || globalLoading}
+        message={globalLoading ? loadingMessage || "Loading" : "Initializing AtoiTalk"}
+      />
+      <Router>
+        <UserProfileDialog />
+        <BannedUserDialog />
+        <AnimatedRoutes />
+        <Toaster position="top-center" />
+      </Router>
+    </ThemeProvider>
   );
 }
 

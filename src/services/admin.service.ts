@@ -212,9 +212,9 @@ export const adminService = {
   /**
    * Get group details by ID
    */
-  getGroupDetail: async (groupId: string) => {
+  getGroupDetail: async (chatId: string) => {
     const response = await api.get<{ data: AdminGroupDetailResponse }>(
-      `/api/admin/groups/${groupId}`
+      `/api/admin/groups/${chatId}`
     );
     return response.data.data;
   },
@@ -223,11 +223,11 @@ export const adminService = {
    * Get group members with pagination
    */
   getGroupMembers: async (
-    groupId: string,
+    chatId: string,
     params?: { query?: string; cursor?: string; limit?: number }
   ) => {
     const response = await api.get<PaginatedResponse<GroupMemberDTO>>(
-      `/api/admin/groups/${groupId}/members`,
+      `/api/admin/groups/${chatId}/members`,
       { params }
     );
     return response.data;
@@ -243,9 +243,9 @@ export const adminService = {
     queryKey: [string, string, string];
     pageParam?: string;
   }) => {
-    const [, groupId, query] = queryKey;
+    const [, chatId, query] = queryKey;
     const response = await api.get<PaginatedResponse<GroupMemberDTO>>(
-      `/api/admin/groups/${groupId}/members`,
+      `/api/admin/groups/${chatId}/members`,
       {
         params: {
           query,
@@ -260,16 +260,16 @@ export const adminService = {
   /**
    * Reset group info (name, description, avatar)
    */
-  resetGroupInfo: async (groupId: string, data: ResetGroupInfoRequest) => {
-    const response = await api.post(`/api/admin/groups/${groupId}/reset`, data);
+  resetGroupInfo: async (chatId: string, data: ResetGroupInfoRequest) => {
+    const response = await api.post(`/api/admin/groups/${chatId}/reset`, data);
     return response.data;
   },
 
   /**
    * Dissolve/Delete a group
    */
-  dissolveGroup: async (groupId: string) => {
-    const response = await api.delete(`/api/admin/groups/${groupId}`);
+  dissolveGroup: async (chatId: string) => {
+    const response = await api.delete(`/api/admin/groups/${chatId}`);
     return response.data;
   },
 

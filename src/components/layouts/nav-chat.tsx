@@ -397,7 +397,7 @@ export function NavChat({
                   setActiveChatId(null);
                 }
                 deleteGroup(
-                  { groupId: chat.id, name: chat.name },
+                  { chatId: chat.id, name: chat.name },
                   {
                     onSuccess: () => {
                       setChatToDelete(null);

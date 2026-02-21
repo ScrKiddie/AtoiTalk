@@ -70,8 +70,8 @@ export const chatService = {
   /**
    * Update group info
    */
-  async updateGroup(groupId: string, data: FormData): Promise<ChatListItem> {
-    const response = await api.put<ApiResponse<ChatListItem>>(`/api/chats/group/${groupId}`, data, {
+  async updateGroup(chatId: string, data: FormData): Promise<ChatListItem> {
+    const response = await api.put<ApiResponse<ChatListItem>>(`/api/chats/group/${chatId}`, data, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return response.data.data;
@@ -80,16 +80,16 @@ export const chatService = {
   /**
    * Leave group
    */
-  async leaveGroup(groupId: string): Promise<Message> {
-    const response = await api.post<ApiResponse<Message>>(`/api/chats/group/${groupId}/leave`);
+  async leaveGroup(chatId: string): Promise<Message> {
+    const response = await api.post<ApiResponse<Message>>(`/api/chats/group/${chatId}/leave`);
     return response.data?.data;
   },
 
   /**
    * Add member to group
    */
-  async addGroupMember(groupId: string, userIds: string[]): Promise<Message> {
-    const response = await api.post<ApiResponse<Message>>(`/api/chats/group/${groupId}/members`, {
+  async addGroupMember(chatId: string, userIds: string[]): Promise<Message> {
+    const response = await api.post<ApiResponse<Message>>(`/api/chats/group/${chatId}/members`, {
       user_ids: userIds,
     });
     return response.data.data;
@@ -98,9 +98,9 @@ export const chatService = {
   /**
    * Kick member from group
    */
-  async kickGroupMember(groupId: string, userId: string): Promise<Message> {
+  async kickGroupMember(chatId: string, userId: string): Promise<Message> {
     const response = await api.post<ApiResponse<Message>>(
-      `/api/chats/group/${groupId}/members/${userId}/kick`
+      `/api/chats/group/${chatId}/members/${userId}/kick`
     );
     return response.data?.data;
   },
@@ -108,16 +108,16 @@ export const chatService = {
   /**
    * Delete group
    */
-  async deleteGroup(groupId: string): Promise<void> {
-    await api.delete(`/api/chats/group/${groupId}`);
+  async deleteGroup(chatId: string): Promise<void> {
+    await api.delete(`/api/chats/group/${chatId}`);
   },
 
   /**
    * Update member role
    */
-  async updateMemberRole(groupId: string, userId: string, role: string): Promise<Message> {
+  async updateMemberRole(chatId: string, userId: string, role: string): Promise<Message> {
     const response = await api.put<ApiResponse<Message>>(
-      `/api/chats/group/${groupId}/members/${userId}/role`,
+      `/api/chats/group/${chatId}/members/${userId}/role`,
       {
         role,
       }
@@ -128,8 +128,8 @@ export const chatService = {
   /**
    * Transfer ownership
    */
-  async transferOwnership(groupId: string, newOwnerId: string): Promise<Message> {
-    const response = await api.post<ApiResponse<Message>>(`/api/chats/group/${groupId}/transfer`, {
+  async transferOwnership(chatId: string, newOwnerId: string): Promise<Message> {
+    const response = await api.post<ApiResponse<Message>>(`/api/chats/group/${chatId}/transfer`, {
       new_owner_id: newOwnerId,
     });
     return response.data?.data;
@@ -139,12 +139,12 @@ export const chatService = {
    * Get group members with pagination
    */
   async getGroupMembers(
-    groupId: string,
+    chatId: string,
     params: { query?: string; cursor?: string; limit?: number } = {},
     signal?: AbortSignal
   ): Promise<PaginatedResponse<GroupMember>> {
     const response = await api.get<PaginatedResponse<GroupMember>>(
-      `/api/chats/group/${groupId}/members`,
+      `/api/chats/group/${chatId}/members`,
       { params, signal }
     );
     return response.data;
@@ -153,10 +153,10 @@ export const chatService = {
   /**
    * Reset group invite code and return the latest code payload
    */
-  async resetGroupInviteCode(groupId: string): Promise<{ code: string; expires_at: string }> {
+  async resetGroupInviteCode(chatId: string): Promise<{ code: string; expires_at: string }> {
     const response = await api.put<
       ApiResponse<{ invite_code?: string; code?: string; expires_at: string }>
-    >(`/api/chats/group/${groupId}/invite`);
+    >(`/api/chats/group/${chatId}/invite`);
     const data = response.data.data;
     return {
       code: data.invite_code || data.code || "",
@@ -202,8 +202,8 @@ export const chatService = {
   /**
    * Join a public group by group ID
    */
-  async joinGroup(groupId: string): Promise<ChatListItem | null> {
-    const response = await api.post<ApiResponse<ChatListItem>>(`/api/chats/group/${groupId}/join`);
+  async joinGroup(chatId: string): Promise<ChatListItem | null> {
+    const response = await api.post<ApiResponse<ChatListItem>>(`/api/chats/group/${chatId}/join`);
 
     if (response.data && "data" in response.data) {
       return response.data.data;

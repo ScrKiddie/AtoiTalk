@@ -108,14 +108,14 @@ describe("chatService", () => {
   });
 
   describe("updateGroup", () => {
-    it("calls PUT /api/chats/group/:groupId with FormData", async () => {
-      const updated = { id: "g1", name: "Updated" };
+    it("calls PUT /api/chats/group/:chatId with FormData", async () => {
+      const updated = { id: "g1", name: "Updated", chat_id: "c1" };
       mockApi.put.mockResolvedValue({ data: { data: updated } });
 
       const formData = new FormData();
-      const result = await chatService.updateGroup("g1", formData);
+      const result = await chatService.updateGroup("c1", formData);
 
-      expect(mockApi.put).toHaveBeenCalledWith("/api/chats/group/g1", formData, {
+      expect(mockApi.put).toHaveBeenCalledWith("/api/chats/group/c1", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       expect(result).toEqual(updated);
@@ -123,79 +123,79 @@ describe("chatService", () => {
   });
 
   describe("leaveGroup", () => {
-    it("calls POST /api/chats/group/:groupId/leave", async () => {
+    it("calls POST /api/chats/group/:chatId/leave", async () => {
       mockApi.post.mockResolvedValue({ data: { data: {} } });
 
-      await chatService.leaveGroup("g1");
+      await chatService.leaveGroup("c1");
 
-      expect(mockApi.post).toHaveBeenCalledWith("/api/chats/group/g1/leave");
+      expect(mockApi.post).toHaveBeenCalledWith("/api/chats/group/c1/leave");
     });
   });
 
   describe("addGroupMember", () => {
-    it("calls POST /api/chats/group/:groupId/members with user_ids", async () => {
+    it("calls POST /api/chats/group/:chatId/members with user_ids", async () => {
       mockApi.post.mockResolvedValue({ data: { data: {} } });
 
-      await chatService.addGroupMember("g1", ["u1", "u2"]);
+      await chatService.addGroupMember("c1", ["u1", "u2"]);
 
-      expect(mockApi.post).toHaveBeenCalledWith("/api/chats/group/g1/members", {
+      expect(mockApi.post).toHaveBeenCalledWith("/api/chats/group/c1/members", {
         user_ids: ["u1", "u2"],
       });
     });
   });
 
   describe("kickGroupMember", () => {
-    it("calls POST /api/chats/group/:groupId/members/:userId/kick", async () => {
+    it("calls POST /api/chats/group/:chatId/members/:userId/kick", async () => {
       mockApi.post.mockResolvedValue({ data: { data: {} } });
 
-      await chatService.kickGroupMember("g1", "u2");
+      await chatService.kickGroupMember("c1", "u2");
 
-      expect(mockApi.post).toHaveBeenCalledWith("/api/chats/group/g1/members/u2/kick");
+      expect(mockApi.post).toHaveBeenCalledWith("/api/chats/group/c1/members/u2/kick");
     });
   });
 
   describe("deleteGroup", () => {
-    it("calls DELETE /api/chats/group/:groupId", async () => {
+    it("calls DELETE /api/chats/group/:chatId", async () => {
       mockApi.delete.mockResolvedValue({});
 
-      await chatService.deleteGroup("g1");
+      await chatService.deleteGroup("c1");
 
-      expect(mockApi.delete).toHaveBeenCalledWith("/api/chats/group/g1");
+      expect(mockApi.delete).toHaveBeenCalledWith("/api/chats/group/c1");
     });
   });
 
   describe("updateMemberRole", () => {
-    it("calls PUT /api/chats/group/:groupId/members/:userId/role", async () => {
+    it("calls PUT /api/chats/group/:chatId/members/:userId/role", async () => {
       mockApi.put.mockResolvedValue({ data: { data: {} } });
 
-      await chatService.updateMemberRole("g1", "u2", "admin");
+      await chatService.updateMemberRole("c1", "u2", "admin");
 
-      expect(mockApi.put).toHaveBeenCalledWith("/api/chats/group/g1/members/u2/role", {
+      expect(mockApi.put).toHaveBeenCalledWith("/api/chats/group/c1/members/u2/role", {
         role: "admin",
       });
     });
   });
 
   describe("transferOwnership", () => {
-    it("calls POST /api/chats/group/:groupId/transfer", async () => {
+    it("calls POST /api/chats/group/:chatId/transfer", async () => {
       mockApi.post.mockResolvedValue({ data: { data: {} } });
 
-      await chatService.transferOwnership("g1", "u2");
+      await chatService.transferOwnership("c1", "u2");
 
-      expect(mockApi.post).toHaveBeenCalledWith("/api/chats/group/g1/transfer", {
+      expect(mockApi.post).toHaveBeenCalledWith("/api/chats/group/c1/transfer", {
         new_owner_id: "u2",
       });
     });
   });
 
   describe("getGroupMembers", () => {
-    it("calls GET /api/chats/group/:groupId/members with params", async () => {
+    it("calls GET /api/chats/group/:chatId/members with params", async () => {
       const data = { data: [], meta: { has_next: false } };
       mockApi.get.mockResolvedValue({ data });
 
-      const result = await chatService.getGroupMembers("g1", { query: "john", limit: 20 });
+      const result = await chatService.getGroupMembers("c1", { query: "john", limit: 20 });
 
-      expect(mockApi.get).toHaveBeenCalledWith("/api/chats/group/g1/members", {
+      expect(mockApi.get).toHaveBeenCalledWith("/api/chats/group/c1/members", {
         params: { query: "john", limit: 20 },
         signal: undefined,
       });
@@ -204,14 +204,14 @@ describe("chatService", () => {
   });
 
   describe("resetGroupInviteCode", () => {
-    it("calls PUT /api/chats/group/:groupId/invite and extracts code", async () => {
+    it("calls PUT /api/chats/group/:chatId/invite and extracts code", async () => {
       mockApi.put.mockResolvedValue({
         data: { data: { invite_code: "ABC123", expires_at: "2025-12-31" } },
       });
 
-      const result = await chatService.resetGroupInviteCode("g1");
+      const result = await chatService.resetGroupInviteCode("c1");
 
-      expect(mockApi.put).toHaveBeenCalledWith("/api/chats/group/g1/invite");
+      expect(mockApi.put).toHaveBeenCalledWith("/api/chats/group/c1/invite");
       expect(result).toEqual({ code: "ABC123", expires_at: "2025-12-31" });
     });
 
@@ -220,7 +220,7 @@ describe("chatService", () => {
         data: { data: { code: "XYZ789", expires_at: "2025-12-31" } },
       });
 
-      const result = await chatService.resetGroupInviteCode("g1");
+      const result = await chatService.resetGroupInviteCode("c1");
 
       expect(result.code).toBe("XYZ789");
     });
@@ -274,9 +274,9 @@ describe("chatService", () => {
       const chat = { id: "g1", name: "Group" };
       mockApi.post.mockResolvedValue({ data: { data: chat } });
 
-      const result = await chatService.joinGroup("g1");
+      const result = await chatService.joinGroup("c1");
 
-      expect(mockApi.post).toHaveBeenCalledWith("/api/chats/group/g1/join");
+      expect(mockApi.post).toHaveBeenCalledWith("/api/chats/group/c1/join");
       expect(result).toEqual(chat);
     });
 
@@ -284,7 +284,7 @@ describe("chatService", () => {
       const chat = { id: "g1", name: "Group" };
       mockApi.post.mockResolvedValue({ data: chat });
 
-      const result = await chatService.joinGroup("g1");
+      const result = await chatService.joinGroup("c1");
 
       expect(result).toEqual(chat);
     });
@@ -292,7 +292,7 @@ describe("chatService", () => {
     it("returns null when response.data is falsy", async () => {
       mockApi.post.mockResolvedValue({ data: null });
 
-      const result = await chatService.joinGroup("g1");
+      const result = await chatService.joinGroup("c1");
 
       expect(result).toBeNull();
     });

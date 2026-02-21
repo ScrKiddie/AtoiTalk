@@ -27,7 +27,7 @@ interface GroupsTableProps {
   isFetching: boolean;
   error: Error | null;
   onRefetch: () => void;
-  onViewDetail: (groupId: string, chatId: string) => void;
+  onViewDetail: (chatId: string) => void;
   onResetInfo: (groupId: string) => void;
   onDissolve: (groupId: string, groupName: string) => void;
 }
@@ -102,10 +102,10 @@ export function GroupsTable({
             </TableRow>
           ) : (
             groups.map((group) => (
-              <TableRow key={group.id}>
+              <TableRow key={group.chat_id}>
                 <TableCell className="text-muted-foreground font-mono text-xs">
-                  <span className="block truncate max-w-[120px]" title={group.id}>
-                    {group.id}
+                  <span className="block truncate max-w-[120px]" title={group.chat_id}>
+                    {group.chat_id}
                   </span>
                 </TableCell>
                 <TableCell>
@@ -141,7 +141,7 @@ export function GroupsTable({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onViewDetail(group.id, group.chat_id)}>
+                      <DropdownMenuItem onClick={() => onViewDetail(group.chat_id)}>
                         <Eye className="mr-2 h-4 w-4" />
                         View Detail
                       </DropdownMenuItem>

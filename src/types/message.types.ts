@@ -28,6 +28,7 @@ export interface Media {
   original_name: string;
   mime_type: string;
   file_size: number;
+  is_deleted?: boolean;
 }
 
 /**

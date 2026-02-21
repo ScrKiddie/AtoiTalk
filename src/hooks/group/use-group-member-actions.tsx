@@ -32,7 +32,7 @@ export const useGroupMemberActions = ({ chatId, memberSearch }: UseGroupMemberAc
   const confirmPromote = () => {
     if (!promoteCandidate) return;
     updateRole(
-      { groupId: chatId, userId: promoteCandidate.user_id, role: "admin" },
+      { chatId, userId: promoteCandidate.user_id, role: "admin" },
       {
         onSuccess: () => setPromoteCandidate(null),
       }
@@ -46,7 +46,7 @@ export const useGroupMemberActions = ({ chatId, memberSearch }: UseGroupMemberAc
   const confirmDemote = () => {
     if (!demoteCandidate) return;
     updateRole(
-      { groupId: chatId, userId: demoteCandidate.user_id, role: "member" },
+      { chatId, userId: demoteCandidate.user_id, role: "member" },
       {
         onSuccess: () => setDemoteCandidate(null),
       }
@@ -60,7 +60,7 @@ export const useGroupMemberActions = ({ chatId, memberSearch }: UseGroupMemberAc
   const confirmTransfer = () => {
     if (!transferCandidate) return;
     transferOwnership(
-      { groupId: chatId, newOwnerId: transferCandidate.user_id },
+      { chatId, newOwnerId: transferCandidate.user_id },
       {
         onSuccess: () => setTransferCandidate(null),
       }
@@ -70,7 +70,7 @@ export const useGroupMemberActions = ({ chatId, memberSearch }: UseGroupMemberAc
   const handleKickMember = () => {
     if (!kickCandidate) return;
     kickMember(
-      { groupId: chatId, userId: kickCandidate.user_id },
+      { chatId, userId: kickCandidate.user_id },
       {
         onSuccess: () => {
           queryClient.setQueryData<InfiniteData<PaginatedResponse<GroupMember>>>(

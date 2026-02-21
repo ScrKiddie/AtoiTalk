@@ -118,25 +118,25 @@ describe("adminService", () => {
   });
 
   describe("getGroupDetail", () => {
-    it("calls GET /api/admin/groups/:groupId", async () => {
-      const group = { id: "g1", name: "Group" };
+    it("calls GET /api/admin/groups/:chatId", async () => {
+      const group = { id: "g1", name: "Group", chat_id: "c1" };
       mockApi.get.mockResolvedValue({ data: { data: group } });
 
-      const result = await adminService.getGroupDetail("g1");
+      const result = await adminService.getGroupDetail("c1");
 
-      expect(mockApi.get).toHaveBeenCalledWith("/api/admin/groups/g1");
+      expect(mockApi.get).toHaveBeenCalledWith("/api/admin/groups/c1");
       expect(result).toEqual(group);
     });
   });
 
   describe("getGroupMembers", () => {
-    it("calls GET /api/admin/groups/:groupId/members with params", async () => {
+    it("calls GET /api/admin/groups/:chatId/members with params", async () => {
       const data = { data: [], meta: { has_next: false } };
       mockApi.get.mockResolvedValue({ data });
 
-      const result = await adminService.getGroupMembers("g1", { query: "john" });
+      const result = await adminService.getGroupMembers("c1", { query: "john" });
 
-      expect(mockApi.get).toHaveBeenCalledWith("/api/admin/groups/g1/members", {
+      expect(mockApi.get).toHaveBeenCalledWith("/api/admin/groups/c1/members", {
         params: { query: "john" },
       });
       expect(result).toEqual(data);
@@ -144,16 +144,16 @@ describe("adminService", () => {
   });
 
   describe("getGroupMembersInfinite", () => {
-    it("calls GET /api/admin/groups/:groupId/members with cursor", async () => {
+    it("calls GET /api/admin/groups/:chatId/members with cursor", async () => {
       const data = { data: [], meta: { has_next: false } };
       mockApi.get.mockResolvedValue({ data });
 
       const result = await adminService.getGroupMembersInfinite({
-        queryKey: ["admin-group-members", "g1", "john"],
+        queryKey: ["admin-group-members", "c1", "john"],
         pageParam: "cursor-abc",
       });
 
-      expect(mockApi.get).toHaveBeenCalledWith("/api/admin/groups/g1/members", {
+      expect(mockApi.get).toHaveBeenCalledWith("/api/admin/groups/c1/members", {
         params: { query: "john", cursor: "cursor-abc", limit: 10 },
       });
       expect(result).toEqual(data);
@@ -161,24 +161,24 @@ describe("adminService", () => {
   });
 
   describe("resetGroupInfo", () => {
-    it("calls POST /api/admin/groups/:groupId/reset", async () => {
+    it("calls POST /api/admin/groups/:chatId/reset", async () => {
       mockApi.post.mockResolvedValue({ data: {} });
 
-      await adminService.resetGroupInfo("g1", { reset_name: true });
+      await adminService.resetGroupInfo("c1", { reset_name: true });
 
-      expect(mockApi.post).toHaveBeenCalledWith("/api/admin/groups/g1/reset", {
+      expect(mockApi.post).toHaveBeenCalledWith("/api/admin/groups/c1/reset", {
         reset_name: true,
       });
     });
   });
 
   describe("dissolveGroup", () => {
-    it("calls DELETE /api/admin/groups/:groupId", async () => {
+    it("calls DELETE /api/admin/groups/:chatId", async () => {
       mockApi.delete.mockResolvedValue({ data: {} });
 
-      await adminService.dissolveGroup("g1");
+      await adminService.dissolveGroup("c1");
 
-      expect(mockApi.delete).toHaveBeenCalledWith("/api/admin/groups/g1");
+      expect(mockApi.delete).toHaveBeenCalledWith("/api/admin/groups/c1");
     });
   });
 

@@ -19,11 +19,11 @@ import {
 } from "@/components/ui/form.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Separator } from "@/components/ui/separator.tsx";
-import { useLogin, useGoogleLogin as useServerGoogleLogin } from "@/hooks/queries";
+import { useInitGoogleAuth, useLogin } from "@/hooks/queries";
 import { formatBanMessage } from "@/lib/date-utils";
 import { emailSchema } from "@/lib/validators";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useGoogleLogin } from "@react-oauth/google";
+
 import { AnimatePresence, motion } from "motion/react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
@@ -34,9 +34,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
-import { ApiError } from "@/types";
-import { AxiosError } from "axios";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 const Login = () => {
   const { theme } = useTheme();
@@ -57,61 +55,22 @@ const Login = () => {
   });
 
   const { mutate: login, isPending: isLoginPending } = useLogin();
-  const { isPending: isGooglePending, mutate: mutateGoogleLogin } = useServerGoogleLogin();
+  const { mutate: initGoogleAuth, isPending: isGoogleInitPending } = useInitGoogleAuth();
 
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [isCaptchaSolving, setIsCaptchaSolving] = useState(true);
-  const [isGooglePopupOpen, setIsGooglePopupOpen] = useState(false);
   const captchaRef = useRef<CaptchaHandle>(null);
 
-  useEffect(() => {
-    if (!isGooglePopupOpen) return;
-
-    let timeoutId: NodeJS.Timeout;
-
-    const handleFocus = () => {
-      timeoutId = setTimeout(() => {
-        setIsGooglePopupOpen(false);
-      }, 1000);
-    };
-
-    window.addEventListener("focus", handleFocus);
-    return () => {
-      window.removeEventListener("focus", handleFocus);
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, [isGooglePopupOpen]);
-
-  const googleLogin = useGoogleLogin({
-    onSuccess: (response) => {
-      setIsGooglePopupOpen(false);
-      if (response.code) {
-        mutateGoogleLogin(
-          { code: response.code },
-          {
-            onSuccess: () => {
-              navigate("/");
-            },
-            onError: (error: AxiosError<ApiError, unknown>) => {
-              const msg = error.response?.data?.error || "Google login failed";
-              toast.error(formatBanMessage(msg));
-            },
-          }
-        );
-      } else {
-        toast.error("Failed to get Google authorization code");
-      }
-    },
-    onError: () => {
-      setIsGooglePopupOpen(false);
-      toast.error("Google login failed");
-    },
-    flow: "auth-code",
-  });
-
   const handleGoogleClick = () => {
-    setIsGooglePopupOpen(true);
-    googleLogin();
+    initGoogleAuth(undefined, {
+      onSuccess: (data) => {
+        window.location.href = data.auth_url;
+      },
+      onError: (error) => {
+        const msg = error.response?.data?.error || "Failed to initialize Google login";
+        toast.error(msg);
+      },
+    });
   };
 
   function onSubmit(values: z.infer<typeof formSchema>) {
@@ -227,7 +186,7 @@ const Login = () => {
                           className="p-0 h-auto font-normal text-sm hover:no-underline hover:opacity-80 transition-opacity"
                           type="button"
                           onClick={() => navigate("/forgot")}
-                          disabled={isLoginPending || isGooglePending || isGooglePopupOpen}
+                          disabled={isLoginPending || isGoogleInitPending}
                         >
                           Forgot password?
                         </Button>
@@ -275,11 +234,7 @@ const Login = () => {
                   type="submit"
                   className="w-full relative"
                   disabled={
-                    isLoginPending ||
-                    isGooglePending ||
-                    isCaptchaSolving ||
-                    !captchaToken ||
-                    isGooglePopupOpen
+                    isLoginPending || isGoogleInitPending || isCaptchaSolving || !captchaToken
                   }
                 >
                   <span className={isLoginPending || isCaptchaSolving ? "opacity-0" : ""}>
@@ -305,15 +260,12 @@ const Login = () => {
               <Button
                 variant="outline"
                 className="w-full relative gap-2"
-                disabled={isLoginPending || isGooglePending || isGooglePopupOpen}
+                disabled={isLoginPending || isGoogleInitPending}
                 type="button"
                 onClick={handleGoogleClick}
               >
                 <span
-                  className={cn(
-                    "flex items-center gap-2",
-                    isGooglePending || isGooglePopupOpen ? "opacity-0" : ""
-                  )}
+                  className={cn("flex items-center gap-2", isGoogleInitPending ? "opacity-0" : "")}
                 >
                   <svg
                     className=" h-4 w-4"
@@ -332,7 +284,7 @@ const Login = () => {
                   </svg>
                   Login with Google
                 </span>
-                {(isGooglePending || isGooglePopupOpen) && (
+                {isGoogleInitPending && (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <Spinner className="size-4" />
                   </div>
@@ -346,7 +298,7 @@ const Login = () => {
                 variant="link"
                 className="p-0 h-auto hover:no-underline hover:opacity-80 transition-opacity"
                 onClick={() => navigate("/register")}
-                disabled={isLoginPending || isGooglePending || isGooglePopupOpen}
+                disabled={isLoginPending || isGoogleInitPending}
               >
                 Register
               </Button>

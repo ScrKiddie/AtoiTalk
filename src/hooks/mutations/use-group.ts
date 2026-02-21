@@ -12,6 +12,7 @@ import {
   PublicGroupDTO,
 } from "@/types";
 import { InfiniteData, useMutation, useQueryClient } from "@tanstack/react-query";
+import { isAxiosError } from "axios";
 
 export const useCreateGroup = () => {
   const queryClient = useQueryClient();
@@ -110,14 +111,14 @@ export const useUpdateGroup = () => {
   });
 };
 
-export const useLeaveGroup = (callback?: (groupId: string) => void) => {
+export const useLeaveGroup = (callback?: (chatId: string) => void) => {
   const queryClient = useQueryClient();
   const setActiveChatId = useChatStore((state) => state.setActiveChatId);
 
   return useMutation({
-    mutationFn: (groupId: string) => chatService.leaveGroup(groupId),
-    onSuccess: (_data, groupId) => {
-      if (callback) callback(groupId);
+    mutationFn: (chatId: string) => chatService.leaveGroup(chatId),
+    onSuccess: (_data, chatId) => {
+      if (callback) callback(chatId);
       setActiveChatId(null);
 
       const allChats = queryClient.getQueriesData<InfiniteData<PaginatedResponse<ChatListItem>>>({
@@ -125,7 +126,7 @@ export const useLeaveGroup = (callback?: (groupId: string) => void) => {
       });
       let groupName = "Group";
       for (const [, cacheData] of allChats) {
-        const found = cacheData?.pages.flatMap((p) => p.data).find((c) => c.id === groupId);
+        const found = cacheData?.pages.flatMap((p) => p.data).find((c) => c.id === chatId);
         if (found?.name) {
           const name = found.name;
           groupName = name.length > 20 ? name.slice(0, 20) + "..." : name;
@@ -139,7 +140,7 @@ export const useLeaveGroup = (callback?: (groupId: string) => void) => {
           if (!oldData) return oldData;
           const newPages = oldData.pages.map((page) => ({
             ...page,
-            data: page.data.filter((chat) => chat.id !== groupId),
+            data: page.data.filter((chat) => chat.id !== chatId),
           }));
           return { ...oldData, pages: newPages };
         }
@@ -155,7 +156,7 @@ export const useLeaveGroup = (callback?: (groupId: string) => void) => {
               ...page,
               data: Array.isArray(page.data)
                 ? page.data.map((group) =>
-                    group.chat_id === groupId ? { ...group, is_member: false } : group
+                    group.chat_id === chatId ? { ...group, is_member: false } : group
                   )
                 : [],
             })),
@@ -164,7 +165,7 @@ export const useLeaveGroup = (callback?: (groupId: string) => void) => {
       );
 
       setTimeout(() => {
-        queryClient.removeQueries({ queryKey: ["messages", groupId] });
+        queryClient.removeQueries({ queryKey: ["messages", chatId] });
       }, 500);
       queryClient.invalidateQueries({ queryKey: ["users", "search"] });
       toast.success(`Left "${groupName}"`);
@@ -180,12 +181,11 @@ export const useDeleteGroup = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ groupId }: { groupId: string; name?: string }) =>
-      chatService.deleteGroup(groupId),
-    onMutate: ({ groupId }) => {
-      useChatStore.getState().addDeletedChatId(groupId);
+    mutationFn: ({ chatId }: { chatId: string; name?: string }) => chatService.deleteGroup(chatId),
+    onMutate: ({ chatId }) => {
+      useChatStore.getState().addDeletedChatId(chatId);
     },
-    onSuccess: (_data, { groupId, name }) => {
+    onSuccess: (_data, { chatId, name }) => {
       let groupName = name || "Group";
 
       if (!name) {
@@ -193,7 +193,7 @@ export const useDeleteGroup = () => {
           queryKey: ["chats"],
         });
         for (const [, cacheData] of allChats) {
-          const found = cacheData?.pages.flatMap((p) => p.data).find((c) => c.id === groupId);
+          const found = cacheData?.pages.flatMap((p) => p.data).find((c) => c.id === chatId);
           if (found?.name) {
             const foundName = found.name;
             groupName = foundName.length > 20 ? foundName.slice(0, 20) + "..." : foundName;
@@ -210,19 +210,19 @@ export const useDeleteGroup = () => {
           if (!oldData) return oldData;
           const newPages = oldData.pages.map((page) => ({
             ...page,
-            data: page.data.filter((chat) => chat.id !== groupId),
+            data: page.data.filter((chat) => chat.id !== chatId),
           }));
           return { ...oldData, pages: newPages };
         }
       );
       setTimeout(() => {
-        queryClient.removeQueries({ queryKey: ["messages", groupId] });
-        queryClient.removeQueries({ queryKey: ["chat", groupId] });
+        queryClient.removeQueries({ queryKey: ["messages", chatId] });
+        queryClient.removeQueries({ queryKey: ["chat", chatId] });
       }, 500);
       toast.success(`"${groupName}" deleted`);
     },
-    onError: (error, { groupId }) => {
-      useChatStore.getState().removeDeletedChatId(groupId);
+    onError: (error, { chatId }) => {
+      useChatStore.getState().removeDeletedChatId(chatId);
       errorLog("Failed to delete group:", error);
       toast.error("Failed to delete group");
     },
@@ -233,10 +233,10 @@ export const useAddGroupMember = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ groupId, userIds }: { groupId: string; userIds: string[] }) =>
-      chatService.addGroupMember(groupId, userIds),
-    onSuccess: (_data, { groupId, userIds }) => {
-      queryClient.setQueryData<ChatListItem>(["chat", groupId], (oldChat) => {
+    mutationFn: ({ chatId, userIds }: { chatId: string; userIds: string[] }) =>
+      chatService.addGroupMember(chatId, userIds),
+    onSuccess: (_data, { chatId, userIds }) => {
+      queryClient.setQueryData<ChatListItem>(["chat", chatId], (oldChat) => {
         if (!oldChat) return oldChat;
         const backendMemberCount = (_data as Message & { member_count?: number }).member_count;
         return {
@@ -256,7 +256,7 @@ export const useAddGroupMember = () => {
           const newPages = oldData.pages.map((page) => ({
             ...page,
             data: page.data.map((chat) =>
-              chat.id === groupId
+              chat.id === chatId
                 ? {
                     ...chat,
                     member_count:
@@ -284,10 +284,10 @@ export const useKickGroupMember = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ groupId, userId }: { groupId: string; userId: string }) =>
-      chatService.kickGroupMember(groupId, userId),
-    onSuccess: (_data, { groupId }) => {
-      queryClient.setQueryData<ChatListItem>(["chat", groupId], (oldChat) => {
+    mutationFn: ({ chatId, userId }: { chatId: string; userId: string }) =>
+      chatService.kickGroupMember(chatId, userId),
+    onSuccess: (_data, { chatId }) => {
+      queryClient.setQueryData<ChatListItem>(["chat", chatId], (oldChat) => {
         if (!oldChat) return oldChat;
         const backendMemberCount = (_data as Message & { member_count?: number }).member_count;
         return {
@@ -307,7 +307,7 @@ export const useKickGroupMember = () => {
           const newPages = oldData.pages.map((page) => ({
             ...page,
             data: page.data.map((chat) =>
-              chat.id === groupId
+              chat.id === chatId
                 ? {
                     ...chat,
                     member_count:
@@ -336,11 +336,11 @@ export const useUpdateMemberRole = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ groupId, userId, role }: { groupId: string; userId: string; role: string }) =>
-      chatService.updateMemberRole(groupId, userId, role),
-    onSuccess: (_data, { groupId, userId, role }) => {
+    mutationFn: ({ chatId, userId, role }: { chatId: string; userId: string; role: string }) =>
+      chatService.updateMemberRole(chatId, userId, role),
+    onSuccess: (_data, { chatId, userId, role }) => {
       queryClient.setQueriesData<InfiniteData<PaginatedResponse<GroupMember>>>(
-        { queryKey: ["group-members", "infinite", groupId] },
+        { queryKey: ["group-members", "infinite", chatId] },
         (oldData) => {
           if (!oldData) return oldData;
           return {
@@ -358,6 +358,11 @@ export const useUpdateMemberRole = () => {
       toast.success("Role updated successfully");
     },
     onError: (error) => {
+      if (isAxiosError(error) && error.response?.status === 400) {
+        const message = error.response.data?.error || "Role update failed";
+        toast.error(message);
+        return;
+      }
       errorLog("Failed to update role:", error);
       toast.error("Failed to update role");
     },
@@ -368,11 +373,11 @@ export const useTransferOwnership = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ groupId, newOwnerId }: { groupId: string; newOwnerId: string }) =>
-      chatService.transferOwnership(groupId, newOwnerId),
-    onSuccess: (_data, { groupId, newOwnerId }) => {
+    mutationFn: ({ chatId, newOwnerId }: { chatId: string; newOwnerId: string }) =>
+      chatService.transferOwnership(chatId, newOwnerId),
+    onSuccess: (_data, { chatId, newOwnerId }) => {
       queryClient.setQueriesData<InfiniteData<PaginatedResponse<GroupMember>>>(
-        { queryKey: ["group-members", "infinite", groupId] },
+        { queryKey: ["group-members", "infinite", chatId] },
         (oldData) => {
           if (!oldData) return oldData;
           return {
@@ -393,6 +398,11 @@ export const useTransferOwnership = () => {
       toast.success("Ownership transferred successfully");
     },
     onError: (error) => {
+      if (isAxiosError(error) && error.response?.status === 400) {
+        const message = error.response.data?.error || "Transfer failed";
+        toast.error(message);
+        return;
+      }
       errorLog("Failed to transfer ownership:", error);
       toast.error("Failed to transfer ownership");
     },
@@ -403,9 +413,9 @@ export const useResetInviteCode = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (groupId: string) => chatService.resetGroupInviteCode(groupId),
-    onSuccess: (data, groupId) => {
-      queryClient.setQueryData<ChatListItem>(["chat", groupId], (oldChat) => {
+    mutationFn: (chatId: string) => chatService.resetGroupInviteCode(chatId),
+    onSuccess: (data, chatId) => {
+      queryClient.setQueryData<ChatListItem>(["chat", chatId], (oldChat) => {
         if (!oldChat) return oldChat;
         return { ...oldChat, invite_code: data.code };
       });
@@ -418,7 +428,7 @@ export const useResetInviteCode = () => {
             pages: oldData.pages.map((page) => ({
               ...page,
               data: page.data.map((chat) =>
-                chat.id === groupId ? { ...chat, invite_code: data.code } : chat
+                chat.id === chatId ? { ...chat, invite_code: data.code } : chat
               ),
             })),
           };

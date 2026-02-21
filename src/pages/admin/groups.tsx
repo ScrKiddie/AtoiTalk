@@ -38,7 +38,7 @@ export default function AdminGroups() {
 
   const { dissolveMutation, resetMutation } = useGroupActions();
 
-  const [detailGroupId, setDetailGroupId] = useState<string | null>(null);
+  const [detailChatId, setDetailChatId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
 
@@ -54,13 +54,13 @@ export default function AdminGroups() {
   const [memberDetailOpen, setMemberDetailOpen] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
 
-  const handleViewDetail = async (groupId: string, chatId: string) => {
+  const handleViewDetail = async (chatId: string) => {
     setIsLoadingDetail(true);
     try {
       await Promise.all([
         queryClient.fetchQuery({
-          queryKey: ["admin-group-detail", groupId],
-          queryFn: () => adminService.getGroupDetail(groupId),
+          queryKey: ["admin-group-detail", chatId],
+          queryFn: () => adminService.getGroupDetail(chatId),
         }),
         queryClient.fetchInfiniteQuery({
           queryKey: ["admin-group-members-infinite", chatId, ""],
@@ -73,7 +73,7 @@ export default function AdminGroups() {
         }),
       ]);
 
-      setDetailGroupId(groupId);
+      setDetailChatId(chatId);
       setDetailOpen(true);
     } catch (error) {
       toast.error("Failed to load group details");
@@ -144,7 +144,7 @@ export default function AdminGroups() {
       <AdminGroupDetailDialog
         open={detailOpen}
         onOpenChange={setDetailOpen}
-        groupId={detailGroupId}
+        groupId={detailChatId}
         onViewMember={(id) => {
           setSelectedMemberId(id);
           setMemberDetailOpen(true);
