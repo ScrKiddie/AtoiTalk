@@ -1,54 +1,120 @@
-# React + TypeScript + Vite
+# AtoiTalk
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+![AtoiTalk Preview](https://github.com/user-attachments/assets/526f84ec-70e3-47e6-9f49-1c13bd37cc8c)
 
-Currently, two official plugins are available:
+Modern, real-time chat web application supporting private/group messaging, rich media uploads, robust administrative controls, and secure authentication. Built with React 19, TypeScript, Vite, Tailwind CSS, and Zustand.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+See [AtoiTalkAPI](https://github.com/ScrKiddie/AtoiTalkAPI) for the backend service.
 
-## Expanding the ESLint configuration
+## Features
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Real-Time Chat System
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-});
+- One-on-one private messaging
+- Group chats with role-based access
+- Real-time updates via WebSocket integration
+- Advanced message features (replies, jump-to-source, editing, deletion)
+- Read receipts and typing indicators
+
+### Account & Security
+
+- Custom JWT authentication + Google OAuth login
+- Cloudflare Turnstile CAPTCHA for sensitive actions
+- Comprehensive User Profile management
+
+### Media & Attachments
+
+- Image uploads with native React Cropper integration
+- Avatar management for Users and Groups
+
+### Performance & Optimization
+
+- Virtualized message lists using `Virtua` for handling high-volume chat histories smoothly
+- Infinity scroll for seamless older message loading
+- Optimized client-side state updates and React Query caching
+
+### Admin Capabilities
+
+- Centralized Dashboard for platform statistics
+- User management (view, ban, unban)
+- Group moderation (view, dissolve, reset info)
+- Reporting system handling (manage and resolve user reports)
+
+## Tech Stack
+
+| Layer                   | Technology                                        |
+| ----------------------- | ------------------------------------------------- |
+| Framework               | React 19 + Vite                                   |
+| Language                | TypeScript                                        |
+| Styling                 | Tailwind CSS v4, Radix UI Primitives              |
+| Icons & Animations      | Lucide React, Motion                              |
+| State Management        | Zustand (Client), TanStack React Query (Server)   |
+| Routing                 | React Router v7                                   |
+| Forms & Validation      | React Hook Form, Zod                              |
+| Utilities & Performance | Virtua (List Virtualization), Next Themes, Sonner |
+
+## Project Structure
+
+```
+src/
+├── assets/         # Static assets
+├── components/     # UI components (modals, charts, chat elements)
+├── context/        # React context providers (e.g., WebSocket)
+├── hooks/          # Custom React hooks
+├── layouts/        # Page layout wrappers (Sidebar, Admin framework)
+├── lib/            # Utility functions (date formatting, fetchers)
+├── pages/          # Application views (Auth, ChatRoom, Admin)
+├── services/       # API integration layers
+├── store/          # Zustand state stores
+└── types/          # TypeScript interface/type definitions
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Environment Variables
 
-```js
-// eslint.config.js
-import reactX from "eslint-plugin-react-x";
-import reactDom from "eslint-plugin-react-dom";
+| Variable                  | Description                                                        |
+| ------------------------- | ------------------------------------------------------------------ |
+| `VITE_API_BASE_URL`       | Base URL for the core RESTful API (e.g., `http://localhost:3000`)  |
+| `VITE_WS_URL`             | WebSocket Server Address (e.g., `ws://localhost:3000/ws`)          |
+| `VITE_GOOGLE_CLIENT_ID`   | Your Google OAuth 2.0 Web Client ID                                |
+| `VITE_TURNSTILE_SITE_KEY` | Cloudflare Turnstile public site key                               |
+| `VITE_DEBUG_LOGS`         | Flag to enable detailed browser console debugging (`true`/`false`) |
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    "react-x": reactX,
-    "react-dom": reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs["recommended-typescript"].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-});
+## Getting Started
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/)
+- `pnpm`
+
+### Setup
+
+1. Clone the repo:
+
+```bash
+git clone https://github.com/ScrKiddie/AtoiTalk.git
+cd AtoiTalk
+```
+
+2. Copy and fill the env file:
+
+```bash
+cp .env.example .env
+```
+
+3. Install dependencies:
+
+```bash
+pnpm install
+```
+
+4. Run the development server:
+
+```bash
+pnpm run dev
+```
+
+5. Build for production:
+
+```bash
+pnpm run build
 ```
