@@ -189,7 +189,7 @@ export const chatService = {
    * Search public groups with cursor pagination
    */
   async searchPublicGroups(
-    params: { query?: string; cursor?: string; limit?: number } = {},
+    params: { query?: string; cursor?: string; limit?: number; sort_by?: string } = {},
     signal?: AbortSignal
   ): Promise<PaginatedResponse<PublicGroupDTO>> {
     const response = await api.get<PaginatedResponse<PublicGroupDTO>>("/api/chats/group/public", {

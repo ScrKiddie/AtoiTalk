@@ -6,7 +6,7 @@ import { TabsContent } from "@/components/ui/tabs";
 import { useJoinGroup } from "@/hooks/mutations/use-group-join";
 import { useSearchPublicGroups } from "@/hooks/queries/use-chat";
 import { PublicGroupDTO } from "@/types";
-import { Check, Globe, Loader2, LogIn, Search } from "lucide-react";
+import { Globe, Loader2, LogIn, Search, UserCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -41,7 +41,8 @@ export const FindGroupTab = ({
     isError,
     refetch,
   } = useSearchPublicGroups(trimmedSearch, {
-    enabled: activeTab === "find" && !!trimmedSearch && trimmedSearch.length >= 3,
+    enabled: activeTab === "find",
+    sortBy: trimmedSearch ? undefined : "member_count",
   });
 
   const groups = (searchResults?.pages.flatMap((page) => page.data) || []).filter((g) => !!g);
@@ -86,7 +87,7 @@ export const FindGroupTab = ({
         <div className="relative">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search public groups..."
+            placeholder="Search public groups (starts with)..."
             className="pl-8"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -105,7 +106,7 @@ export const FindGroupTab = ({
           isFetchingNextPage={!!isFetchingNextPage}
           fetchNextPage={fetchNextPage}
           refetch={refetch}
-          emptyMessage={debouncedSearch ? "No groups found." : "Type to search public groups."}
+          emptyMessage={debouncedSearch ? "No groups found." : "No groups available."}
           loadingHeight="h-10"
           showBorder={false}
           skeletonButtonCount={1}
@@ -128,9 +129,17 @@ export const FindGroupTab = ({
                   </Avatar>
                   <div className="flex flex-col text-left min-w-0 overflow-hidden">
                     <span className="text-sm font-medium truncate">{group.name}</span>
-                    <span className="text-xs text-muted-foreground truncate">
-                      {group.description || "No description"}
-                    </span>
+                    <div className="flex items-center text-xs text-muted-foreground truncate gap-1.5 mt-0.5">
+                      <span className="shrink-0 text-foreground/70">
+                        {group.member_count || 0} members
+                      </span>
+                      {group.description && (
+                        <>
+                          <span className="shrink-0 opacity-50">•</span>
+                          <span className="truncate">{group.description}</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -144,7 +153,7 @@ export const FindGroupTab = ({
                     {isCurrentJoining ? (
                       <Loader2 className="size-4 animate-spin" />
                     ) : group.is_member ? (
-                      <Check className="size-4" />
+                      <UserCheck className="size-4" />
                     ) : (
                       <LogIn className="size-4" />
                     )}

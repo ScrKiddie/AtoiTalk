@@ -50,7 +50,7 @@ export function NavHeader() {
     isError,
     refetch,
   } = useSearchUsers(trimmedSearch, {
-    enabled: !!trimmedSearch && trimmedSearch.length >= 3,
+    enabled: !!trimmedSearch && trimmedSearch.length >= 1,
   });
 
   useEffect(() => {
@@ -152,7 +152,7 @@ export function NavHeader() {
                   <div className="relative shrink-0">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search users..."
+                      placeholder="Search users (starts with)..."
                       className="pl-8"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}

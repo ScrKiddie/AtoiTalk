@@ -51,11 +51,11 @@ export const MembersTab = ({
     refetch: refetchMembers,
   } = useInfiniteGroupMembers(
     chat.id,
-    debouncedMemberSearch.length >= 3 ? debouncedMemberSearch : "",
+    debouncedMemberSearch.length >= 1 ? debouncedMemberSearch : "",
     { enabled: isOpen && activeTab === "members" }
   );
 
-  const isShortSearch = debouncedMemberSearch.length > 0 && debouncedMemberSearch.length < 3;
+  const isShortSearch = false;
   const membersList = isShortSearch
     ? []
     : membersData?.pages.flatMap((page) => page.data).filter((m): m is GroupMember => m !== null) ||
@@ -79,7 +79,7 @@ export const MembersTab = ({
           <div className="relative flex-1">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search members..."
+              placeholder="Search members (starts with)..."
               className="pl-8"
               value={memberSearch}
               onChange={(e) => setMemberSearch(e.target.value)}
@@ -103,6 +103,7 @@ export const MembersTab = ({
           isFetchingNextPage={!!isFetchingNextPage}
           fetchNextPage={fetchNextPage}
           refetch={refetchMembers}
+          emptyMessage={debouncedMemberSearch ? "No members found." : "Type to search members."}
           skeletonButtonCount={2}
           renderItem={(member: GroupMember) => (
             <MemberItem

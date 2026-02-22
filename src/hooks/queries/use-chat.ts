@@ -145,15 +145,19 @@ export function useCreatePrivateChat() {
   });
 }
 
-export function useSearchPublicGroups(query: string, options?: { enabled?: boolean }) {
+export function useSearchPublicGroups(
+  query: string,
+  options?: { enabled?: boolean; sortBy?: string }
+) {
   return useInfiniteQuery({
-    queryKey: ["public-groups", query],
+    queryKey: ["public-groups", query, options?.sortBy],
     queryFn: ({ pageParam, signal }) =>
       chatService.searchPublicGroups(
         {
           query,
           cursor: pageParam as string | undefined,
           limit: 20,
+          sort_by: options?.sortBy,
         },
         signal
       ),
