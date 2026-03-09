@@ -20,9 +20,26 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(
     const existingToken = useAuthStore((s) => s.captchaToken);
     const setCaptchaToken = useAuthStore((s) => s.setCaptchaToken);
     const hasRestoredRef = useRef(false);
+    const retryResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const clearRetryResetTimer = () => {
+      if (retryResetTimerRef.current) {
+        clearTimeout(retryResetTimerRef.current);
+        retryResetTimerRef.current = null;
+      }
+    };
+
+    const scheduleWidgetReset = () => {
+      clearRetryResetTimer();
+      retryResetTimerRef.current = setTimeout(() => {
+        turnstileRef.current?.reset();
+        retryResetTimerRef.current = null;
+      }, 1200);
+    };
 
     useImperativeHandle(ref, () => ({
       reset: () => {
+        clearRetryResetTimer();
         setCaptchaToken(null);
         turnstileRef.current?.reset();
       },
@@ -36,13 +53,21 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(
       }
     }, [existingToken, onVerify]);
 
+    useEffect(() => {
+      return () => {
+        clearRetryResetTimer();
+      };
+    }, []);
+
     const handleVerify = (token: string) => {
+      clearRetryResetTimer();
       setCaptchaToken(token);
       onVerify(token);
     };
 
     const handleError = (error?: unknown) => {
       setCaptchaToken(null);
+      scheduleWidgetReset();
       onError?.(error);
     };
 
@@ -62,7 +87,10 @@ export const Captcha = forwardRef<CaptchaHandle, CaptchaProps>(
           options={{
             action,
             size: "invisible",
-            retry: "never",
+            retry: "auto",
+            retryInterval: 2000,
+            refreshExpired: "auto",
+            refreshTimeout: "auto",
           }}
         />
       </div>
