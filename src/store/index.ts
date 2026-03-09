@@ -6,9 +6,11 @@ interface AuthState {
   token: string | null;
   user: User | null;
   isAuthenticated: boolean;
+  captchaToken: string | null;
 
   setCredentials: (token: string, user: User) => void;
   setUser: (user: User) => void;
+  setCaptchaToken: (token: string | null) => void;
   logout: () => void;
 }
 
@@ -18,6 +20,7 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       user: null,
       isAuthenticated: false,
+      captchaToken: null,
 
       setCredentials: (token, user) =>
         set({
@@ -28,11 +31,14 @@ export const useAuthStore = create<AuthState>()(
 
       setUser: (user) => set({ user }),
 
+      setCaptchaToken: (token) => set({ captchaToken: token }),
+
       logout: () =>
         set({
           token: null,
           user: null,
           isAuthenticated: false,
+          captchaToken: null,
         }),
     }),
     {

@@ -259,9 +259,9 @@ export function ChangeEmailDialog({
               onError={() => {
                 setCaptchaToken(null);
                 setIsCaptchaSolving(true);
-                toast.error("Failed to load captcha, retrying...", {
-                  id: "captcha-load-error",
-                });
+                if (import.meta.env.DEV) {
+                  console.warn("Captcha failed to load, retrying...");
+                }
               }}
               onExpire={() => {
                 setCaptchaToken(null);

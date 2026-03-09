@@ -29,3 +29,6 @@ doc
 *.njsproj
 *.sln
 *.sw?
+.vercel
+temp.env
+vercel.json

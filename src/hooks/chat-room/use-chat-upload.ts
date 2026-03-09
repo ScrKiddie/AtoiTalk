@@ -37,6 +37,20 @@ export function useChatUpload({ uploadMedia, setAttachments, attachments }: UseC
     return `${nameWithoutExt.substring(0, half)}...${nameWithoutExt.substring(nameWithoutExt.length - half)}${extension}`;
   };
 
+  const handleCaptchaError = () => {
+    setIsSolvingCaptcha(false);
+
+    pendingUploadsRef.current.forEach((file) => {
+      setTimeout(() => {
+        toast.error(`Failed to upload "${truncateFilename(file.name)}"`);
+      }, 0);
+    });
+
+    pendingUploadsRef.current = [];
+    setUploadingFiles([]);
+    uploadingKeysRef.current.clear();
+  };
+
   const handleCancelUploads = () => {
     setIsCancelling(true);
 
@@ -197,6 +211,7 @@ export function useChatUpload({ uploadMedia, setAttachments, attachments }: UseC
     captchaRef,
     handleFilesChange,
     handleCancelUploads,
+    handleCaptchaError,
     processNextFile,
   };
 }

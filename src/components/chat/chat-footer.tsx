@@ -9,7 +9,6 @@ import { useChatUpload } from "@/hooks/chat-room/use-chat-upload";
 import { useRefreshMedia } from "@/hooks/mutations/use-refresh-media";
 import { useUserById } from "@/hooks/queries";
 import { errorLog } from "@/lib/logger";
-import { toast } from "@/lib/toast";
 import { useUIStore } from "@/store";
 import { ChatListItem, EditMessage, EditMessageRequest, Media, Message, User } from "@/types";
 import * as React from "react";
@@ -93,10 +92,10 @@ const ChatFooter = ({
     setIsSolvingCaptcha,
     isCancelling,
     pendingUploadsRef,
-    uploadingKeysRef,
     captchaRef,
     handleFilesChange,
     handleCancelUploads,
+    handleCaptchaError,
     processNextFile,
   } = useChatUpload({ uploadMedia, setAttachments, attachments });
 
@@ -258,11 +257,10 @@ const ChatFooter = ({
           }
         }}
         onError={() => {
-          toast.error("Security check failed. Please try again.");
-          setIsSolvingCaptcha(false);
-          pendingUploadsRef.current = [];
-          setUploadingFiles([]);
-          uploadingKeysRef.current.clear();
+          if (import.meta.env.DEV) {
+            console.warn("Security check failed.");
+          }
+          handleCaptchaError();
         }}
         onExpire={() => {
           if (pendingUploadsRef.current.length > 0) {

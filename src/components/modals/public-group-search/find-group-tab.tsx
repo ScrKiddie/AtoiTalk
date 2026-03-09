@@ -146,7 +146,7 @@ export const FindGroupTab = ({
                   <Button
                     size="icon"
                     variant="outline"
-                    className="size-8 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-200"
+                    className="size-8 transition-all duration-200"
                     onClick={() => handleJoin(group)}
                     disabled={isCurrentJoining || (isJoining && !!joiningGroupId)}
                   >
