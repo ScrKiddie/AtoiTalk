@@ -9,6 +9,39 @@ export const api = axios.create({
   },
 });
 
+const AUTH_ENDPOINTS_SKIP_AUTO_LOGOUT = new Set([
+  "/api/auth/login",
+  "/api/auth/register",
+  "/api/auth/reset-password",
+  "/api/auth/google",
+  "/api/auth/google/init",
+  "/api/auth/logout",
+]);
+
+const resolveRequestPath = (url?: string): string => {
+  if (!url) return "";
+
+  try {
+    return new URL(url, api.defaults.baseURL).pathname;
+  } catch {
+    return url;
+  }
+};
+
+const hasBearerTokenHeader = (headers: unknown): boolean => {
+  if (!headers || typeof headers !== "object") return false;
+
+  const normalizedHeaders = headers as Record<string, unknown>;
+  const auth =
+    normalizedHeaders.Authorization ??
+    normalizedHeaders.authorization ??
+    (typeof (normalizedHeaders as { get?: (name: string) => unknown }).get === "function"
+      ? (normalizedHeaders as { get: (name: string) => unknown }).get("Authorization")
+      : undefined);
+
+  return typeof auth === "string" && auth.startsWith("Bearer ");
+};
+
 api.interceptors.request.use(
   (config) => {
     const token = useAuthStore.getState().token;
@@ -29,15 +62,31 @@ api.interceptors.response.use(
     const data = error.response?.data;
 
     if (status === 401) {
-      useAuthStore.getState().logout();
+      const requestPath = resolveRequestPath(error.config?.url);
+      const requestMethod = error.config?.method?.toUpperCase() || "GET";
+      const isAuthEndpoint = AUTH_ENDPOINTS_SKIP_AUTO_LOGOUT.has(requestPath);
+      const hasAuthHeader = hasBearerTokenHeader(error.config?.headers);
+      const hasSession = !!useAuthStore.getState().token;
+      const shouldAutoLogout = hasSession && hasAuthHeader && !isAuthEndpoint;
 
-      const currentPath = window.location.pathname;
-      if (
-        !currentPath.startsWith("/login") &&
-        !currentPath.startsWith("/register") &&
-        !currentPath.startsWith("/forgot")
-      ) {
-        window.dispatchEvent(new Event("unauthorized"));
+      if (import.meta.env.DEV) {
+        console.warn(
+          `[Auth] 401 from ${requestMethod} ${requestPath || "(unknown path)"}:`,
+          data?.error || "Unauthorized"
+        );
+      }
+
+      if (shouldAutoLogout) {
+        useAuthStore.getState().logout();
+
+        const currentPath = window.location.pathname;
+        if (
+          !currentPath.startsWith("/login") &&
+          !currentPath.startsWith("/register") &&
+          !currentPath.startsWith("/forgot")
+        ) {
+          window.dispatchEvent(new Event("unauthorized"));
+        }
       }
     }
 
