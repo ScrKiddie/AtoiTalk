@@ -246,7 +246,7 @@ const ChatFooter = ({
   }
 
   return (
-    <footer className="relative mx-auto p-2 gap-2 w-full flex flex-col items-start bg-background border-t">
+    <footer className="relative mx-auto p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] gap-2 w-full flex flex-col items-start bg-background border-t">
       <Captcha
         ref={captchaRef}
         onVerify={(token) => {

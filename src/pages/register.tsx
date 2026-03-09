@@ -170,7 +170,10 @@ export default function Register() {
   };
 
   return (
-    <AuthLayout description="Complete your details to finish registration.">
+    <AuthLayout
+      description="Complete your details to finish registration."
+      cardClassName="sm:w-[560px] lg:w-[620px]"
+    >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <OtpInput
@@ -181,65 +184,67 @@ export default function Register() {
             onResend={onResend}
           />
 
-          <FormField
-            control={form.control}
-            name="username"
-            render={({ field, fieldState }) => (
-              <FormItem className="space-y-0">
-                <FormLabel>Username</FormLabel>
-                <FormControl className="mt-3">
-                  <Input
-                    placeholder="Username"
-                    {...field}
-                    onChange={(e) => {
-                      const normalized = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "");
-                      field.onChange(normalized);
-                    }}
-                  />
-                </FormControl>
-                <AnimatePresence mode="wait">
-                  {fieldState.error && (
-                    <motion.div
-                      variants={errorVariants}
-                      initial="hidden"
-                      animate="visible"
-                      exit="exit"
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      <FormMessage />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field, fieldState }) => (
-              <FormItem className="space-y-0">
-                <FormLabel>Full Name</FormLabel>
-                <FormControl className="mt-3">
-                  <Input placeholder="Full Name" {...field} />
-                </FormControl>
-                <AnimatePresence mode="wait">
-                  {fieldState.error && (
-                    <motion.div
-                      variants={errorVariants}
-                      initial="hidden"
-                      animate="visible"
-                      exit="exit"
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      <FormMessage />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </FormItem>
-            )}
-          />
+          <div className="grid gap-4 md:grid-cols-2">
+            <FormField
+              control={form.control}
+              name="username"
+              render={({ field, fieldState }) => (
+                <FormItem className="space-y-0">
+                  <FormLabel>Username</FormLabel>
+                  <FormControl className="mt-3">
+                    <Input
+                      placeholder="Username"
+                      {...field}
+                      onChange={(e) => {
+                        const normalized = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "");
+                        field.onChange(normalized);
+                      }}
+                    />
+                  </FormControl>
+                  <AnimatePresence mode="wait">
+                    {fieldState.error && (
+                      <motion.div
+                        variants={errorVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <FormMessage />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field, fieldState }) => (
+                <FormItem className="space-y-0">
+                  <FormLabel>Full Name</FormLabel>
+                  <FormControl className="mt-3">
+                    <Input placeholder="Full Name" {...field} />
+                  </FormControl>
+                  <AnimatePresence mode="wait">
+                    {fieldState.error && (
+                      <motion.div
+                        variants={errorVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <FormMessage />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </FormItem>
+              )}
+            />
+          </div>
           <FormField
             control={form.control}
             name="password"

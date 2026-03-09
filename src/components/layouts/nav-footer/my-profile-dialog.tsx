@@ -74,7 +74,7 @@ export function MyProfileDialog({
       bio: user.bio || "",
       avatarPreview: user.avatar || null,
     }));
-  }, [user]);
+  }, [user.full_name, user.username, user.bio, user.avatar]);
 
   const [profileErrors, setProfileErrors] = useState<ProfileErrors>({});
   const [isModalAvatarLoaded, setIsModalAvatarLoaded] = useState(false);

@@ -1,6 +1,6 @@
 # AtoiTalk
 
-![AtoiTalk Preview](https://github.com/user-attachments/assets/526f84ec-70e3-47e6-9f49-1c13bd37cc8c)
+![AtoiTalk Preview](https://github.com/user-attachments/assets/630de5f6-26c2-488f-9c5e-3783ddc11957)
 
 Modern, real-time chat web application supporting private/group messaging, rich media uploads, robust administrative controls, and secure authentication. Built with React 19, TypeScript, Vite, Tailwind CSS, and Zustand.
 

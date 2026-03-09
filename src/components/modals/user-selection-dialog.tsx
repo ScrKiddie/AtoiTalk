@@ -146,7 +146,7 @@ export function UserSelectionDialog({
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search users (starts with)..."
+              placeholder="Search users..."
               className="pl-8"
               value={search}
               onChange={(e) => setSearch(e.target.value)}

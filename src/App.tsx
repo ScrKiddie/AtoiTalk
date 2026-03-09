@@ -14,6 +14,7 @@ import ChatRoom from "@/pages/chat-room.tsx";
 import ForgotPassword from "@/pages/forgot-password";
 import GoogleCallback from "@/pages/google-callback";
 import InvitePage from "@/pages/invite";
+import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import { adminService, userService } from "@/services";
@@ -147,6 +148,17 @@ const AnimatedRoutes = () => {
 
           <Route path="/auth/google/callback" element={<GoogleCallback />} />
 
+          <Route
+            path="/"
+            element={
+              useAuthStore.getState().isAuthenticated ? (
+                <Navigate to="/chat" replace />
+              ) : (
+                <Landing />
+              )
+            }
+          />
+
           <Route element={<PublicRoute />}>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -154,20 +166,22 @@ const AnimatedRoutes = () => {
           </Route>
           <Route element={<ProtectedRoute />}>
             <Route
-              path="/*"
+              path="/chat/*"
               element={
                 <SidebarProvider>
                   <AppSidebar />
                   <Routes>
                     <Route path="/" element={<EmptyChatState />} />
-                    <Route path="/chat/:chatId" element={<ChatRoom />} />
-                    <Route path="/chat/u/:userId" element={<ChatRoom />} />
-                    <Route path="*" element={<Navigate to="/" replace />} />
+                    <Route path=":chatId" element={<ChatRoom />} />
+                    <Route path="u/:userId" element={<ChatRoom />} />
+                    <Route path="*" element={<Navigate to="/chat" replace />} />
                   </Routes>
                 </SidebarProvider>
               }
             />
           </Route>
+
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AnimatePresence>
     </WebSocketProvider>

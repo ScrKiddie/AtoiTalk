@@ -79,7 +79,7 @@ export const MembersTab = ({
           <div className="relative flex-1">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search members (starts with)..."
+              placeholder="Search members..."
               className="pl-8"
               value={memberSearch}
               onChange={(e) => setMemberSearch(e.target.value)}
