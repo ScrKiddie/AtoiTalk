@@ -176,6 +176,7 @@ export const useChatMessages = ({
   const {
     virtualizerRef,
     items,
+    scrollToBottom,
     activeStickyDate,
     handleScroll,
     showScrollButton,
@@ -297,9 +298,9 @@ export const useChatMessages = ({
       if (isJumped) {
         clearJumpState();
       }
-      virtualizerRef.current?.scrollToIndex(items.length - 1, { align: "end" });
+      scrollToBottom();
     }
-  }, [hasPreviousPage, returnToLatest, isJumped, clearJumpState, items.length]);
+  }, [hasPreviousPage, returnToLatest, isJumped, clearJumpState, scrollToBottom]);
 
   const handleReturnJump = useCallback(() => {
     if (returnStack.length > 0) {

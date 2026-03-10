@@ -25,6 +25,8 @@ interface UseVirtuaChatProps {
   jumpTimestamp?: number | null;
 }
 
+const BOTTOM_FOLLOW_THRESHOLD = 260;
+
 export const useVirtuaChat = ({
   messages,
   hasNextPage,
@@ -47,10 +49,13 @@ export const useVirtuaChat = ({
 
   const [shifting, setShifting] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const bottomFollowTimeoutsRef = useRef<number[]>([]);
 
   useEffect(() => {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      bottomFollowTimeoutsRef.current.forEach((timerId) => window.clearTimeout(timerId));
+      bottomFollowTimeoutsRef.current = [];
     };
   }, []);
 
@@ -112,6 +117,8 @@ export const useVirtuaChat = ({
   const fetchedBottomCountRef = useRef(-1);
   const topThresholdArmedRef = useRef(true);
   const blockTopAutoFetchUntilRearmedRef = useRef(false);
+  const wasAtBottomRef = useRef(true);
+  const bottomLockUntilRef = useRef(0);
 
   useEffect(() => {
     blockTopAutoFetchUntilRearmedRef.current = false;
@@ -137,29 +144,97 @@ export const useVirtuaChat = ({
     topThresholdArmedRef.current = offset > 200;
   }, [itemCount, topItemId]);
 
-  const scrollToBottom = useCallback(() => {
-    if (virtualizerRef.current && items.length > 0) {
-      virtualizerRef.current.scrollToIndex(items.length - 1, { align: "end" });
-    }
-  }, [items.length]);
+  const isAtBottom = useCallback((offset: number, scrollSize: number, viewportSize: number) => {
+    const threshold = Math.max(BOTTOM_FOLLOW_THRESHOLD, Math.round(viewportSize * 0.25));
+    return offset >= scrollSize - viewportSize - threshold;
+  }, []);
 
-  const wasAtBottomRef = useRef(true);
+  const isBottomLockActive = useCallback(
+    () => Date.now() < bottomLockUntilRef.current,
+    [bottomLockUntilRef]
+  );
+
+  const syncBottomState = useCallback(
+    (offset: number) => {
+      const ref = virtualizerRef.current;
+      if (!ref) return false;
+
+      const atBottom = isAtBottom(offset, ref.scrollSize, ref.viewportSize);
+      const lockActive = !hasPreviousPage && isBottomLockActive();
+
+      if (lockActive) {
+        setShowScrollButton(false);
+        if (atBottom) {
+          wasAtBottomRef.current = true;
+        }
+        return true;
+      }
+
+      setShowScrollButton(!atBottom || hasPreviousPage);
+      wasAtBottomRef.current = atBottom && !hasPreviousPage;
+      return atBottom;
+    },
+    [hasPreviousPage, isAtBottom, isBottomLockActive]
+  );
+
+  const scrollToBottom = useCallback(() => {
+    const ref = virtualizerRef.current;
+    if (!ref || items.length === 0) return;
+
+    if (!hasPreviousPage) {
+      bottomLockUntilRef.current = Date.now() + 900;
+    }
+
+    wasAtBottomRef.current = !hasPreviousPage;
+
+    const alignToLatest = () => {
+      const currentRef = virtualizerRef.current;
+      if (!currentRef || items.length === 0) return;
+      currentRef.scrollToIndex(items.length - 1, { align: "end" });
+      currentRef.scrollTo(currentRef.scrollSize);
+    };
+
+    alignToLatest();
+    requestAnimationFrame(() => {
+      alignToLatest();
+      requestAnimationFrame(() => {
+        alignToLatest();
+      });
+    });
+
+    bottomFollowTimeoutsRef.current.forEach((timerId) => window.clearTimeout(timerId));
+    bottomFollowTimeoutsRef.current = [];
+
+    [120, 260].forEach((delay) => {
+      const timerId = window.setTimeout(() => {
+        alignToLatest();
+      }, delay);
+      bottomFollowTimeoutsRef.current.push(timerId);
+    });
+  }, [items.length, hasPreviousPage]);
 
   useEffect(() => {
     const ref = virtualizerRef.current;
     if (!ref) return;
 
+    const wasFollowingLatest = wasAtBottomRef.current;
+
     requestAnimationFrame(() => {
-      const offset = ref.scrollOffset;
+      const atBottom = syncBottomState(ref.scrollOffset);
+      const shouldFollowLatest = wasFollowingLatest || (atBottom && !hasPreviousPage);
 
-      const atBottom = offset >= ref.scrollSize - ref.viewportSize - 200;
-      setShowScrollButton(!atBottom || hasPreviousPage);
-
-      if (wasAtBottomRef.current && !isFetchingNextPage && items.length > 0 && !isJumping) {
+      if (shouldFollowLatest && !isFetchingNextPage && items.length > 0 && !isJumping) {
         scrollToBottom();
       }
     });
-  }, [items.length, isFetchingNextPage, scrollToBottom, isJumping]);
+  }, [
+    items.length,
+    isFetchingNextPage,
+    scrollToBottom,
+    isJumping,
+    hasPreviousPage,
+    syncBottomState,
+  ]);
 
   const handleScroll = useCallback(
     (offset: number) => {
@@ -181,10 +256,7 @@ export const useVirtuaChat = ({
         }
       }
 
-      const atBottom = offset >= ref.scrollSize - ref.viewportSize - 200;
-      setShowScrollButton(!atBottom || hasPreviousPage);
-
-      wasAtBottomRef.current = atBottom && !hasPreviousPage;
+      const atBottom = syncBottomState(offset);
 
       const isNearTop = offset <= 200;
       if (!isNearTop) {
@@ -220,9 +292,9 @@ export const useVirtuaChat = ({
       hasPreviousPage,
       isFetchingPreviousPage,
       fetchPreviousPage,
-      setShowScrollButton,
       isErrorNextPage,
       isErrorPreviousPage,
+      syncBottomState,
     ]
   );
 
@@ -259,7 +331,7 @@ export const useVirtuaChat = ({
       virtualizerRef.current &&
       !isJumping
     ) {
-      virtualizerRef.current.scrollToIndex(items.length - 1, { align: "end" });
+      scrollToBottom();
       initialScrollDone.current = currentChatId;
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -273,7 +345,47 @@ export const useVirtuaChat = ({
         initialScrollDone.current = currentChatId;
       }
     }
-  }, [currentChatId, items.length, isJumping]);
+  }, [currentChatId, items.length, isJumping, scrollToBottom]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    let frameId: number | null = null;
+    const viewport = window.visualViewport;
+
+    const handleViewportChange = () => {
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+      }
+
+      frameId = requestAnimationFrame(() => {
+        frameId = null;
+
+        const ref = virtualizerRef.current;
+        if (!ref) return;
+
+        const wasFollowingLatest = wasAtBottomRef.current;
+        syncBottomState(ref.scrollOffset);
+
+        if ((wasFollowingLatest || isBottomLockActive()) && !hasPreviousPage && !isJumping) {
+          scrollToBottom();
+        }
+      });
+    };
+
+    window.addEventListener("resize", handleViewportChange);
+    viewport?.addEventListener("resize", handleViewportChange);
+    viewport?.addEventListener("scroll", handleViewportChange);
+
+    return () => {
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+      }
+      window.removeEventListener("resize", handleViewportChange);
+      viewport?.removeEventListener("resize", handleViewportChange);
+      viewport?.removeEventListener("scroll", handleViewportChange);
+    };
+  }, [hasPreviousPage, isBottomLockActive, isJumping, scrollToBottom, syncBottomState]);
 
   const lastSuccessfulJump = useRef<{ id: string; timestamp: number } | null>(null);
   const [internalHighlightedId, setInternalHighlightedId] = useState<string | null>(null);

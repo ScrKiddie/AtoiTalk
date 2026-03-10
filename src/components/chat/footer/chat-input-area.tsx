@@ -6,7 +6,9 @@ import {
   EmojiPickerSearch,
 } from "@/components/ui/emoji-picker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { File as FileIcon, SendHorizonal, Shredder, Smile } from "lucide-react";
 import React from "react";
 
@@ -43,6 +45,7 @@ export function ChatInputArea({
   onSendMessage,
   onTyping,
 }: ChatInputAreaProps) {
+  const isMobile = useIsMobile();
   const disabled = isGlobalUploading || isSending || isEditing || isLoading;
 
   return (
@@ -99,11 +102,13 @@ export function ChatInputArea({
           onTyping();
         }}
         onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            onSendMessage();
-          }
+          if (e.key !== "Enter" || e.nativeEvent.isComposing) return;
+          if (isMobile || e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
+
+          e.preventDefault();
+          onSendMessage();
         }}
+        enterKeyHint={isMobile ? "enter" : "send"}
         placeholder={isEditing ? "Edit message..." : "Type a message..."}
         className="min-h-[20px] max-h-[140px] !px-2 !py-2 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 resize-none px-0 shadow-none scrollbar-thin"
         rows={1}
@@ -115,9 +120,10 @@ export function ChatInputArea({
         size="icon"
         disabled={disabled || (!newMessageText.trim() && !attachmentMode)}
         className="size-9 rounded-full shrink-0"
+        aria-label={isSending ? "Sending message" : "Send message"}
         onClick={onSendMessage}
       >
-        <SendHorizonal className="size-5" />
+        {isSending ? <Spinner className="size-4" /> : <SendHorizonal className="size-5" />}
       </Button>
     </div>
   );

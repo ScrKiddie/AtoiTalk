@@ -267,9 +267,11 @@ button .dark .bg-foreground:focus {
   flex-direction: column;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
-.chat-message-list > div {
+.chat-message-list > div:first-child {
   margin-top: auto;
 }
 
