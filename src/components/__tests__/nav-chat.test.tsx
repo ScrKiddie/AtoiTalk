@@ -151,7 +151,7 @@ describe("NavChat Component", () => {
     ];
 
     const setActiveMenu = vi.fn();
-    renderComponent({ chats, activeMenu: "chat-0", setActiveMenu });
+    renderComponent({ chats, activeMenu: "chat-chat1", setActiveMenu });
 
     expect(screen.getByText("Delete Chat")).toBeInTheDocument();
 

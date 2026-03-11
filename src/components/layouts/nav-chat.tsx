@@ -36,7 +36,7 @@ import {
   Unlock,
   Users,
 } from "lucide-react";
-import { useState } from "react";
+import { MouseEvent, PointerEvent, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { ChatPreviewText } from "@/components/chat/chat-preview-text";
@@ -75,7 +75,7 @@ export function NavChat({
   const match = location.pathname.match(/\/chat\/([^/]+)/);
   const activeId = match ? match[1] : null;
 
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [hoveredChatId, setHoveredChatId] = useState<string | null>(null);
   const [chatToDelete, setChatToDelete] = useState<ChatListItem | null>(null);
 
   const { mutate: hideChat, isPending: isHidingChat } = useHideChat();
@@ -96,6 +96,17 @@ export function NavChat({
     if (!isBusy) {
       navigate(`/chat/${chat.id}`);
     }
+  };
+
+  const handleMenuTriggerPointerDown = (event: PointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const handleMenuTriggerClick = (event: MouseEvent<HTMLButtonElement>, menuId: string) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setActiveMenu(activeMenu === menuId ? null : menuId);
   };
 
   if (isLoading) {
@@ -126,18 +137,21 @@ export function NavChat({
             </SidebarMenuItem>
           )}
 
-          {chats.map((chat, index) => {
-            const menuId = `chat-${index}`;
+          {chats.map((chat) => {
+            const menuId = `chat-${chat.id}`;
             const isDeleted = chat.type === "private" && chat.other_user_is_deleted;
             const displayName = isDeleted ? "Deleted Account" : chat.name;
             const initials = getInitials(displayName);
 
             return (
-              <SidebarMenuItem className="border-b border-sidebar-border group-data-[collapsible=icon]:border-none">
+              <SidebarMenuItem
+                key={chat.id}
+                className="border-b border-sidebar-border group-data-[collapsible=icon]:border-none"
+              >
                 <div
                   className="relative w-full"
-                  onMouseEnter={() => setHoveredIndex(index)}
-                  onMouseLeave={() => setHoveredIndex(null)}
+                  onMouseEnter={() => setHoveredChatId(chat.id)}
+                  onMouseLeave={() => setHoveredChatId(null)}
                 >
                   <SidebarMenuButton
                     onClick={() => handleChatClick(chat)}
@@ -150,7 +164,7 @@ export function NavChat({
                       activeId === chat.id
                         ? "bg-muted font-normal data-[active=true]:font-normal"
                         : "",
-                      !(hoveredIndex === index || activeMenu === menuId || isMobile) && "!pr-4",
+                      !(hoveredChatId === chat.id || activeMenu === menuId || isMobile) && "!pr-4",
                       isBusy ? "opacity-50 cursor-not-allowed" : ""
                     )}
                   >
@@ -225,9 +239,11 @@ export function NavChat({
                   >
                     <DropdownMenuTrigger asChild>
                       <SidebarMenuAction
+                        onPointerDown={handleMenuTriggerPointerDown}
+                        onClick={(event) => handleMenuTriggerClick(event, menuId)}
                         className={cn(
                           "absolute right-2 !top-1/2 -translate-y-1/2 transition-opacity duration-200 hover:bg-transparent group-data-[collapsible=icon]:hidden",
-                          hoveredIndex === index || activeMenu === menuId || isMobile
+                          hoveredChatId === chat.id || activeMenu === menuId || isMobile
                             ? "opacity-100"
                             : "opacity-0 pointer-events-none"
                         )}
@@ -352,8 +368,6 @@ export function NavChat({
 
         {!isFetchingNextPage && hasNextPage && <div className="h-[0.1px] w-full" />}
       </SidebarGroup>
-
-      <DropdownMenu></DropdownMenu>
 
       <ConfirmationDialog
         open={!!chatToDelete}
